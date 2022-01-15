@@ -1,0 +1,13 @@
+[package]
+name = "libfmod"
+version = "0.1.0"
+edition = "2021"
+license-file = "LICENSE"
+description = "A library wrapper for integrating FMOD Engine in Rust applications."
+readme = "README.md"
+homepage = "https://github.com/lebedev-games/libfmod"
+repository = "https://github.com/lebedev-games/libfmod"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
