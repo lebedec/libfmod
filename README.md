@@ -1,4 +1,4 @@
-# libFMOD
+# libFMOD [![crates.io badge][crates-io-badge]][crates-io-url]
 
 A library wrapper for integrating FMOD Engine in Rust applications. 
 FFI wrapped in Rust code to make them safe, more idiomatic 
