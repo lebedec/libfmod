@@ -1,7 +1,7 @@
 #![allow(unused_unsafe)]
 
 use std::ffi::{c_void, CStr, CString, IntoStringError};
-use std::ptr::null_mut;
+use std::ptr::{null, null_mut};
 use std::slice;
 
 pub mod ffi;
@@ -55,6 +55,28 @@ macro_rules! to_vec {
         slice::from_raw_parts($ptr, $length as usize).to_vec()
     };
 }
+macro_rules! to_bool {
+    ($ value : expr) => {
+        match $value {
+            1 => true,
+            _ => false,
+        }
+    };
+}
+macro_rules! from_bool {
+    ($ value : expr) => {
+        match $value {
+            true => 1,
+            _ => 0,
+        }
+    };
+}
+pub fn attr3d_array8(
+    values: Vec<Attributes3d>,
+) -> [Attributes3d; ffi::FMOD_MAX_LISTENERS as usize] {
+    values.try_into().expect("slice with incorrect length")
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LoadingState {
     Unloading,
@@ -3710,13 +3732,13 @@ impl ParameterId {
 #[derive(Debug, Clone)]
 pub struct ParameterDescription {
     pub name: String,
-    pub id: ffi::FMOD_STUDIO_PARAMETER_ID,
+    pub id: ParameterId,
     pub minimum: f32,
     pub maximum: f32,
     pub defaultvalue: f32,
     pub type_: ParameterType,
     pub flags: ffi::FMOD_STUDIO_PARAMETER_FLAGS,
-    pub guid: ffi::FMOD_GUID,
+    pub guid: Guid,
 }
 
 impl ParameterDescription {
@@ -3726,26 +3748,26 @@ impl ParameterDescription {
         unsafe {
             Ok(ParameterDescription {
                 name: to_string!(value.name)?,
-                id: value.id,
+                id: ParameterId::from(value.id)?,
                 minimum: value.minimum,
                 maximum: value.maximum,
                 defaultvalue: value.defaultvalue,
                 type_: ParameterType::from(value.type_)?,
                 flags: value.flags,
-                guid: value.guid,
+                guid: Guid::from(value.guid)?,
             })
         }
     }
     pub fn into(self) -> ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION {
         ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION {
             name: self.name.as_ptr().cast(),
-            id: self.id,
+            id: self.id.into(),
             minimum: self.minimum,
             maximum: self.maximum,
             defaultvalue: self.defaultvalue,
             type_: self.type_.into(),
             flags: self.flags,
-            guid: self.guid,
+            guid: self.guid.into(),
         }
     }
 }
@@ -3790,7 +3812,7 @@ impl ProgrammerSoundProperties {
         unsafe {
             Ok(ProgrammerSoundProperties {
                 name: to_string!(value.name)?,
-                sound: Sound::from_pointer(value.sound),
+                sound: Sound::from(value.sound),
                 subsound_index: value.subsoundIndex,
             })
         }
@@ -3817,7 +3839,7 @@ impl PluginInstanceProperties {
         unsafe {
             Ok(PluginInstanceProperties {
                 name: to_string!(value.name)?,
-                dsp: Dsp::from_pointer(value.dsp),
+                dsp: Dsp::from(value.dsp),
             })
         }
     }
@@ -3893,8 +3915,8 @@ impl TimelineBeatProperties {
 
 #[derive(Debug, Clone)]
 pub struct TimelineNestedBeatProperties {
-    pub eventid: ffi::FMOD_GUID,
-    pub properties: ffi::FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES,
+    pub eventid: Guid,
+    pub properties: TimelineBeatProperties,
 }
 
 impl TimelineNestedBeatProperties {
@@ -3903,15 +3925,15 @@ impl TimelineNestedBeatProperties {
     ) -> Result<TimelineNestedBeatProperties, Error> {
         unsafe {
             Ok(TimelineNestedBeatProperties {
-                eventid: value.eventid,
-                properties: value.properties,
+                eventid: Guid::from(value.eventid)?,
+                properties: TimelineBeatProperties::from(value.properties)?,
             })
         }
     }
     pub fn into(self) -> ffi::FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES {
         ffi::FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES {
-            eventid: self.eventid,
-            properties: self.properties,
+            eventid: self.eventid.into(),
+            properties: self.properties.into(),
         }
     }
 }
@@ -4008,23 +4030,23 @@ impl BufferInfo {
 
 #[derive(Debug, Clone)]
 pub struct BufferUsage {
-    pub studiocommandqueue: ffi::FMOD_STUDIO_BUFFER_INFO,
-    pub studiohandle: ffi::FMOD_STUDIO_BUFFER_INFO,
+    pub studiocommandqueue: BufferInfo,
+    pub studiohandle: BufferInfo,
 }
 
 impl BufferUsage {
     pub fn from(value: ffi::FMOD_STUDIO_BUFFER_USAGE) -> Result<BufferUsage, Error> {
         unsafe {
             Ok(BufferUsage {
-                studiocommandqueue: value.studiocommandqueue,
-                studiohandle: value.studiohandle,
+                studiocommandqueue: BufferInfo::from(value.studiocommandqueue)?,
+                studiohandle: BufferInfo::from(value.studiohandle)?,
             })
         }
     }
     pub fn into(self) -> ffi::FMOD_STUDIO_BUFFER_USAGE {
         ffi::FMOD_STUDIO_BUFFER_USAGE {
-            studiocommandqueue: self.studiocommandqueue,
-            studiohandle: self.studiohandle,
+            studiocommandqueue: self.studiocommandqueue.into(),
+            studiohandle: self.studiohandle.into(),
         }
     }
 }
@@ -4033,7 +4055,7 @@ impl BufferUsage {
 pub struct SoundInfo {
     pub name_or_data: String,
     pub mode: ffi::FMOD_MODE,
-    pub exinfo: ffi::FMOD_CREATESOUNDEXINFO,
+    pub exinfo: CreateSoundexInfo,
     pub subsoundindex: i32,
 }
 
@@ -4043,7 +4065,7 @@ impl SoundInfo {
             Ok(SoundInfo {
                 name_or_data: to_string!(value.name_or_data)?,
                 mode: value.mode,
-                exinfo: value.exinfo,
+                exinfo: CreateSoundexInfo::from(value.exinfo)?,
                 subsoundindex: value.subsoundindex,
             })
         }
@@ -4052,7 +4074,7 @@ impl SoundInfo {
         ffi::FMOD_STUDIO_SOUND_INFO {
             name_or_data: self.name_or_data.as_ptr().cast(),
             mode: self.mode,
-            exinfo: self.exinfo,
+            exinfo: self.exinfo.into(),
             subsoundindex: self.subsoundindex,
         }
     }
@@ -4194,29 +4216,29 @@ impl Vector {
 
 #[derive(Debug, Clone)]
 pub struct Attributes3d {
-    pub position: ffi::FMOD_VECTOR,
-    pub velocity: ffi::FMOD_VECTOR,
-    pub forward: ffi::FMOD_VECTOR,
-    pub up: ffi::FMOD_VECTOR,
+    pub position: Vector,
+    pub velocity: Vector,
+    pub forward: Vector,
+    pub up: Vector,
 }
 
 impl Attributes3d {
     pub fn from(value: ffi::FMOD_3D_ATTRIBUTES) -> Result<Attributes3d, Error> {
         unsafe {
             Ok(Attributes3d {
-                position: value.position,
-                velocity: value.velocity,
-                forward: value.forward,
-                up: value.up,
+                position: Vector::from(value.position)?,
+                velocity: Vector::from(value.velocity)?,
+                forward: Vector::from(value.forward)?,
+                up: Vector::from(value.up)?,
             })
         }
     }
     pub fn into(self) -> ffi::FMOD_3D_ATTRIBUTES {
         ffi::FMOD_3D_ATTRIBUTES {
-            position: self.position,
-            velocity: self.velocity,
-            forward: self.forward,
-            up: self.up,
+            position: self.position.into(),
+            velocity: self.velocity.into(),
+            forward: self.forward.into(),
+            up: self.up.into(),
         }
     }
 }
@@ -4482,7 +4504,7 @@ impl CreateSoundexInfo {
                 fileuserdata: value.fileuserdata,
                 filebuffersize: value.filebuffersize,
                 channelorder: ChannelOrder::from(value.channelorder)?,
-                initialsoundgroup: SoundGroup::from_pointer(value.initialsoundgroup),
+                initialsoundgroup: SoundGroup::from(value.initialsoundgroup),
                 initialseekposition: value.initialseekposition,
                 initialseekpostype: value.initialseekpostype,
                 ignoresetfilesystem: value.ignoresetfilesystem,
@@ -4956,7 +4978,7 @@ impl OutputState {
 pub struct OutputObject3Dinfo {
     pub buffer: Vec<f32>,
     pub bufferlength: u32,
-    pub position: ffi::FMOD_VECTOR,
+    pub position: Vector,
     pub gain: f32,
     pub spread: f32,
     pub priority: f32,
@@ -4968,7 +4990,7 @@ impl OutputObject3Dinfo {
             Ok(OutputObject3Dinfo {
                 buffer: to_vec!(value.buffer, value.bufferlength),
                 bufferlength: value.bufferlength,
-                position: value.position,
+                position: Vector::from(value.position)?,
                 gain: value.gain,
                 spread: value.spread,
                 priority: value.priority,
@@ -4979,7 +5001,7 @@ impl OutputObject3Dinfo {
         ffi::FMOD_OUTPUT_OBJECT3DINFO {
             buffer: self.buffer.as_ptr() as *mut _,
             bufferlength: self.bufferlength,
-            position: self.position,
+            position: self.position.into(),
             gain: self.gain,
             spread: self.spread,
             priority: self.priority,
@@ -5073,7 +5095,7 @@ impl DspParameterFloatMappingPiecewiseLinear {
 #[derive(Debug, Clone)]
 pub struct DspParameterFloatMapping {
     pub type_: DspParameterFloatMappingType,
-    pub piecewiselinearmapping: ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR,
+    pub piecewiselinearmapping: DspParameterFloatMappingPiecewiseLinear,
 }
 
 impl DspParameterFloatMapping {
@@ -5083,14 +5105,16 @@ impl DspParameterFloatMapping {
         unsafe {
             Ok(DspParameterFloatMapping {
                 type_: DspParameterFloatMappingType::from(value.type_)?,
-                piecewiselinearmapping: value.piecewiselinearmapping,
+                piecewiselinearmapping: DspParameterFloatMappingPiecewiseLinear::from(
+                    value.piecewiselinearmapping,
+                )?,
             })
         }
     }
     pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING {
         ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING {
             type_: self.type_.into(),
-            piecewiselinearmapping: self.piecewiselinearmapping,
+            piecewiselinearmapping: self.piecewiselinearmapping.into(),
         }
     }
 }
@@ -5100,7 +5124,7 @@ pub struct DspParameterDescFloat {
     pub min: f32,
     pub max: f32,
     pub defaultval: f32,
-    pub mapping: ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING,
+    pub mapping: DspParameterFloatMapping,
 }
 
 impl DspParameterDescFloat {
@@ -5110,7 +5134,7 @@ impl DspParameterDescFloat {
                 min: value.min,
                 max: value.max,
                 defaultval: value.defaultval,
-                mapping: value.mapping,
+                mapping: DspParameterFloatMapping::from(value.mapping)?,
             })
         }
     }
@@ -5119,7 +5143,7 @@ impl DspParameterDescFloat {
             min: self.min,
             max: self.max,
             defaultval: self.defaultval,
-            mapping: self.mapping,
+            mapping: self.mapping.into(),
         }
     }
 }
@@ -5258,8 +5282,8 @@ impl DspParameterOverallgain {
 
 #[derive(Debug, Clone)]
 pub struct DspParameterAttributes3d {
-    pub relative: ffi::FMOD_3D_ATTRIBUTES,
-    pub absolute: ffi::FMOD_3D_ATTRIBUTES,
+    pub relative: Attributes3d,
+    pub absolute: Attributes3d,
 }
 
 impl DspParameterAttributes3d {
@@ -5268,15 +5292,15 @@ impl DspParameterAttributes3d {
     ) -> Result<DspParameterAttributes3d, Error> {
         unsafe {
             Ok(DspParameterAttributes3d {
-                relative: value.relative,
-                absolute: value.absolute,
+                relative: Attributes3d::from(value.relative)?,
+                absolute: Attributes3d::from(value.absolute)?,
             })
         }
     }
     pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES {
         ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES {
-            relative: self.relative,
-            absolute: self.absolute,
+            relative: self.relative.into(),
+            absolute: self.absolute.into(),
         }
     }
 }
@@ -5284,9 +5308,9 @@ impl DspParameterAttributes3d {
 #[derive(Debug, Clone)]
 pub struct DspParameterAttributes3dMulti {
     pub numlisteners: i32,
-    pub relative: [ffi::FMOD_3D_ATTRIBUTES; ffi::FMOD_MAX_LISTENERS as usize],
+    pub relative: [Attributes3d; ffi::FMOD_MAX_LISTENERS as usize],
     pub weight: [f32; ffi::FMOD_MAX_LISTENERS as usize],
-    pub absolute: ffi::FMOD_3D_ATTRIBUTES,
+    pub absolute: Attributes3d,
 }
 
 impl DspParameterAttributes3dMulti {
@@ -5296,18 +5320,24 @@ impl DspParameterAttributes3dMulti {
         unsafe {
             Ok(DspParameterAttributes3dMulti {
                 numlisteners: value.numlisteners,
-                relative: value.relative,
+                relative: attr3d_array8(
+                    value
+                        .relative
+                        .map(Attributes3d::from)
+                        .into_iter()
+                        .collect::<Result<Vec<Attributes3d>, Error>>()?,
+                ),
                 weight: value.weight,
-                absolute: value.absolute,
+                absolute: Attributes3d::from(value.absolute)?,
             })
         }
     }
     pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI {
         ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI {
             numlisteners: self.numlisteners,
-            relative: self.relative,
+            relative: self.relative.map(Attributes3d::into),
             weight: self.weight,
-            absolute: self.absolute,
+            absolute: self.absolute.into(),
         }
     }
 }
@@ -5730,10 +5760,819 @@ pub struct Channel {
 }
 
 impl Channel {
-    pub fn from_pointer(pointer: *mut ffi::FMOD_CHANNEL) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_CHANNEL) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_CHANNEL {
+        self.pointer
+    }
+    pub fn get_system_object(&self) -> Result<System, Error> {
+        unsafe {
+            let mut system = null_mut();
+            match ffi::FMOD_Channel_GetSystemObject(self.pointer, &mut system) {
+                ffi::FMOD_OK => Ok(System::from(system)),
+                error => Err(err_fmod!("FMOD_Channel_GetSystemObject", error)),
+            }
+        }
+    }
+    pub fn stop(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_Stop(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_Stop", error)),
+            }
+        }
+    }
+    pub fn set_paused(&self, paused: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetPaused(self.pointer, from_bool!(paused)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetPaused", error)),
+            }
+        }
+    }
+    pub fn get_paused(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut paused = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Channel_GetPaused(self.pointer, &mut paused) {
+                ffi::FMOD_OK => Ok(to_bool!(paused)),
+                error => Err(err_fmod!("FMOD_Channel_GetPaused", error)),
+            }
+        }
+    }
+    pub fn set_volume(&self, volume: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetVolume(self.pointer, volume) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetVolume", error)),
+            }
+        }
+    }
+    pub fn get_volume(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut volume = f32::default();
+            match ffi::FMOD_Channel_GetVolume(self.pointer, &mut volume) {
+                ffi::FMOD_OK => Ok(volume),
+                error => Err(err_fmod!("FMOD_Channel_GetVolume", error)),
+            }
+        }
+    }
+    pub fn set_volume_ramp(&self, ramp: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetVolumeRamp(self.pointer, from_bool!(ramp)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetVolumeRamp", error)),
+            }
+        }
+    }
+    pub fn get_volume_ramp(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut ramp = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Channel_GetVolumeRamp(self.pointer, &mut ramp) {
+                ffi::FMOD_OK => Ok(to_bool!(ramp)),
+                error => Err(err_fmod!("FMOD_Channel_GetVolumeRamp", error)),
+            }
+        }
+    }
+    pub fn get_audibility(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut audibility = f32::default();
+            match ffi::FMOD_Channel_GetAudibility(self.pointer, &mut audibility) {
+                ffi::FMOD_OK => Ok(audibility),
+                error => Err(err_fmod!("FMOD_Channel_GetAudibility", error)),
+            }
+        }
+    }
+    pub fn set_pitch(&self, pitch: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetPitch(self.pointer, pitch) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetPitch", error)),
+            }
+        }
+    }
+    pub fn get_pitch(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut pitch = f32::default();
+            match ffi::FMOD_Channel_GetPitch(self.pointer, &mut pitch) {
+                ffi::FMOD_OK => Ok(pitch),
+                error => Err(err_fmod!("FMOD_Channel_GetPitch", error)),
+            }
+        }
+    }
+    pub fn set_mute(&self, mute: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetMute(self.pointer, from_bool!(mute)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetMute", error)),
+            }
+        }
+    }
+    pub fn get_mute(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut mute = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Channel_GetMute(self.pointer, &mut mute) {
+                ffi::FMOD_OK => Ok(to_bool!(mute)),
+                error => Err(err_fmod!("FMOD_Channel_GetMute", error)),
+            }
+        }
+    }
+    pub fn set_reverb_properties(&self, instance: i32, wet: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetReverbProperties(self.pointer, instance, wet) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetReverbProperties", error)),
+            }
+        }
+    }
+    pub fn get_reverb_properties(&self, instance: i32) -> Result<f32, Error> {
+        unsafe {
+            let mut wet = f32::default();
+            match ffi::FMOD_Channel_GetReverbProperties(self.pointer, instance, &mut wet) {
+                ffi::FMOD_OK => Ok(wet),
+                error => Err(err_fmod!("FMOD_Channel_GetReverbProperties", error)),
+            }
+        }
+    }
+    pub fn set_low_pass_gain(&self, gain: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetLowPassGain(self.pointer, gain) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetLowPassGain", error)),
+            }
+        }
+    }
+    pub fn get_low_pass_gain(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut gain = f32::default();
+            match ffi::FMOD_Channel_GetLowPassGain(self.pointer, &mut gain) {
+                ffi::FMOD_OK => Ok(gain),
+                error => Err(err_fmod!("FMOD_Channel_GetLowPassGain", error)),
+            }
+        }
+    }
+    pub fn set_mode(&self, mode: ffi::FMOD_MODE) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetMode(self.pointer, mode) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetMode", error)),
+            }
+        }
+    }
+    pub fn get_mode(&self) -> Result<ffi::FMOD_MODE, Error> {
+        unsafe {
+            let mut mode = ffi::FMOD_MODE::default();
+            match ffi::FMOD_Channel_GetMode(self.pointer, &mut mode) {
+                ffi::FMOD_OK => Ok(mode),
+                error => Err(err_fmod!("FMOD_Channel_GetMode", error)),
+            }
+        }
+    }
+    pub fn set_callback(&self, callback: ffi::FMOD_CHANNELCONTROL_CALLBACK) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetCallback(self.pointer, callback) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetCallback", error)),
+            }
+        }
+    }
+    pub fn is_playing(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut isplaying = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Channel_IsPlaying(self.pointer, &mut isplaying) {
+                ffi::FMOD_OK => Ok(to_bool!(isplaying)),
+                error => Err(err_fmod!("FMOD_Channel_IsPlaying", error)),
+            }
+        }
+    }
+    pub fn set_pan(&self, pan: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetPan(self.pointer, pan) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetPan", error)),
+            }
+        }
+    }
+    pub fn set_mix_levels_output(
+        &self,
+        frontleft: f32,
+        frontright: f32,
+        center: f32,
+        lfe: f32,
+        surroundleft: f32,
+        surroundright: f32,
+        backleft: f32,
+        backright: f32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetMixLevelsOutput(
+                self.pointer,
+                frontleft,
+                frontright,
+                center,
+                lfe,
+                surroundleft,
+                surroundright,
+                backleft,
+                backright,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetMixLevelsOutput", error)),
+            }
+        }
+    }
+    pub fn set_mix_levels_input(&self, numlevels: i32) -> Result<f32, Error> {
+        unsafe {
+            let mut levels = f32::default();
+            match ffi::FMOD_Channel_SetMixLevelsInput(self.pointer, &mut levels, numlevels) {
+                ffi::FMOD_OK => Ok(levels),
+                error => Err(err_fmod!("FMOD_Channel_SetMixLevelsInput", error)),
+            }
+        }
+    }
+    pub fn set_mix_matrix(
+        &self,
+        outchannels: i32,
+        inchannels: i32,
+        inchannel_hop: i32,
+    ) -> Result<f32, Error> {
+        unsafe {
+            let mut matrix = f32::default();
+            match ffi::FMOD_Channel_SetMixMatrix(
+                self.pointer,
+                &mut matrix,
+                outchannels,
+                inchannels,
+                inchannel_hop,
+            ) {
+                ffi::FMOD_OK => Ok(matrix),
+                error => Err(err_fmod!("FMOD_Channel_SetMixMatrix", error)),
+            }
+        }
+    }
+    pub fn get_mix_matrix(&self, inchannel_hop: i32) -> Result<(f32, i32, i32), Error> {
+        unsafe {
+            let mut matrix = f32::default();
+            let mut outchannels = i32::default();
+            let mut inchannels = i32::default();
+            match ffi::FMOD_Channel_GetMixMatrix(
+                self.pointer,
+                &mut matrix,
+                &mut outchannels,
+                &mut inchannels,
+                inchannel_hop,
+            ) {
+                ffi::FMOD_OK => Ok((matrix, outchannels, inchannels)),
+                error => Err(err_fmod!("FMOD_Channel_GetMixMatrix", error)),
+            }
+        }
+    }
+    pub fn get_dsp_clock(&self) -> Result<(u64, u64), Error> {
+        unsafe {
+            let mut dspclock = u64::default();
+            let mut parentclock = u64::default();
+            match ffi::FMOD_Channel_GetDSPClock(self.pointer, &mut dspclock, &mut parentclock) {
+                ffi::FMOD_OK => Ok((dspclock, parentclock)),
+                error => Err(err_fmod!("FMOD_Channel_GetDSPClock", error)),
+            }
+        }
+    }
+    pub fn set_delay(
+        &self,
+        dspclock_start: u64,
+        dspclock_end: u64,
+        stopchannels: bool,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetDelay(
+                self.pointer,
+                dspclock_start,
+                dspclock_end,
+                from_bool!(stopchannels),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetDelay", error)),
+            }
+        }
+    }
+    pub fn get_delay(&self) -> Result<(u64, u64, bool), Error> {
+        unsafe {
+            let mut dspclock_start = u64::default();
+            let mut dspclock_end = u64::default();
+            let mut stopchannels = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Channel_GetDelay(
+                self.pointer,
+                &mut dspclock_start,
+                &mut dspclock_end,
+                &mut stopchannels,
+            ) {
+                ffi::FMOD_OK => Ok((dspclock_start, dspclock_end, to_bool!(stopchannels))),
+                error => Err(err_fmod!("FMOD_Channel_GetDelay", error)),
+            }
+        }
+    }
+    pub fn add_fade_point(&self, dspclock: u64, volume: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_AddFadePoint(self.pointer, dspclock, volume) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_AddFadePoint", error)),
+            }
+        }
+    }
+    pub fn set_fade_point_ramp(&self, dspclock: u64, volume: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetFadePointRamp(self.pointer, dspclock, volume) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetFadePointRamp", error)),
+            }
+        }
+    }
+    pub fn remove_fade_points(&self, dspclock_start: u64, dspclock_end: u64) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_RemoveFadePoints(self.pointer, dspclock_start, dspclock_end) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_RemoveFadePoints", error)),
+            }
+        }
+    }
+    pub fn get_fade_points(&self) -> Result<(u32, u64, f32), Error> {
+        unsafe {
+            let mut numpoints = u32::default();
+            let mut point_dspclock = u64::default();
+            let mut point_volume = f32::default();
+            match ffi::FMOD_Channel_GetFadePoints(
+                self.pointer,
+                &mut numpoints,
+                &mut point_dspclock,
+                &mut point_volume,
+            ) {
+                ffi::FMOD_OK => Ok((numpoints, point_dspclock, point_volume)),
+                error => Err(err_fmod!("FMOD_Channel_GetFadePoints", error)),
+            }
+        }
+    }
+    pub fn get_dsp(&self, index: i32) -> Result<Dsp, Error> {
+        unsafe {
+            let mut dsp = null_mut();
+            match ffi::FMOD_Channel_GetDSP(self.pointer, index, &mut dsp) {
+                ffi::FMOD_OK => Ok(Dsp::from(dsp)),
+                error => Err(err_fmod!("FMOD_Channel_GetDSP", error)),
+            }
+        }
+    }
+    pub fn add_dsp(&self, index: i32, dsp: Dsp) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_AddDSP(self.pointer, index, dsp.as_mut_ptr()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_AddDSP", error)),
+            }
+        }
+    }
+    pub fn remove_dsp(&self, dsp: Dsp) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_RemoveDSP(self.pointer, dsp.as_mut_ptr()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_RemoveDSP", error)),
+            }
+        }
+    }
+    pub fn get_num_ds_ps(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numdsps = i32::default();
+            match ffi::FMOD_Channel_GetNumDSPs(self.pointer, &mut numdsps) {
+                ffi::FMOD_OK => Ok(numdsps),
+                error => Err(err_fmod!("FMOD_Channel_GetNumDSPs", error)),
+            }
+        }
+    }
+    pub fn set_dsp_index(&self, dsp: Dsp, index: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetDSPIndex(self.pointer, dsp.as_mut_ptr(), index) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetDSPIndex", error)),
+            }
+        }
+    }
+    pub fn get_dsp_index(&self, dsp: Dsp) -> Result<i32, Error> {
+        unsafe {
+            let mut index = i32::default();
+            match ffi::FMOD_Channel_GetDSPIndex(self.pointer, dsp.as_mut_ptr(), &mut index) {
+                ffi::FMOD_OK => Ok(index),
+                error => Err(err_fmod!("FMOD_Channel_GetDSPIndex", error)),
+            }
+        }
+    }
+    pub fn set_3_d_attributes(&self, pos: Vector, vel: Vector) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_Set3DAttributes(self.pointer, &pos.into(), &vel.into()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_Set3DAttributes", error)),
+            }
+        }
+    }
+    pub fn get_3_d_attributes(&self) -> Result<(Vector, Vector), Error> {
+        unsafe {
+            let mut pos = ffi::FMOD_VECTOR::default();
+            let mut vel = ffi::FMOD_VECTOR::default();
+            match ffi::FMOD_Channel_Get3DAttributes(self.pointer, &mut pos, &mut vel) {
+                ffi::FMOD_OK => Ok((Vector::from(pos)?, Vector::from(vel)?)),
+                error => Err(err_fmod!("FMOD_Channel_Get3DAttributes", error)),
+            }
+        }
+    }
+    pub fn set_3_d_min_max_distance(
+        &self,
+        mindistance: f32,
+        maxdistance: f32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_Set3DMinMaxDistance(self.pointer, mindistance, maxdistance) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_Set3DMinMaxDistance", error)),
+            }
+        }
+    }
+    pub fn get_3_d_min_max_distance(&self) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut mindistance = f32::default();
+            let mut maxdistance = f32::default();
+            match ffi::FMOD_Channel_Get3DMinMaxDistance(
+                self.pointer,
+                &mut mindistance,
+                &mut maxdistance,
+            ) {
+                ffi::FMOD_OK => Ok((mindistance, maxdistance)),
+                error => Err(err_fmod!("FMOD_Channel_Get3DMinMaxDistance", error)),
+            }
+        }
+    }
+    pub fn set_3_d_cone_settings(
+        &self,
+        insideconeangle: f32,
+        outsideconeangle: f32,
+        outsidevolume: f32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_Set3DConeSettings(
+                self.pointer,
+                insideconeangle,
+                outsideconeangle,
+                outsidevolume,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_Set3DConeSettings", error)),
+            }
+        }
+    }
+    pub fn get_3_d_cone_settings(&self) -> Result<(f32, f32, f32), Error> {
+        unsafe {
+            let mut insideconeangle = f32::default();
+            let mut outsideconeangle = f32::default();
+            let mut outsidevolume = f32::default();
+            match ffi::FMOD_Channel_Get3DConeSettings(
+                self.pointer,
+                &mut insideconeangle,
+                &mut outsideconeangle,
+                &mut outsidevolume,
+            ) {
+                ffi::FMOD_OK => Ok((insideconeangle, outsideconeangle, outsidevolume)),
+                error => Err(err_fmod!("FMOD_Channel_Get3DConeSettings", error)),
+            }
+        }
+    }
+    pub fn set_3_d_cone_orientation(&self) -> Result<Vector, Error> {
+        unsafe {
+            let mut orientation = ffi::FMOD_VECTOR::default();
+            match ffi::FMOD_Channel_Set3DConeOrientation(self.pointer, &mut orientation) {
+                ffi::FMOD_OK => Ok(Vector::from(orientation)?),
+                error => Err(err_fmod!("FMOD_Channel_Set3DConeOrientation", error)),
+            }
+        }
+    }
+    pub fn get_3_d_cone_orientation(&self) -> Result<Vector, Error> {
+        unsafe {
+            let mut orientation = ffi::FMOD_VECTOR::default();
+            match ffi::FMOD_Channel_Get3DConeOrientation(self.pointer, &mut orientation) {
+                ffi::FMOD_OK => Ok(Vector::from(orientation)?),
+                error => Err(err_fmod!("FMOD_Channel_Get3DConeOrientation", error)),
+            }
+        }
+    }
+    pub fn set_3_d_custom_rolloff(&self, numpoints: i32) -> Result<Vector, Error> {
+        unsafe {
+            let mut points = ffi::FMOD_VECTOR::default();
+            match ffi::FMOD_Channel_Set3DCustomRolloff(self.pointer, &mut points, numpoints) {
+                ffi::FMOD_OK => Ok(Vector::from(points)?),
+                error => Err(err_fmod!("FMOD_Channel_Set3DCustomRolloff", error)),
+            }
+        }
+    }
+    pub fn get_3_d_custom_rolloff(&self) -> Result<(Vec<Vector>, i32), Error> {
+        unsafe {
+            let mut points = null_mut();
+            let mut numpoints = i32::default();
+            match ffi::FMOD_Channel_Get3DCustomRolloff(self.pointer, &mut points, &mut numpoints) {
+                ffi::FMOD_OK => Ok((to_vec!(points, 1, Vector::from)?, numpoints)),
+                error => Err(err_fmod!("FMOD_Channel_Get3DCustomRolloff", error)),
+            }
+        }
+    }
+    pub fn set_3_d_occlusion(
+        &self,
+        directocclusion: f32,
+        reverbocclusion: f32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_Set3DOcclusion(self.pointer, directocclusion, reverbocclusion) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_Set3DOcclusion", error)),
+            }
+        }
+    }
+    pub fn get_3_d_occlusion(&self) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut directocclusion = f32::default();
+            let mut reverbocclusion = f32::default();
+            match ffi::FMOD_Channel_Get3DOcclusion(
+                self.pointer,
+                &mut directocclusion,
+                &mut reverbocclusion,
+            ) {
+                ffi::FMOD_OK => Ok((directocclusion, reverbocclusion)),
+                error => Err(err_fmod!("FMOD_Channel_Get3DOcclusion", error)),
+            }
+        }
+    }
+    pub fn set_3_d_spread(&self, angle: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_Set3DSpread(self.pointer, angle) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_Set3DSpread", error)),
+            }
+        }
+    }
+    pub fn get_3_d_spread(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut angle = f32::default();
+            match ffi::FMOD_Channel_Get3DSpread(self.pointer, &mut angle) {
+                ffi::FMOD_OK => Ok(angle),
+                error => Err(err_fmod!("FMOD_Channel_Get3DSpread", error)),
+            }
+        }
+    }
+    pub fn set_3_d_level(&self, level: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_Set3DLevel(self.pointer, level) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_Set3DLevel", error)),
+            }
+        }
+    }
+    pub fn get_3_d_level(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut level = f32::default();
+            match ffi::FMOD_Channel_Get3DLevel(self.pointer, &mut level) {
+                ffi::FMOD_OK => Ok(level),
+                error => Err(err_fmod!("FMOD_Channel_Get3DLevel", error)),
+            }
+        }
+    }
+    pub fn set_3_d_doppler_level(&self, level: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_Set3DDopplerLevel(self.pointer, level) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_Set3DDopplerLevel", error)),
+            }
+        }
+    }
+    pub fn get_3_d_doppler_level(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut level = f32::default();
+            match ffi::FMOD_Channel_Get3DDopplerLevel(self.pointer, &mut level) {
+                ffi::FMOD_OK => Ok(level),
+                error => Err(err_fmod!("FMOD_Channel_Get3DDopplerLevel", error)),
+            }
+        }
+    }
+    pub fn set_3_d_distance_filter(
+        &self,
+        custom: bool,
+        custom_level: f32,
+        center_freq: f32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_Set3DDistanceFilter(
+                self.pointer,
+                from_bool!(custom),
+                custom_level,
+                center_freq,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_Set3DDistanceFilter", error)),
+            }
+        }
+    }
+    pub fn get_3_d_distance_filter(&self) -> Result<(bool, f32, f32), Error> {
+        unsafe {
+            let mut custom = ffi::FMOD_BOOL::default();
+            let mut custom_level = f32::default();
+            let mut center_freq = f32::default();
+            match ffi::FMOD_Channel_Get3DDistanceFilter(
+                self.pointer,
+                &mut custom,
+                &mut custom_level,
+                &mut center_freq,
+            ) {
+                ffi::FMOD_OK => Ok((to_bool!(custom), custom_level, center_freq)),
+                error => Err(err_fmod!("FMOD_Channel_Get3DDistanceFilter", error)),
+            }
+        }
+    }
+    pub fn set_user_data(&self, userdata: *mut c_void) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetUserData(self.pointer, userdata) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetUserData", error)),
+            }
+        }
+    }
+    pub fn get_user_data(&self) -> Result<*mut c_void, Error> {
+        unsafe {
+            let mut userdata = null_mut();
+            match ffi::FMOD_Channel_GetUserData(self.pointer, &mut userdata) {
+                ffi::FMOD_OK => Ok(userdata),
+                error => Err(err_fmod!("FMOD_Channel_GetUserData", error)),
+            }
+        }
+    }
+    pub fn set_frequency(&self, frequency: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetFrequency(self.pointer, frequency) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetFrequency", error)),
+            }
+        }
+    }
+    pub fn get_frequency(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut frequency = f32::default();
+            match ffi::FMOD_Channel_GetFrequency(self.pointer, &mut frequency) {
+                ffi::FMOD_OK => Ok(frequency),
+                error => Err(err_fmod!("FMOD_Channel_GetFrequency", error)),
+            }
+        }
+    }
+    pub fn set_priority(&self, priority: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetPriority(self.pointer, priority) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetPriority", error)),
+            }
+        }
+    }
+    pub fn get_priority(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut priority = i32::default();
+            match ffi::FMOD_Channel_GetPriority(self.pointer, &mut priority) {
+                ffi::FMOD_OK => Ok(priority),
+                error => Err(err_fmod!("FMOD_Channel_GetPriority", error)),
+            }
+        }
+    }
+    pub fn set_position(&self, position: u32, postype: ffi::FMOD_TIMEUNIT) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetPosition(self.pointer, position, postype) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetPosition", error)),
+            }
+        }
+    }
+    pub fn get_position(&self, postype: ffi::FMOD_TIMEUNIT) -> Result<u32, Error> {
+        unsafe {
+            let mut position = u32::default();
+            match ffi::FMOD_Channel_GetPosition(self.pointer, &mut position, postype) {
+                ffi::FMOD_OK => Ok(position),
+                error => Err(err_fmod!("FMOD_Channel_GetPosition", error)),
+            }
+        }
+    }
+    pub fn set_channel_group(&self, channelgroup: ChannelGroup) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetChannelGroup(self.pointer, channelgroup.as_mut_ptr()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetChannelGroup", error)),
+            }
+        }
+    }
+    pub fn get_channel_group(&self) -> Result<ChannelGroup, Error> {
+        unsafe {
+            let mut channelgroup = null_mut();
+            match ffi::FMOD_Channel_GetChannelGroup(self.pointer, &mut channelgroup) {
+                ffi::FMOD_OK => Ok(ChannelGroup::from(channelgroup)),
+                error => Err(err_fmod!("FMOD_Channel_GetChannelGroup", error)),
+            }
+        }
+    }
+    pub fn set_loop_count(&self, loopcount: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetLoopCount(self.pointer, loopcount) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetLoopCount", error)),
+            }
+        }
+    }
+    pub fn get_loop_count(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut loopcount = i32::default();
+            match ffi::FMOD_Channel_GetLoopCount(self.pointer, &mut loopcount) {
+                ffi::FMOD_OK => Ok(loopcount),
+                error => Err(err_fmod!("FMOD_Channel_GetLoopCount", error)),
+            }
+        }
+    }
+    pub fn set_loop_points(
+        &self,
+        loopstart: u32,
+        loopstarttype: ffi::FMOD_TIMEUNIT,
+        loopend: u32,
+        loopendtype: ffi::FMOD_TIMEUNIT,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Channel_SetLoopPoints(
+                self.pointer,
+                loopstart,
+                loopstarttype,
+                loopend,
+                loopendtype,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Channel_SetLoopPoints", error)),
+            }
+        }
+    }
+    pub fn get_loop_points(
+        &self,
+        loopstarttype: ffi::FMOD_TIMEUNIT,
+        loopendtype: ffi::FMOD_TIMEUNIT,
+    ) -> Result<(u32, u32), Error> {
+        unsafe {
+            let mut loopstart = u32::default();
+            let mut loopend = u32::default();
+            match ffi::FMOD_Channel_GetLoopPoints(
+                self.pointer,
+                &mut loopstart,
+                loopstarttype,
+                &mut loopend,
+                loopendtype,
+            ) {
+                ffi::FMOD_OK => Ok((loopstart, loopend)),
+                error => Err(err_fmod!("FMOD_Channel_GetLoopPoints", error)),
+            }
+        }
+    }
+    pub fn is_virtual(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut isvirtual = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Channel_IsVirtual(self.pointer, &mut isvirtual) {
+                ffi::FMOD_OK => Ok(to_bool!(isvirtual)),
+                error => Err(err_fmod!("FMOD_Channel_IsVirtual", error)),
+            }
+        }
+    }
+    pub fn get_current_sound(&self) -> Result<Sound, Error> {
+        unsafe {
+            let mut sound = null_mut();
+            match ffi::FMOD_Channel_GetCurrentSound(self.pointer, &mut sound) {
+                ffi::FMOD_OK => Ok(Sound::from(sound)),
+                error => Err(err_fmod!("FMOD_Channel_GetCurrentSound", error)),
+            }
+        }
+    }
+    pub fn get_index(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut index = i32::default();
+            match ffi::FMOD_Channel_GetIndex(self.pointer, &mut index) {
+                ffi::FMOD_OK => Ok(index),
+                error => Err(err_fmod!("FMOD_Channel_GetIndex", error)),
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct ChannelControl {
+    pointer: *mut ffi::FMOD_CHANNELCONTROL,
+}
+
+impl ChannelControl {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_CHANNELCONTROL) -> Self {
+        Self { pointer }
+    }
+    #[inline]
+    pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_CHANNELCONTROL {
         self.pointer
     }
 }
@@ -5744,11 +6583,748 @@ pub struct ChannelGroup {
 }
 
 impl ChannelGroup {
-    pub fn from_pointer(pointer: *mut ffi::FMOD_CHANNELGROUP) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_CHANNELGROUP) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_CHANNELGROUP {
         self.pointer
+    }
+    pub fn get_system_object(&self) -> Result<System, Error> {
+        unsafe {
+            let mut system = null_mut();
+            match ffi::FMOD_ChannelGroup_GetSystemObject(self.pointer, &mut system) {
+                ffi::FMOD_OK => Ok(System::from(system)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetSystemObject", error)),
+            }
+        }
+    }
+    pub fn stop(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_Stop(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Stop", error)),
+            }
+        }
+    }
+    pub fn set_paused(&self, paused: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_SetPaused(self.pointer, from_bool!(paused)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetPaused", error)),
+            }
+        }
+    }
+    pub fn get_paused(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut paused = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_ChannelGroup_GetPaused(self.pointer, &mut paused) {
+                ffi::FMOD_OK => Ok(to_bool!(paused)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetPaused", error)),
+            }
+        }
+    }
+    pub fn set_volume(&self, volume: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_SetVolume(self.pointer, volume) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetVolume", error)),
+            }
+        }
+    }
+    pub fn get_volume(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut volume = f32::default();
+            match ffi::FMOD_ChannelGroup_GetVolume(self.pointer, &mut volume) {
+                ffi::FMOD_OK => Ok(volume),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetVolume", error)),
+            }
+        }
+    }
+    pub fn set_volume_ramp(&self, ramp: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_SetVolumeRamp(self.pointer, from_bool!(ramp)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetVolumeRamp", error)),
+            }
+        }
+    }
+    pub fn get_volume_ramp(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut ramp = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_ChannelGroup_GetVolumeRamp(self.pointer, &mut ramp) {
+                ffi::FMOD_OK => Ok(to_bool!(ramp)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetVolumeRamp", error)),
+            }
+        }
+    }
+    pub fn get_audibility(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut audibility = f32::default();
+            match ffi::FMOD_ChannelGroup_GetAudibility(self.pointer, &mut audibility) {
+                ffi::FMOD_OK => Ok(audibility),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetAudibility", error)),
+            }
+        }
+    }
+    pub fn set_pitch(&self, pitch: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_SetPitch(self.pointer, pitch) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetPitch", error)),
+            }
+        }
+    }
+    pub fn get_pitch(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut pitch = f32::default();
+            match ffi::FMOD_ChannelGroup_GetPitch(self.pointer, &mut pitch) {
+                ffi::FMOD_OK => Ok(pitch),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetPitch", error)),
+            }
+        }
+    }
+    pub fn set_mute(&self, mute: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_SetMute(self.pointer, from_bool!(mute)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetMute", error)),
+            }
+        }
+    }
+    pub fn get_mute(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut mute = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_ChannelGroup_GetMute(self.pointer, &mut mute) {
+                ffi::FMOD_OK => Ok(to_bool!(mute)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetMute", error)),
+            }
+        }
+    }
+    pub fn set_reverb_properties(&self, instance: i32, wet: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_SetReverbProperties(self.pointer, instance, wet) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetReverbProperties", error)),
+            }
+        }
+    }
+    pub fn get_reverb_properties(&self, instance: i32) -> Result<f32, Error> {
+        unsafe {
+            let mut wet = f32::default();
+            match ffi::FMOD_ChannelGroup_GetReverbProperties(self.pointer, instance, &mut wet) {
+                ffi::FMOD_OK => Ok(wet),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetReverbProperties", error)),
+            }
+        }
+    }
+    pub fn set_low_pass_gain(&self, gain: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_SetLowPassGain(self.pointer, gain) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetLowPassGain", error)),
+            }
+        }
+    }
+    pub fn get_low_pass_gain(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut gain = f32::default();
+            match ffi::FMOD_ChannelGroup_GetLowPassGain(self.pointer, &mut gain) {
+                ffi::FMOD_OK => Ok(gain),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetLowPassGain", error)),
+            }
+        }
+    }
+    pub fn set_mode(&self, mode: ffi::FMOD_MODE) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_SetMode(self.pointer, mode) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetMode", error)),
+            }
+        }
+    }
+    pub fn get_mode(&self) -> Result<ffi::FMOD_MODE, Error> {
+        unsafe {
+            let mut mode = ffi::FMOD_MODE::default();
+            match ffi::FMOD_ChannelGroup_GetMode(self.pointer, &mut mode) {
+                ffi::FMOD_OK => Ok(mode),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetMode", error)),
+            }
+        }
+    }
+    pub fn set_callback(&self, callback: ffi::FMOD_CHANNELCONTROL_CALLBACK) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_SetCallback(self.pointer, callback) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetCallback", error)),
+            }
+        }
+    }
+    pub fn is_playing(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut isplaying = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_ChannelGroup_IsPlaying(self.pointer, &mut isplaying) {
+                ffi::FMOD_OK => Ok(to_bool!(isplaying)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_IsPlaying", error)),
+            }
+        }
+    }
+    pub fn set_pan(&self, pan: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_SetPan(self.pointer, pan) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetPan", error)),
+            }
+        }
+    }
+    pub fn set_mix_levels_output(
+        &self,
+        frontleft: f32,
+        frontright: f32,
+        center: f32,
+        lfe: f32,
+        surroundleft: f32,
+        surroundright: f32,
+        backleft: f32,
+        backright: f32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_SetMixLevelsOutput(
+                self.pointer,
+                frontleft,
+                frontright,
+                center,
+                lfe,
+                surroundleft,
+                surroundright,
+                backleft,
+                backright,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetMixLevelsOutput", error)),
+            }
+        }
+    }
+    pub fn set_mix_levels_input(&self, numlevels: i32) -> Result<f32, Error> {
+        unsafe {
+            let mut levels = f32::default();
+            match ffi::FMOD_ChannelGroup_SetMixLevelsInput(self.pointer, &mut levels, numlevels) {
+                ffi::FMOD_OK => Ok(levels),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetMixLevelsInput", error)),
+            }
+        }
+    }
+    pub fn set_mix_matrix(
+        &self,
+        outchannels: i32,
+        inchannels: i32,
+        inchannel_hop: i32,
+    ) -> Result<f32, Error> {
+        unsafe {
+            let mut matrix = f32::default();
+            match ffi::FMOD_ChannelGroup_SetMixMatrix(
+                self.pointer,
+                &mut matrix,
+                outchannels,
+                inchannels,
+                inchannel_hop,
+            ) {
+                ffi::FMOD_OK => Ok(matrix),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetMixMatrix", error)),
+            }
+        }
+    }
+    pub fn get_mix_matrix(&self, inchannel_hop: i32) -> Result<(f32, i32, i32), Error> {
+        unsafe {
+            let mut matrix = f32::default();
+            let mut outchannels = i32::default();
+            let mut inchannels = i32::default();
+            match ffi::FMOD_ChannelGroup_GetMixMatrix(
+                self.pointer,
+                &mut matrix,
+                &mut outchannels,
+                &mut inchannels,
+                inchannel_hop,
+            ) {
+                ffi::FMOD_OK => Ok((matrix, outchannels, inchannels)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetMixMatrix", error)),
+            }
+        }
+    }
+    pub fn get_dsp_clock(&self) -> Result<(u64, u64), Error> {
+        unsafe {
+            let mut dspclock = u64::default();
+            let mut parentclock = u64::default();
+            match ffi::FMOD_ChannelGroup_GetDSPClock(self.pointer, &mut dspclock, &mut parentclock)
+            {
+                ffi::FMOD_OK => Ok((dspclock, parentclock)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetDSPClock", error)),
+            }
+        }
+    }
+    pub fn set_delay(
+        &self,
+        dspclock_start: u64,
+        dspclock_end: u64,
+        stopchannels: bool,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_SetDelay(
+                self.pointer,
+                dspclock_start,
+                dspclock_end,
+                from_bool!(stopchannels),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetDelay", error)),
+            }
+        }
+    }
+    pub fn get_delay(&self) -> Result<(u64, u64, bool), Error> {
+        unsafe {
+            let mut dspclock_start = u64::default();
+            let mut dspclock_end = u64::default();
+            let mut stopchannels = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_ChannelGroup_GetDelay(
+                self.pointer,
+                &mut dspclock_start,
+                &mut dspclock_end,
+                &mut stopchannels,
+            ) {
+                ffi::FMOD_OK => Ok((dspclock_start, dspclock_end, to_bool!(stopchannels))),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetDelay", error)),
+            }
+        }
+    }
+    pub fn add_fade_point(&self, dspclock: u64, volume: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_AddFadePoint(self.pointer, dspclock, volume) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_AddFadePoint", error)),
+            }
+        }
+    }
+    pub fn set_fade_point_ramp(&self, dspclock: u64, volume: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_SetFadePointRamp(self.pointer, dspclock, volume) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetFadePointRamp", error)),
+            }
+        }
+    }
+    pub fn remove_fade_points(&self, dspclock_start: u64, dspclock_end: u64) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_RemoveFadePoints(
+                self.pointer,
+                dspclock_start,
+                dspclock_end,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_RemoveFadePoints", error)),
+            }
+        }
+    }
+    pub fn get_fade_points(&self) -> Result<(u32, u64, f32), Error> {
+        unsafe {
+            let mut numpoints = u32::default();
+            let mut point_dspclock = u64::default();
+            let mut point_volume = f32::default();
+            match ffi::FMOD_ChannelGroup_GetFadePoints(
+                self.pointer,
+                &mut numpoints,
+                &mut point_dspclock,
+                &mut point_volume,
+            ) {
+                ffi::FMOD_OK => Ok((numpoints, point_dspclock, point_volume)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetFadePoints", error)),
+            }
+        }
+    }
+    pub fn get_dsp(&self, index: i32) -> Result<Dsp, Error> {
+        unsafe {
+            let mut dsp = null_mut();
+            match ffi::FMOD_ChannelGroup_GetDSP(self.pointer, index, &mut dsp) {
+                ffi::FMOD_OK => Ok(Dsp::from(dsp)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetDSP", error)),
+            }
+        }
+    }
+    pub fn add_dsp(&self, index: i32, dsp: Dsp) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_AddDSP(self.pointer, index, dsp.as_mut_ptr()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_AddDSP", error)),
+            }
+        }
+    }
+    pub fn remove_dsp(&self, dsp: Dsp) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_RemoveDSP(self.pointer, dsp.as_mut_ptr()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_RemoveDSP", error)),
+            }
+        }
+    }
+    pub fn get_num_ds_ps(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numdsps = i32::default();
+            match ffi::FMOD_ChannelGroup_GetNumDSPs(self.pointer, &mut numdsps) {
+                ffi::FMOD_OK => Ok(numdsps),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetNumDSPs", error)),
+            }
+        }
+    }
+    pub fn set_dsp_index(&self, dsp: Dsp, index: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_SetDSPIndex(self.pointer, dsp.as_mut_ptr(), index) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetDSPIndex", error)),
+            }
+        }
+    }
+    pub fn get_dsp_index(&self, dsp: Dsp) -> Result<i32, Error> {
+        unsafe {
+            let mut index = i32::default();
+            match ffi::FMOD_ChannelGroup_GetDSPIndex(self.pointer, dsp.as_mut_ptr(), &mut index) {
+                ffi::FMOD_OK => Ok(index),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetDSPIndex", error)),
+            }
+        }
+    }
+    pub fn set_3_d_attributes(&self, pos: Vector, vel: Vector) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_Set3DAttributes(self.pointer, &pos.into(), &vel.into()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Set3DAttributes", error)),
+            }
+        }
+    }
+    pub fn get_3_d_attributes(&self) -> Result<(Vector, Vector), Error> {
+        unsafe {
+            let mut pos = ffi::FMOD_VECTOR::default();
+            let mut vel = ffi::FMOD_VECTOR::default();
+            match ffi::FMOD_ChannelGroup_Get3DAttributes(self.pointer, &mut pos, &mut vel) {
+                ffi::FMOD_OK => Ok((Vector::from(pos)?, Vector::from(vel)?)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Get3DAttributes", error)),
+            }
+        }
+    }
+    pub fn set_3_d_min_max_distance(
+        &self,
+        mindistance: f32,
+        maxdistance: f32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_Set3DMinMaxDistance(self.pointer, mindistance, maxdistance)
+            {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Set3DMinMaxDistance", error)),
+            }
+        }
+    }
+    pub fn get_3_d_min_max_distance(&self) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut mindistance = f32::default();
+            let mut maxdistance = f32::default();
+            match ffi::FMOD_ChannelGroup_Get3DMinMaxDistance(
+                self.pointer,
+                &mut mindistance,
+                &mut maxdistance,
+            ) {
+                ffi::FMOD_OK => Ok((mindistance, maxdistance)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Get3DMinMaxDistance", error)),
+            }
+        }
+    }
+    pub fn set_3_d_cone_settings(
+        &self,
+        insideconeangle: f32,
+        outsideconeangle: f32,
+        outsidevolume: f32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_Set3DConeSettings(
+                self.pointer,
+                insideconeangle,
+                outsideconeangle,
+                outsidevolume,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Set3DConeSettings", error)),
+            }
+        }
+    }
+    pub fn get_3_d_cone_settings(&self) -> Result<(f32, f32, f32), Error> {
+        unsafe {
+            let mut insideconeangle = f32::default();
+            let mut outsideconeangle = f32::default();
+            let mut outsidevolume = f32::default();
+            match ffi::FMOD_ChannelGroup_Get3DConeSettings(
+                self.pointer,
+                &mut insideconeangle,
+                &mut outsideconeangle,
+                &mut outsidevolume,
+            ) {
+                ffi::FMOD_OK => Ok((insideconeangle, outsideconeangle, outsidevolume)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Get3DConeSettings", error)),
+            }
+        }
+    }
+    pub fn set_3_d_cone_orientation(&self) -> Result<Vector, Error> {
+        unsafe {
+            let mut orientation = ffi::FMOD_VECTOR::default();
+            match ffi::FMOD_ChannelGroup_Set3DConeOrientation(self.pointer, &mut orientation) {
+                ffi::FMOD_OK => Ok(Vector::from(orientation)?),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Set3DConeOrientation", error)),
+            }
+        }
+    }
+    pub fn get_3_d_cone_orientation(&self) -> Result<Vector, Error> {
+        unsafe {
+            let mut orientation = ffi::FMOD_VECTOR::default();
+            match ffi::FMOD_ChannelGroup_Get3DConeOrientation(self.pointer, &mut orientation) {
+                ffi::FMOD_OK => Ok(Vector::from(orientation)?),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Get3DConeOrientation", error)),
+            }
+        }
+    }
+    pub fn set_3_d_custom_rolloff(&self, numpoints: i32) -> Result<Vector, Error> {
+        unsafe {
+            let mut points = ffi::FMOD_VECTOR::default();
+            match ffi::FMOD_ChannelGroup_Set3DCustomRolloff(self.pointer, &mut points, numpoints) {
+                ffi::FMOD_OK => Ok(Vector::from(points)?),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Set3DCustomRolloff", error)),
+            }
+        }
+    }
+    pub fn get_3_d_custom_rolloff(&self) -> Result<(Vec<Vector>, i32), Error> {
+        unsafe {
+            let mut points = null_mut();
+            let mut numpoints = i32::default();
+            match ffi::FMOD_ChannelGroup_Get3DCustomRolloff(
+                self.pointer,
+                &mut points,
+                &mut numpoints,
+            ) {
+                ffi::FMOD_OK => Ok((to_vec!(points, 1, Vector::from)?, numpoints)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Get3DCustomRolloff", error)),
+            }
+        }
+    }
+    pub fn set_3_d_occlusion(
+        &self,
+        directocclusion: f32,
+        reverbocclusion: f32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_Set3DOcclusion(
+                self.pointer,
+                directocclusion,
+                reverbocclusion,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Set3DOcclusion", error)),
+            }
+        }
+    }
+    pub fn get_3_d_occlusion(&self) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut directocclusion = f32::default();
+            let mut reverbocclusion = f32::default();
+            match ffi::FMOD_ChannelGroup_Get3DOcclusion(
+                self.pointer,
+                &mut directocclusion,
+                &mut reverbocclusion,
+            ) {
+                ffi::FMOD_OK => Ok((directocclusion, reverbocclusion)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Get3DOcclusion", error)),
+            }
+        }
+    }
+    pub fn set_3_d_spread(&self, angle: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_Set3DSpread(self.pointer, angle) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Set3DSpread", error)),
+            }
+        }
+    }
+    pub fn get_3_d_spread(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut angle = f32::default();
+            match ffi::FMOD_ChannelGroup_Get3DSpread(self.pointer, &mut angle) {
+                ffi::FMOD_OK => Ok(angle),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Get3DSpread", error)),
+            }
+        }
+    }
+    pub fn set_3_d_level(&self, level: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_Set3DLevel(self.pointer, level) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Set3DLevel", error)),
+            }
+        }
+    }
+    pub fn get_3_d_level(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut level = f32::default();
+            match ffi::FMOD_ChannelGroup_Get3DLevel(self.pointer, &mut level) {
+                ffi::FMOD_OK => Ok(level),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Get3DLevel", error)),
+            }
+        }
+    }
+    pub fn set_3_d_doppler_level(&self, level: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_Set3DDopplerLevel(self.pointer, level) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Set3DDopplerLevel", error)),
+            }
+        }
+    }
+    pub fn get_3_d_doppler_level(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut level = f32::default();
+            match ffi::FMOD_ChannelGroup_Get3DDopplerLevel(self.pointer, &mut level) {
+                ffi::FMOD_OK => Ok(level),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Get3DDopplerLevel", error)),
+            }
+        }
+    }
+    pub fn set_3_d_distance_filter(
+        &self,
+        custom: bool,
+        custom_level: f32,
+        center_freq: f32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_Set3DDistanceFilter(
+                self.pointer,
+                from_bool!(custom),
+                custom_level,
+                center_freq,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Set3DDistanceFilter", error)),
+            }
+        }
+    }
+    pub fn get_3_d_distance_filter(&self) -> Result<(bool, f32, f32), Error> {
+        unsafe {
+            let mut custom = ffi::FMOD_BOOL::default();
+            let mut custom_level = f32::default();
+            let mut center_freq = f32::default();
+            match ffi::FMOD_ChannelGroup_Get3DDistanceFilter(
+                self.pointer,
+                &mut custom,
+                &mut custom_level,
+                &mut center_freq,
+            ) {
+                ffi::FMOD_OK => Ok((to_bool!(custom), custom_level, center_freq)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Get3DDistanceFilter", error)),
+            }
+        }
+    }
+    pub fn set_user_data(&self, userdata: *mut c_void) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_SetUserData(self.pointer, userdata) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_SetUserData", error)),
+            }
+        }
+    }
+    pub fn get_user_data(&self) -> Result<*mut c_void, Error> {
+        unsafe {
+            let mut userdata = null_mut();
+            match ffi::FMOD_ChannelGroup_GetUserData(self.pointer, &mut userdata) {
+                ffi::FMOD_OK => Ok(userdata),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetUserData", error)),
+            }
+        }
+    }
+    pub fn release(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_ChannelGroup_Release(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_ChannelGroup_Release", error)),
+            }
+        }
+    }
+    pub fn add_group(
+        &self,
+        group: ChannelGroup,
+        propagatedspclock: bool,
+    ) -> Result<DspConnection, Error> {
+        unsafe {
+            let mut connection = null_mut();
+            match ffi::FMOD_ChannelGroup_AddGroup(
+                self.pointer,
+                group.as_mut_ptr(),
+                from_bool!(propagatedspclock),
+                &mut connection,
+            ) {
+                ffi::FMOD_OK => Ok(DspConnection::from(connection)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_AddGroup", error)),
+            }
+        }
+    }
+    pub fn get_num_groups(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numgroups = i32::default();
+            match ffi::FMOD_ChannelGroup_GetNumGroups(self.pointer, &mut numgroups) {
+                ffi::FMOD_OK => Ok(numgroups),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetNumGroups", error)),
+            }
+        }
+    }
+    pub fn get_group(&self, index: i32) -> Result<ChannelGroup, Error> {
+        unsafe {
+            let mut group = null_mut();
+            match ffi::FMOD_ChannelGroup_GetGroup(self.pointer, index, &mut group) {
+                ffi::FMOD_OK => Ok(ChannelGroup::from(group)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetGroup", error)),
+            }
+        }
+    }
+    pub fn get_parent_group(&self) -> Result<ChannelGroup, Error> {
+        unsafe {
+            let mut group = null_mut();
+            match ffi::FMOD_ChannelGroup_GetParentGroup(self.pointer, &mut group) {
+                ffi::FMOD_OK => Ok(ChannelGroup::from(group)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetParentGroup", error)),
+            }
+        }
+    }
+    pub fn get_name(&self, namelen: i32) -> Result<String, Error> {
+        unsafe {
+            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            match ffi::FMOD_ChannelGroup_GetName(self.pointer, name, namelen) {
+                ffi::FMOD_OK => Ok(CString::from_raw(name)
+                    .into_string()
+                    .map_err(Error::String)?),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetName", error)),
+            }
+        }
+    }
+    pub fn get_num_channels(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numchannels = i32::default();
+            match ffi::FMOD_ChannelGroup_GetNumChannels(self.pointer, &mut numchannels) {
+                ffi::FMOD_OK => Ok(numchannels),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetNumChannels", error)),
+            }
+        }
+    }
+    pub fn get_channel(&self, index: i32) -> Result<Channel, Error> {
+        unsafe {
+            let mut channel = null_mut();
+            match ffi::FMOD_ChannelGroup_GetChannel(self.pointer, index, &mut channel) {
+                ffi::FMOD_OK => Ok(Channel::from(channel)),
+                error => Err(err_fmod!("FMOD_ChannelGroup_GetChannel", error)),
+            }
+        }
     }
 }
 
@@ -5758,11 +7334,513 @@ pub struct Dsp {
 }
 
 impl Dsp {
-    pub fn from_pointer(pointer: *mut ffi::FMOD_DSP) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_DSP) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_DSP {
         self.pointer
+    }
+    pub fn release(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_Release(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_Release", error)),
+            }
+        }
+    }
+    pub fn get_system_object(&self) -> Result<System, Error> {
+        unsafe {
+            let mut system = null_mut();
+            match ffi::FMOD_DSP_GetSystemObject(self.pointer, &mut system) {
+                ffi::FMOD_OK => Ok(System::from(system)),
+                error => Err(err_fmod!("FMOD_DSP_GetSystemObject", error)),
+            }
+        }
+    }
+    pub fn add_input(&self, input: Dsp, type_: DspConnectionType) -> Result<DspConnection, Error> {
+        unsafe {
+            let mut connection = null_mut();
+            match ffi::FMOD_DSP_AddInput(
+                self.pointer,
+                input.as_mut_ptr(),
+                &mut connection,
+                type_.into(),
+            ) {
+                ffi::FMOD_OK => Ok(DspConnection::from(connection)),
+                error => Err(err_fmod!("FMOD_DSP_AddInput", error)),
+            }
+        }
+    }
+    pub fn disconnect_from(&self, target: Dsp, connection: DspConnection) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_DisconnectFrom(
+                self.pointer,
+                target.as_mut_ptr(),
+                connection.as_mut_ptr(),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_DisconnectFrom", error)),
+            }
+        }
+    }
+    pub fn disconnect_all(&self, inputs: bool, outputs: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_DisconnectAll(self.pointer, from_bool!(inputs), from_bool!(outputs))
+            {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_DisconnectAll", error)),
+            }
+        }
+    }
+    pub fn get_num_inputs(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numinputs = i32::default();
+            match ffi::FMOD_DSP_GetNumInputs(self.pointer, &mut numinputs) {
+                ffi::FMOD_OK => Ok(numinputs),
+                error => Err(err_fmod!("FMOD_DSP_GetNumInputs", error)),
+            }
+        }
+    }
+    pub fn get_num_outputs(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numoutputs = i32::default();
+            match ffi::FMOD_DSP_GetNumOutputs(self.pointer, &mut numoutputs) {
+                ffi::FMOD_OK => Ok(numoutputs),
+                error => Err(err_fmod!("FMOD_DSP_GetNumOutputs", error)),
+            }
+        }
+    }
+    pub fn get_input(&self, index: i32) -> Result<(Dsp, DspConnection), Error> {
+        unsafe {
+            let mut input = null_mut();
+            let mut inputconnection = null_mut();
+            match ffi::FMOD_DSP_GetInput(self.pointer, index, &mut input, &mut inputconnection) {
+                ffi::FMOD_OK => Ok((Dsp::from(input), DspConnection::from(inputconnection))),
+                error => Err(err_fmod!("FMOD_DSP_GetInput", error)),
+            }
+        }
+    }
+    pub fn get_output(&self, index: i32) -> Result<(Dsp, DspConnection), Error> {
+        unsafe {
+            let mut output = null_mut();
+            let mut outputconnection = null_mut();
+            match ffi::FMOD_DSP_GetOutput(self.pointer, index, &mut output, &mut outputconnection) {
+                ffi::FMOD_OK => Ok((Dsp::from(output), DspConnection::from(outputconnection))),
+                error => Err(err_fmod!("FMOD_DSP_GetOutput", error)),
+            }
+        }
+    }
+    pub fn set_active(&self, active: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_SetActive(self.pointer, from_bool!(active)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_SetActive", error)),
+            }
+        }
+    }
+    pub fn get_active(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut active = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_DSP_GetActive(self.pointer, &mut active) {
+                ffi::FMOD_OK => Ok(to_bool!(active)),
+                error => Err(err_fmod!("FMOD_DSP_GetActive", error)),
+            }
+        }
+    }
+    pub fn set_bypass(&self, bypass: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_SetBypass(self.pointer, from_bool!(bypass)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_SetBypass", error)),
+            }
+        }
+    }
+    pub fn get_bypass(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut bypass = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_DSP_GetBypass(self.pointer, &mut bypass) {
+                ffi::FMOD_OK => Ok(to_bool!(bypass)),
+                error => Err(err_fmod!("FMOD_DSP_GetBypass", error)),
+            }
+        }
+    }
+    pub fn set_wet_dry_mix(&self, prewet: f32, postwet: f32, dry: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_SetWetDryMix(self.pointer, prewet, postwet, dry) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_SetWetDryMix", error)),
+            }
+        }
+    }
+    pub fn get_wet_dry_mix(&self) -> Result<(f32, f32, f32), Error> {
+        unsafe {
+            let mut prewet = f32::default();
+            let mut postwet = f32::default();
+            let mut dry = f32::default();
+            match ffi::FMOD_DSP_GetWetDryMix(self.pointer, &mut prewet, &mut postwet, &mut dry) {
+                ffi::FMOD_OK => Ok((prewet, postwet, dry)),
+                error => Err(err_fmod!("FMOD_DSP_GetWetDryMix", error)),
+            }
+        }
+    }
+    pub fn set_channel_format(
+        &self,
+        channelmask: ffi::FMOD_CHANNELMASK,
+        numchannels: i32,
+        source_speakermode: SpeakerMode,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_SetChannelFormat(
+                self.pointer,
+                channelmask,
+                numchannels,
+                source_speakermode.into(),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_SetChannelFormat", error)),
+            }
+        }
+    }
+    pub fn get_channel_format(&self) -> Result<(ffi::FMOD_CHANNELMASK, i32, SpeakerMode), Error> {
+        unsafe {
+            let mut channelmask = ffi::FMOD_CHANNELMASK::default();
+            let mut numchannels = i32::default();
+            let mut source_speakermode = ffi::FMOD_SPEAKERMODE::default();
+            match ffi::FMOD_DSP_GetChannelFormat(
+                self.pointer,
+                &mut channelmask,
+                &mut numchannels,
+                &mut source_speakermode,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    channelmask,
+                    numchannels,
+                    SpeakerMode::from(source_speakermode)?,
+                )),
+                error => Err(err_fmod!("FMOD_DSP_GetChannelFormat", error)),
+            }
+        }
+    }
+    pub fn get_output_channel_format(
+        &self,
+        inmask: ffi::FMOD_CHANNELMASK,
+        inchannels: i32,
+        inspeakermode: SpeakerMode,
+    ) -> Result<(ffi::FMOD_CHANNELMASK, i32, SpeakerMode), Error> {
+        unsafe {
+            let mut outmask = ffi::FMOD_CHANNELMASK::default();
+            let mut outchannels = i32::default();
+            let mut outspeakermode = ffi::FMOD_SPEAKERMODE::default();
+            match ffi::FMOD_DSP_GetOutputChannelFormat(
+                self.pointer,
+                inmask,
+                inchannels,
+                inspeakermode.into(),
+                &mut outmask,
+                &mut outchannels,
+                &mut outspeakermode,
+            ) {
+                ffi::FMOD_OK => Ok((outmask, outchannels, SpeakerMode::from(outspeakermode)?)),
+                error => Err(err_fmod!("FMOD_DSP_GetOutputChannelFormat", error)),
+            }
+        }
+    }
+    pub fn reset(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_Reset(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_Reset", error)),
+            }
+        }
+    }
+    pub fn set_parameter_float(&self, index: i32, value: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_SetParameterFloat(self.pointer, index, value) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_SetParameterFloat", error)),
+            }
+        }
+    }
+    pub fn set_parameter_int(&self, index: i32, value: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_SetParameterInt(self.pointer, index, value) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_SetParameterInt", error)),
+            }
+        }
+    }
+    pub fn set_parameter_bool(&self, index: i32, value: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_SetParameterBool(self.pointer, index, from_bool!(value)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_SetParameterBool", error)),
+            }
+        }
+    }
+    pub fn set_parameter_data(
+        &self,
+        index: i32,
+        data: *mut c_void,
+        length: u32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_SetParameterData(self.pointer, index, data, length) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_SetParameterData", error)),
+            }
+        }
+    }
+    pub fn get_parameter_float(
+        &self,
+        index: i32,
+        valuestrlen: i32,
+    ) -> Result<(f32, String), Error> {
+        unsafe {
+            let mut value = f32::default();
+            let valuestr = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            match ffi::FMOD_DSP_GetParameterFloat(
+                self.pointer,
+                index,
+                &mut value,
+                valuestr,
+                valuestrlen,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    value,
+                    CString::from_raw(valuestr)
+                        .into_string()
+                        .map_err(Error::String)?,
+                )),
+                error => Err(err_fmod!("FMOD_DSP_GetParameterFloat", error)),
+            }
+        }
+    }
+    pub fn get_parameter_int(&self, index: i32, valuestrlen: i32) -> Result<(i32, String), Error> {
+        unsafe {
+            let mut value = i32::default();
+            let valuestr = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            match ffi::FMOD_DSP_GetParameterInt(
+                self.pointer,
+                index,
+                &mut value,
+                valuestr,
+                valuestrlen,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    value,
+                    CString::from_raw(valuestr)
+                        .into_string()
+                        .map_err(Error::String)?,
+                )),
+                error => Err(err_fmod!("FMOD_DSP_GetParameterInt", error)),
+            }
+        }
+    }
+    pub fn get_parameter_bool(
+        &self,
+        index: i32,
+        valuestrlen: i32,
+    ) -> Result<(bool, String), Error> {
+        unsafe {
+            let mut value = ffi::FMOD_BOOL::default();
+            let valuestr = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            match ffi::FMOD_DSP_GetParameterBool(
+                self.pointer,
+                index,
+                &mut value,
+                valuestr,
+                valuestrlen,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    to_bool!(value),
+                    CString::from_raw(valuestr)
+                        .into_string()
+                        .map_err(Error::String)?,
+                )),
+                error => Err(err_fmod!("FMOD_DSP_GetParameterBool", error)),
+            }
+        }
+    }
+    pub fn get_parameter_data(
+        &self,
+        index: i32,
+        valuestrlen: i32,
+    ) -> Result<(*mut c_void, u32, String), Error> {
+        unsafe {
+            let mut data = null_mut();
+            let mut length = u32::default();
+            let valuestr = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            match ffi::FMOD_DSP_GetParameterData(
+                self.pointer,
+                index,
+                &mut data,
+                &mut length,
+                valuestr,
+                valuestrlen,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    data,
+                    length,
+                    CString::from_raw(valuestr)
+                        .into_string()
+                        .map_err(Error::String)?,
+                )),
+                error => Err(err_fmod!("FMOD_DSP_GetParameterData", error)),
+            }
+        }
+    }
+    pub fn get_num_parameters(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numparams = i32::default();
+            match ffi::FMOD_DSP_GetNumParameters(self.pointer, &mut numparams) {
+                ffi::FMOD_OK => Ok(numparams),
+                error => Err(err_fmod!("FMOD_DSP_GetNumParameters", error)),
+            }
+        }
+    }
+    pub fn get_parameter_info(&self, index: i32) -> Result<Vec<DspParameterDesc>, Error> {
+        unsafe {
+            let mut desc = null_mut();
+            match ffi::FMOD_DSP_GetParameterInfo(self.pointer, index, &mut desc) {
+                ffi::FMOD_OK => Ok(to_vec!(desc, 1, DspParameterDesc::from)?),
+                error => Err(err_fmod!("FMOD_DSP_GetParameterInfo", error)),
+            }
+        }
+    }
+    pub fn get_data_parameter_index(&self, datatype: i32) -> Result<i32, Error> {
+        unsafe {
+            let mut index = i32::default();
+            match ffi::FMOD_DSP_GetDataParameterIndex(self.pointer, datatype, &mut index) {
+                ffi::FMOD_OK => Ok(index),
+                error => Err(err_fmod!("FMOD_DSP_GetDataParameterIndex", error)),
+            }
+        }
+    }
+    pub fn show_config_dialog(&self, hwnd: *mut c_void, show: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_ShowConfigDialog(self.pointer, hwnd, from_bool!(show)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_ShowConfigDialog", error)),
+            }
+        }
+    }
+    pub fn get_info(&self) -> Result<(String, u32, i32, i32, i32), Error> {
+        unsafe {
+            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut version = u32::default();
+            let mut channels = i32::default();
+            let mut configwidth = i32::default();
+            let mut configheight = i32::default();
+            match ffi::FMOD_DSP_GetInfo(
+                self.pointer,
+                name,
+                &mut version,
+                &mut channels,
+                &mut configwidth,
+                &mut configheight,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    CString::from_raw(name)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    version,
+                    channels,
+                    configwidth,
+                    configheight,
+                )),
+                error => Err(err_fmod!("FMOD_DSP_GetInfo", error)),
+            }
+        }
+    }
+    pub fn get_type(&self) -> Result<DspType, Error> {
+        unsafe {
+            let mut type_ = ffi::FMOD_DSP_TYPE::default();
+            match ffi::FMOD_DSP_GetType(self.pointer, &mut type_) {
+                ffi::FMOD_OK => Ok(DspType::from(type_)?),
+                error => Err(err_fmod!("FMOD_DSP_GetType", error)),
+            }
+        }
+    }
+    pub fn get_idle(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut idle = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_DSP_GetIdle(self.pointer, &mut idle) {
+                ffi::FMOD_OK => Ok(to_bool!(idle)),
+                error => Err(err_fmod!("FMOD_DSP_GetIdle", error)),
+            }
+        }
+    }
+    pub fn set_user_data(&self, userdata: *mut c_void) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_SetUserData(self.pointer, userdata) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_SetUserData", error)),
+            }
+        }
+    }
+    pub fn get_user_data(&self) -> Result<*mut c_void, Error> {
+        unsafe {
+            let mut userdata = null_mut();
+            match ffi::FMOD_DSP_GetUserData(self.pointer, &mut userdata) {
+                ffi::FMOD_OK => Ok(userdata),
+                error => Err(err_fmod!("FMOD_DSP_GetUserData", error)),
+            }
+        }
+    }
+    pub fn set_metering_enabled(
+        &self,
+        input_enabled: bool,
+        output_enabled: bool,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_SetMeteringEnabled(
+                self.pointer,
+                from_bool!(input_enabled),
+                from_bool!(output_enabled),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_SetMeteringEnabled", error)),
+            }
+        }
+    }
+    pub fn get_metering_enabled(&self) -> Result<(bool, bool), Error> {
+        unsafe {
+            let mut input_enabled = ffi::FMOD_BOOL::default();
+            let mut output_enabled = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_DSP_GetMeteringEnabled(
+                self.pointer,
+                &mut input_enabled,
+                &mut output_enabled,
+            ) {
+                ffi::FMOD_OK => Ok((to_bool!(input_enabled), to_bool!(output_enabled))),
+                error => Err(err_fmod!("FMOD_DSP_GetMeteringEnabled", error)),
+            }
+        }
+    }
+    pub fn get_metering_info(&self) -> Result<(DspMeteringInfo, DspMeteringInfo), Error> {
+        unsafe {
+            let mut input_info = ffi::FMOD_DSP_METERING_INFO::default();
+            let mut output_info = ffi::FMOD_DSP_METERING_INFO::default();
+            match ffi::FMOD_DSP_GetMeteringInfo(self.pointer, &mut input_info, &mut output_info) {
+                ffi::FMOD_OK => Ok((
+                    DspMeteringInfo::from(input_info)?,
+                    DspMeteringInfo::from(output_info)?,
+                )),
+                error => Err(err_fmod!("FMOD_DSP_GetMeteringInfo", error)),
+            }
+        }
+    }
+    pub fn get_cpu_usage(&self) -> Result<(u32, u32), Error> {
+        unsafe {
+            let mut exclusive = u32::default();
+            let mut inclusive = u32::default();
+            match ffi::FMOD_DSP_GetCPUUsage(self.pointer, &mut exclusive, &mut inclusive) {
+                ffi::FMOD_OK => Ok((exclusive, inclusive)),
+                error => Err(err_fmod!("FMOD_DSP_GetCPUUsage", error)),
+            }
+        }
     }
 }
 
@@ -5772,11 +7850,111 @@ pub struct DspConnection {
 }
 
 impl DspConnection {
-    pub fn from_pointer(pointer: *mut ffi::FMOD_DSPCONNECTION) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_DSPCONNECTION) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_DSPCONNECTION {
         self.pointer
+    }
+    pub fn get_input(&self) -> Result<Dsp, Error> {
+        unsafe {
+            let mut input = null_mut();
+            match ffi::FMOD_DSPConnection_GetInput(self.pointer, &mut input) {
+                ffi::FMOD_OK => Ok(Dsp::from(input)),
+                error => Err(err_fmod!("FMOD_DSPConnection_GetInput", error)),
+            }
+        }
+    }
+    pub fn get_output(&self) -> Result<Dsp, Error> {
+        unsafe {
+            let mut output = null_mut();
+            match ffi::FMOD_DSPConnection_GetOutput(self.pointer, &mut output) {
+                ffi::FMOD_OK => Ok(Dsp::from(output)),
+                error => Err(err_fmod!("FMOD_DSPConnection_GetOutput", error)),
+            }
+        }
+    }
+    pub fn set_mix(&self, volume: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSPConnection_SetMix(self.pointer, volume) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSPConnection_SetMix", error)),
+            }
+        }
+    }
+    pub fn get_mix(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut volume = f32::default();
+            match ffi::FMOD_DSPConnection_GetMix(self.pointer, &mut volume) {
+                ffi::FMOD_OK => Ok(volume),
+                error => Err(err_fmod!("FMOD_DSPConnection_GetMix", error)),
+            }
+        }
+    }
+    pub fn set_mix_matrix(
+        &self,
+        outchannels: i32,
+        inchannels: i32,
+        inchannel_hop: i32,
+    ) -> Result<f32, Error> {
+        unsafe {
+            let mut matrix = f32::default();
+            match ffi::FMOD_DSPConnection_SetMixMatrix(
+                self.pointer,
+                &mut matrix,
+                outchannels,
+                inchannels,
+                inchannel_hop,
+            ) {
+                ffi::FMOD_OK => Ok(matrix),
+                error => Err(err_fmod!("FMOD_DSPConnection_SetMixMatrix", error)),
+            }
+        }
+    }
+    pub fn get_mix_matrix(&self, inchannel_hop: i32) -> Result<(f32, i32, i32), Error> {
+        unsafe {
+            let mut matrix = f32::default();
+            let mut outchannels = i32::default();
+            let mut inchannels = i32::default();
+            match ffi::FMOD_DSPConnection_GetMixMatrix(
+                self.pointer,
+                &mut matrix,
+                &mut outchannels,
+                &mut inchannels,
+                inchannel_hop,
+            ) {
+                ffi::FMOD_OK => Ok((matrix, outchannels, inchannels)),
+                error => Err(err_fmod!("FMOD_DSPConnection_GetMixMatrix", error)),
+            }
+        }
+    }
+    pub fn get_type(&self) -> Result<DspConnectionType, Error> {
+        unsafe {
+            let mut type_ = ffi::FMOD_DSPCONNECTION_TYPE::default();
+            match ffi::FMOD_DSPConnection_GetType(self.pointer, &mut type_) {
+                ffi::FMOD_OK => Ok(DspConnectionType::from(type_)?),
+                error => Err(err_fmod!("FMOD_DSPConnection_GetType", error)),
+            }
+        }
+    }
+    pub fn set_user_data(&self, userdata: *mut c_void) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSPConnection_SetUserData(self.pointer, userdata) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSPConnection_SetUserData", error)),
+            }
+        }
+    }
+    pub fn get_user_data(&self) -> Result<*mut c_void, Error> {
+        unsafe {
+            let mut userdata = null_mut();
+            match ffi::FMOD_DSPConnection_GetUserData(self.pointer, &mut userdata) {
+                ffi::FMOD_OK => Ok(userdata),
+                error => Err(err_fmod!("FMOD_DSPConnection_GetUserData", error)),
+            }
+        }
     }
 }
 
@@ -5786,10 +7964,252 @@ pub struct Geometry {
 }
 
 impl Geometry {
-    pub fn from_pointer(pointer: *mut ffi::FMOD_GEOMETRY) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_GEOMETRY) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_GEOMETRY {
+        self.pointer
+    }
+    pub fn release(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Geometry_Release(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Geometry_Release", error)),
+            }
+        }
+    }
+    pub fn add_polygon(
+        &self,
+        directocclusion: f32,
+        reverbocclusion: f32,
+        doublesided: bool,
+        numvertices: i32,
+        vertices: Vector,
+    ) -> Result<i32, Error> {
+        unsafe {
+            let mut polygonindex = i32::default();
+            match ffi::FMOD_Geometry_AddPolygon(
+                self.pointer,
+                directocclusion,
+                reverbocclusion,
+                from_bool!(doublesided),
+                numvertices,
+                &vertices.into(),
+                &mut polygonindex,
+            ) {
+                ffi::FMOD_OK => Ok(polygonindex),
+                error => Err(err_fmod!("FMOD_Geometry_AddPolygon", error)),
+            }
+        }
+    }
+    pub fn get_num_polygons(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numpolygons = i32::default();
+            match ffi::FMOD_Geometry_GetNumPolygons(self.pointer, &mut numpolygons) {
+                ffi::FMOD_OK => Ok(numpolygons),
+                error => Err(err_fmod!("FMOD_Geometry_GetNumPolygons", error)),
+            }
+        }
+    }
+    pub fn get_max_polygons(&self) -> Result<(i32, i32), Error> {
+        unsafe {
+            let mut maxpolygons = i32::default();
+            let mut maxvertices = i32::default();
+            match ffi::FMOD_Geometry_GetMaxPolygons(
+                self.pointer,
+                &mut maxpolygons,
+                &mut maxvertices,
+            ) {
+                ffi::FMOD_OK => Ok((maxpolygons, maxvertices)),
+                error => Err(err_fmod!("FMOD_Geometry_GetMaxPolygons", error)),
+            }
+        }
+    }
+    pub fn get_polygon_num_vertices(&self, index: i32) -> Result<i32, Error> {
+        unsafe {
+            let mut numvertices = i32::default();
+            match ffi::FMOD_Geometry_GetPolygonNumVertices(self.pointer, index, &mut numvertices) {
+                ffi::FMOD_OK => Ok(numvertices),
+                error => Err(err_fmod!("FMOD_Geometry_GetPolygonNumVertices", error)),
+            }
+        }
+    }
+    pub fn set_polygon_vertex(
+        &self,
+        index: i32,
+        vertexindex: i32,
+        vertex: Vector,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Geometry_SetPolygonVertex(
+                self.pointer,
+                index,
+                vertexindex,
+                &vertex.into(),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Geometry_SetPolygonVertex", error)),
+            }
+        }
+    }
+    pub fn get_polygon_vertex(&self, index: i32, vertexindex: i32) -> Result<Vector, Error> {
+        unsafe {
+            let mut vertex = ffi::FMOD_VECTOR::default();
+            match ffi::FMOD_Geometry_GetPolygonVertex(self.pointer, index, vertexindex, &mut vertex)
+            {
+                ffi::FMOD_OK => Ok(Vector::from(vertex)?),
+                error => Err(err_fmod!("FMOD_Geometry_GetPolygonVertex", error)),
+            }
+        }
+    }
+    pub fn set_polygon_attributes(
+        &self,
+        index: i32,
+        directocclusion: f32,
+        reverbocclusion: f32,
+        doublesided: bool,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Geometry_SetPolygonAttributes(
+                self.pointer,
+                index,
+                directocclusion,
+                reverbocclusion,
+                from_bool!(doublesided),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Geometry_SetPolygonAttributes", error)),
+            }
+        }
+    }
+    pub fn get_polygon_attributes(&self, index: i32) -> Result<(f32, f32, bool), Error> {
+        unsafe {
+            let mut directocclusion = f32::default();
+            let mut reverbocclusion = f32::default();
+            let mut doublesided = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Geometry_GetPolygonAttributes(
+                self.pointer,
+                index,
+                &mut directocclusion,
+                &mut reverbocclusion,
+                &mut doublesided,
+            ) {
+                ffi::FMOD_OK => Ok((directocclusion, reverbocclusion, to_bool!(doublesided))),
+                error => Err(err_fmod!("FMOD_Geometry_GetPolygonAttributes", error)),
+            }
+        }
+    }
+    pub fn set_active(&self, active: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Geometry_SetActive(self.pointer, from_bool!(active)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Geometry_SetActive", error)),
+            }
+        }
+    }
+    pub fn get_active(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut active = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Geometry_GetActive(self.pointer, &mut active) {
+                ffi::FMOD_OK => Ok(to_bool!(active)),
+                error => Err(err_fmod!("FMOD_Geometry_GetActive", error)),
+            }
+        }
+    }
+    pub fn set_rotation(&self, forward: Vector, up: Vector) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Geometry_SetRotation(self.pointer, &forward.into(), &up.into()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Geometry_SetRotation", error)),
+            }
+        }
+    }
+    pub fn get_rotation(&self) -> Result<(Vector, Vector), Error> {
+        unsafe {
+            let mut forward = ffi::FMOD_VECTOR::default();
+            let mut up = ffi::FMOD_VECTOR::default();
+            match ffi::FMOD_Geometry_GetRotation(self.pointer, &mut forward, &mut up) {
+                ffi::FMOD_OK => Ok((Vector::from(forward)?, Vector::from(up)?)),
+                error => Err(err_fmod!("FMOD_Geometry_GetRotation", error)),
+            }
+        }
+    }
+    pub fn set_position(&self, position: Vector) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Geometry_SetPosition(self.pointer, &position.into()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Geometry_SetPosition", error)),
+            }
+        }
+    }
+    pub fn get_position(&self) -> Result<Vector, Error> {
+        unsafe {
+            let mut position = ffi::FMOD_VECTOR::default();
+            match ffi::FMOD_Geometry_GetPosition(self.pointer, &mut position) {
+                ffi::FMOD_OK => Ok(Vector::from(position)?),
+                error => Err(err_fmod!("FMOD_Geometry_GetPosition", error)),
+            }
+        }
+    }
+    pub fn set_scale(&self, scale: Vector) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Geometry_SetScale(self.pointer, &scale.into()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Geometry_SetScale", error)),
+            }
+        }
+    }
+    pub fn get_scale(&self) -> Result<Vector, Error> {
+        unsafe {
+            let mut scale = ffi::FMOD_VECTOR::default();
+            match ffi::FMOD_Geometry_GetScale(self.pointer, &mut scale) {
+                ffi::FMOD_OK => Ok(Vector::from(scale)?),
+                error => Err(err_fmod!("FMOD_Geometry_GetScale", error)),
+            }
+        }
+    }
+    pub fn save(&self, data: *mut c_void) -> Result<i32, Error> {
+        unsafe {
+            let mut datasize = i32::default();
+            match ffi::FMOD_Geometry_Save(self.pointer, data, &mut datasize) {
+                ffi::FMOD_OK => Ok(datasize),
+                error => Err(err_fmod!("FMOD_Geometry_Save", error)),
+            }
+        }
+    }
+    pub fn set_user_data(&self, userdata: *mut c_void) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Geometry_SetUserData(self.pointer, userdata) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Geometry_SetUserData", error)),
+            }
+        }
+    }
+    pub fn get_user_data(&self) -> Result<*mut c_void, Error> {
+        unsafe {
+            let mut userdata = null_mut();
+            match ffi::FMOD_Geometry_GetUserData(self.pointer, &mut userdata) {
+                ffi::FMOD_OK => Ok(userdata),
+                error => Err(err_fmod!("FMOD_Geometry_GetUserData", error)),
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Polygon {
+    pointer: *mut ffi::FMOD_POLYGON,
+}
+
+impl Polygon {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_POLYGON) -> Self {
+        Self { pointer }
+    }
+    #[inline]
+    pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_POLYGON {
         self.pointer
     }
 }
@@ -5800,11 +8220,106 @@ pub struct Reverb3d {
 }
 
 impl Reverb3d {
-    pub fn from_pointer(pointer: *mut ffi::FMOD_REVERB3D) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_REVERB3D) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_REVERB3D {
         self.pointer
+    }
+    pub fn release(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Reverb3D_Release(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Reverb3D_Release", error)),
+            }
+        }
+    }
+    pub fn set_3_d_attributes(
+        &self,
+        position: Vector,
+        mindistance: f32,
+        maxdistance: f32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Reverb3D_Set3DAttributes(
+                self.pointer,
+                &position.into(),
+                mindistance,
+                maxdistance,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Reverb3D_Set3DAttributes", error)),
+            }
+        }
+    }
+    pub fn get_3_d_attributes(&self) -> Result<(Vector, f32, f32), Error> {
+        unsafe {
+            let mut position = ffi::FMOD_VECTOR::default();
+            let mut mindistance = f32::default();
+            let mut maxdistance = f32::default();
+            match ffi::FMOD_Reverb3D_Get3DAttributes(
+                self.pointer,
+                &mut position,
+                &mut mindistance,
+                &mut maxdistance,
+            ) {
+                ffi::FMOD_OK => Ok((Vector::from(position)?, mindistance, maxdistance)),
+                error => Err(err_fmod!("FMOD_Reverb3D_Get3DAttributes", error)),
+            }
+        }
+    }
+    pub fn set_properties(&self, properties: ReverbProperties) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Reverb3D_SetProperties(self.pointer, &properties.into()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Reverb3D_SetProperties", error)),
+            }
+        }
+    }
+    pub fn get_properties(&self) -> Result<ReverbProperties, Error> {
+        unsafe {
+            let mut properties = ffi::FMOD_REVERB_PROPERTIES::default();
+            match ffi::FMOD_Reverb3D_GetProperties(self.pointer, &mut properties) {
+                ffi::FMOD_OK => Ok(ReverbProperties::from(properties)?),
+                error => Err(err_fmod!("FMOD_Reverb3D_GetProperties", error)),
+            }
+        }
+    }
+    pub fn set_active(&self, active: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Reverb3D_SetActive(self.pointer, from_bool!(active)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Reverb3D_SetActive", error)),
+            }
+        }
+    }
+    pub fn get_active(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut active = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Reverb3D_GetActive(self.pointer, &mut active) {
+                ffi::FMOD_OK => Ok(to_bool!(active)),
+                error => Err(err_fmod!("FMOD_Reverb3D_GetActive", error)),
+            }
+        }
+    }
+    pub fn set_user_data(&self, userdata: *mut c_void) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Reverb3D_SetUserData(self.pointer, userdata) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Reverb3D_SetUserData", error)),
+            }
+        }
+    }
+    pub fn get_user_data(&self) -> Result<*mut c_void, Error> {
+        unsafe {
+            let mut userdata = null_mut();
+            match ffi::FMOD_Reverb3D_GetUserData(self.pointer, &mut userdata) {
+                ffi::FMOD_OK => Ok(userdata),
+                error => Err(err_fmod!("FMOD_Reverb3D_GetUserData", error)),
+            }
+        }
     }
 }
 
@@ -5814,11 +8329,510 @@ pub struct Sound {
 }
 
 impl Sound {
-    pub fn from_pointer(pointer: *mut ffi::FMOD_SOUND) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_SOUND) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_SOUND {
         self.pointer
+    }
+    pub fn release(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Sound_Release(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Sound_Release", error)),
+            }
+        }
+    }
+    pub fn get_system_object(&self) -> Result<System, Error> {
+        unsafe {
+            let mut system = null_mut();
+            match ffi::FMOD_Sound_GetSystemObject(self.pointer, &mut system) {
+                ffi::FMOD_OK => Ok(System::from(system)),
+                error => Err(err_fmod!("FMOD_Sound_GetSystemObject", error)),
+            }
+        }
+    }
+    pub fn lock(
+        &self,
+        offset: u32,
+        length: u32,
+    ) -> Result<(*mut c_void, *mut c_void, u32, u32), Error> {
+        unsafe {
+            let mut ptr_1 = null_mut();
+            let mut ptr_2 = null_mut();
+            let mut len_1 = u32::default();
+            let mut len_2 = u32::default();
+            match ffi::FMOD_Sound_Lock(
+                self.pointer,
+                offset,
+                length,
+                &mut ptr_1,
+                &mut ptr_2,
+                &mut len_1,
+                &mut len_2,
+            ) {
+                ffi::FMOD_OK => Ok((ptr_1, ptr_2, len_1, len_2)),
+                error => Err(err_fmod!("FMOD_Sound_Lock", error)),
+            }
+        }
+    }
+    pub fn unlock(
+        &self,
+        ptr_1: *mut c_void,
+        ptr_2: *mut c_void,
+        len_1: u32,
+        len_2: u32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Sound_Unlock(self.pointer, ptr_1, ptr_2, len_1, len_2) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Sound_Unlock", error)),
+            }
+        }
+    }
+    pub fn set_defaults(&self, frequency: f32, priority: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Sound_SetDefaults(self.pointer, frequency, priority) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Sound_SetDefaults", error)),
+            }
+        }
+    }
+    pub fn get_defaults(&self) -> Result<(f32, i32), Error> {
+        unsafe {
+            let mut frequency = f32::default();
+            let mut priority = i32::default();
+            match ffi::FMOD_Sound_GetDefaults(self.pointer, &mut frequency, &mut priority) {
+                ffi::FMOD_OK => Ok((frequency, priority)),
+                error => Err(err_fmod!("FMOD_Sound_GetDefaults", error)),
+            }
+        }
+    }
+    pub fn set_3_d_min_max_distance(&self, min: f32, max: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Sound_Set3DMinMaxDistance(self.pointer, min, max) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Sound_Set3DMinMaxDistance", error)),
+            }
+        }
+    }
+    pub fn get_3_d_min_max_distance(&self) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut min = f32::default();
+            let mut max = f32::default();
+            match ffi::FMOD_Sound_Get3DMinMaxDistance(self.pointer, &mut min, &mut max) {
+                ffi::FMOD_OK => Ok((min, max)),
+                error => Err(err_fmod!("FMOD_Sound_Get3DMinMaxDistance", error)),
+            }
+        }
+    }
+    pub fn set_3_d_cone_settings(
+        &self,
+        insideconeangle: f32,
+        outsideconeangle: f32,
+        outsidevolume: f32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Sound_Set3DConeSettings(
+                self.pointer,
+                insideconeangle,
+                outsideconeangle,
+                outsidevolume,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Sound_Set3DConeSettings", error)),
+            }
+        }
+    }
+    pub fn get_3_d_cone_settings(&self) -> Result<(f32, f32, f32), Error> {
+        unsafe {
+            let mut insideconeangle = f32::default();
+            let mut outsideconeangle = f32::default();
+            let mut outsidevolume = f32::default();
+            match ffi::FMOD_Sound_Get3DConeSettings(
+                self.pointer,
+                &mut insideconeangle,
+                &mut outsideconeangle,
+                &mut outsidevolume,
+            ) {
+                ffi::FMOD_OK => Ok((insideconeangle, outsideconeangle, outsidevolume)),
+                error => Err(err_fmod!("FMOD_Sound_Get3DConeSettings", error)),
+            }
+        }
+    }
+    pub fn set_3_d_custom_rolloff(&self, numpoints: i32) -> Result<Vector, Error> {
+        unsafe {
+            let mut points = ffi::FMOD_VECTOR::default();
+            match ffi::FMOD_Sound_Set3DCustomRolloff(self.pointer, &mut points, numpoints) {
+                ffi::FMOD_OK => Ok(Vector::from(points)?),
+                error => Err(err_fmod!("FMOD_Sound_Set3DCustomRolloff", error)),
+            }
+        }
+    }
+    pub fn get_3_d_custom_rolloff(&self) -> Result<(Vec<Vector>, i32), Error> {
+        unsafe {
+            let mut points = null_mut();
+            let mut numpoints = i32::default();
+            match ffi::FMOD_Sound_Get3DCustomRolloff(self.pointer, &mut points, &mut numpoints) {
+                ffi::FMOD_OK => Ok((to_vec!(points, 1, Vector::from)?, numpoints)),
+                error => Err(err_fmod!("FMOD_Sound_Get3DCustomRolloff", error)),
+            }
+        }
+    }
+    pub fn get_sub_sound(&self, index: i32) -> Result<Sound, Error> {
+        unsafe {
+            let mut subsound = null_mut();
+            match ffi::FMOD_Sound_GetSubSound(self.pointer, index, &mut subsound) {
+                ffi::FMOD_OK => Ok(Sound::from(subsound)),
+                error => Err(err_fmod!("FMOD_Sound_GetSubSound", error)),
+            }
+        }
+    }
+    pub fn get_sub_sound_parent(&self) -> Result<Sound, Error> {
+        unsafe {
+            let mut parentsound = null_mut();
+            match ffi::FMOD_Sound_GetSubSoundParent(self.pointer, &mut parentsound) {
+                ffi::FMOD_OK => Ok(Sound::from(parentsound)),
+                error => Err(err_fmod!("FMOD_Sound_GetSubSoundParent", error)),
+            }
+        }
+    }
+    pub fn get_name(&self, namelen: i32) -> Result<String, Error> {
+        unsafe {
+            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            match ffi::FMOD_Sound_GetName(self.pointer, name, namelen) {
+                ffi::FMOD_OK => Ok(CString::from_raw(name)
+                    .into_string()
+                    .map_err(Error::String)?),
+                error => Err(err_fmod!("FMOD_Sound_GetName", error)),
+            }
+        }
+    }
+    pub fn get_length(&self, lengthtype: ffi::FMOD_TIMEUNIT) -> Result<u32, Error> {
+        unsafe {
+            let mut length = u32::default();
+            match ffi::FMOD_Sound_GetLength(self.pointer, &mut length, lengthtype) {
+                ffi::FMOD_OK => Ok(length),
+                error => Err(err_fmod!("FMOD_Sound_GetLength", error)),
+            }
+        }
+    }
+    pub fn get_format(&self) -> Result<(SoundType, SoundFormat, i32, i32), Error> {
+        unsafe {
+            let mut type_ = ffi::FMOD_SOUND_TYPE::default();
+            let mut format = ffi::FMOD_SOUND_FORMAT::default();
+            let mut channels = i32::default();
+            let mut bits = i32::default();
+            match ffi::FMOD_Sound_GetFormat(
+                self.pointer,
+                &mut type_,
+                &mut format,
+                &mut channels,
+                &mut bits,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    SoundType::from(type_)?,
+                    SoundFormat::from(format)?,
+                    channels,
+                    bits,
+                )),
+                error => Err(err_fmod!("FMOD_Sound_GetFormat", error)),
+            }
+        }
+    }
+    pub fn get_num_sub_sounds(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numsubsounds = i32::default();
+            match ffi::FMOD_Sound_GetNumSubSounds(self.pointer, &mut numsubsounds) {
+                ffi::FMOD_OK => Ok(numsubsounds),
+                error => Err(err_fmod!("FMOD_Sound_GetNumSubSounds", error)),
+            }
+        }
+    }
+    pub fn get_num_tags(&self) -> Result<(i32, i32), Error> {
+        unsafe {
+            let mut numtags = i32::default();
+            let mut numtagsupdated = i32::default();
+            match ffi::FMOD_Sound_GetNumTags(self.pointer, &mut numtags, &mut numtagsupdated) {
+                ffi::FMOD_OK => Ok((numtags, numtagsupdated)),
+                error => Err(err_fmod!("FMOD_Sound_GetNumTags", error)),
+            }
+        }
+    }
+    pub fn get_tag(&self, name: &str, index: i32) -> Result<Tag, Error> {
+        unsafe {
+            let mut tag = ffi::FMOD_TAG::default();
+            match ffi::FMOD_Sound_GetTag(self.pointer, name.as_ptr().cast(), index, &mut tag) {
+                ffi::FMOD_OK => Ok(Tag::from(tag)?),
+                error => Err(err_fmod!("FMOD_Sound_GetTag", error)),
+            }
+        }
+    }
+    pub fn get_open_state(&self) -> Result<(OpenState, u32, bool, bool), Error> {
+        unsafe {
+            let mut openstate = ffi::FMOD_OPENSTATE::default();
+            let mut percentbuffered = u32::default();
+            let mut starving = ffi::FMOD_BOOL::default();
+            let mut diskbusy = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Sound_GetOpenState(
+                self.pointer,
+                &mut openstate,
+                &mut percentbuffered,
+                &mut starving,
+                &mut diskbusy,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    OpenState::from(openstate)?,
+                    percentbuffered,
+                    to_bool!(starving),
+                    to_bool!(diskbusy),
+                )),
+                error => Err(err_fmod!("FMOD_Sound_GetOpenState", error)),
+            }
+        }
+    }
+    pub fn read_data(&self, buffer: *mut c_void, length: u32) -> Result<u32, Error> {
+        unsafe {
+            let mut read = u32::default();
+            match ffi::FMOD_Sound_ReadData(self.pointer, buffer, length, &mut read) {
+                ffi::FMOD_OK => Ok(read),
+                error => Err(err_fmod!("FMOD_Sound_ReadData", error)),
+            }
+        }
+    }
+    pub fn seek_data(&self, pcm: u32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Sound_SeekData(self.pointer, pcm) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Sound_SeekData", error)),
+            }
+        }
+    }
+    pub fn set_sound_group(&self, soundgroup: SoundGroup) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Sound_SetSoundGroup(self.pointer, soundgroup.as_mut_ptr()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Sound_SetSoundGroup", error)),
+            }
+        }
+    }
+    pub fn get_sound_group(&self) -> Result<SoundGroup, Error> {
+        unsafe {
+            let mut soundgroup = null_mut();
+            match ffi::FMOD_Sound_GetSoundGroup(self.pointer, &mut soundgroup) {
+                ffi::FMOD_OK => Ok(SoundGroup::from(soundgroup)),
+                error => Err(err_fmod!("FMOD_Sound_GetSoundGroup", error)),
+            }
+        }
+    }
+    pub fn get_num_sync_points(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numsyncpoints = i32::default();
+            match ffi::FMOD_Sound_GetNumSyncPoints(self.pointer, &mut numsyncpoints) {
+                ffi::FMOD_OK => Ok(numsyncpoints),
+                error => Err(err_fmod!("FMOD_Sound_GetNumSyncPoints", error)),
+            }
+        }
+    }
+    pub fn get_sync_point(&self, index: i32) -> Result<SyncPoint, Error> {
+        unsafe {
+            let mut point = null_mut();
+            match ffi::FMOD_Sound_GetSyncPoint(self.pointer, index, &mut point) {
+                ffi::FMOD_OK => Ok(SyncPoint::from(point)),
+                error => Err(err_fmod!("FMOD_Sound_GetSyncPoint", error)),
+            }
+        }
+    }
+    pub fn get_sync_point_info(
+        &self,
+        point: SyncPoint,
+        namelen: i32,
+        offsettype: ffi::FMOD_TIMEUNIT,
+    ) -> Result<(String, u32), Error> {
+        unsafe {
+            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut offset = u32::default();
+            match ffi::FMOD_Sound_GetSyncPointInfo(
+                self.pointer,
+                point.as_mut_ptr(),
+                name,
+                namelen,
+                &mut offset,
+                offsettype,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    CString::from_raw(name)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    offset,
+                )),
+                error => Err(err_fmod!("FMOD_Sound_GetSyncPointInfo", error)),
+            }
+        }
+    }
+    pub fn add_sync_point(
+        &self,
+        offset: u32,
+        offsettype: ffi::FMOD_TIMEUNIT,
+        name: &str,
+    ) -> Result<SyncPoint, Error> {
+        unsafe {
+            let mut point = null_mut();
+            match ffi::FMOD_Sound_AddSyncPoint(
+                self.pointer,
+                offset,
+                offsettype,
+                name.as_ptr().cast(),
+                &mut point,
+            ) {
+                ffi::FMOD_OK => Ok(SyncPoint::from(point)),
+                error => Err(err_fmod!("FMOD_Sound_AddSyncPoint", error)),
+            }
+        }
+    }
+    pub fn delete_sync_point(&self, point: SyncPoint) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Sound_DeleteSyncPoint(self.pointer, point.as_mut_ptr()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Sound_DeleteSyncPoint", error)),
+            }
+        }
+    }
+    pub fn set_mode(&self, mode: ffi::FMOD_MODE) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Sound_SetMode(self.pointer, mode) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Sound_SetMode", error)),
+            }
+        }
+    }
+    pub fn get_mode(&self) -> Result<ffi::FMOD_MODE, Error> {
+        unsafe {
+            let mut mode = ffi::FMOD_MODE::default();
+            match ffi::FMOD_Sound_GetMode(self.pointer, &mut mode) {
+                ffi::FMOD_OK => Ok(mode),
+                error => Err(err_fmod!("FMOD_Sound_GetMode", error)),
+            }
+        }
+    }
+    pub fn set_loop_count(&self, loopcount: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Sound_SetLoopCount(self.pointer, loopcount) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Sound_SetLoopCount", error)),
+            }
+        }
+    }
+    pub fn get_loop_count(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut loopcount = i32::default();
+            match ffi::FMOD_Sound_GetLoopCount(self.pointer, &mut loopcount) {
+                ffi::FMOD_OK => Ok(loopcount),
+                error => Err(err_fmod!("FMOD_Sound_GetLoopCount", error)),
+            }
+        }
+    }
+    pub fn set_loop_points(
+        &self,
+        loopstart: u32,
+        loopstarttype: ffi::FMOD_TIMEUNIT,
+        loopend: u32,
+        loopendtype: ffi::FMOD_TIMEUNIT,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Sound_SetLoopPoints(
+                self.pointer,
+                loopstart,
+                loopstarttype,
+                loopend,
+                loopendtype,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Sound_SetLoopPoints", error)),
+            }
+        }
+    }
+    pub fn get_loop_points(
+        &self,
+        loopstarttype: ffi::FMOD_TIMEUNIT,
+        loopendtype: ffi::FMOD_TIMEUNIT,
+    ) -> Result<(u32, u32), Error> {
+        unsafe {
+            let mut loopstart = u32::default();
+            let mut loopend = u32::default();
+            match ffi::FMOD_Sound_GetLoopPoints(
+                self.pointer,
+                &mut loopstart,
+                loopstarttype,
+                &mut loopend,
+                loopendtype,
+            ) {
+                ffi::FMOD_OK => Ok((loopstart, loopend)),
+                error => Err(err_fmod!("FMOD_Sound_GetLoopPoints", error)),
+            }
+        }
+    }
+    pub fn get_music_num_channels(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numchannels = i32::default();
+            match ffi::FMOD_Sound_GetMusicNumChannels(self.pointer, &mut numchannels) {
+                ffi::FMOD_OK => Ok(numchannels),
+                error => Err(err_fmod!("FMOD_Sound_GetMusicNumChannels", error)),
+            }
+        }
+    }
+    pub fn set_music_channel_volume(&self, channel: i32, volume: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Sound_SetMusicChannelVolume(self.pointer, channel, volume) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Sound_SetMusicChannelVolume", error)),
+            }
+        }
+    }
+    pub fn get_music_channel_volume(&self, channel: i32) -> Result<f32, Error> {
+        unsafe {
+            let mut volume = f32::default();
+            match ffi::FMOD_Sound_GetMusicChannelVolume(self.pointer, channel, &mut volume) {
+                ffi::FMOD_OK => Ok(volume),
+                error => Err(err_fmod!("FMOD_Sound_GetMusicChannelVolume", error)),
+            }
+        }
+    }
+    pub fn set_music_speed(&self, speed: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Sound_SetMusicSpeed(self.pointer, speed) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Sound_SetMusicSpeed", error)),
+            }
+        }
+    }
+    pub fn get_music_speed(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut speed = f32::default();
+            match ffi::FMOD_Sound_GetMusicSpeed(self.pointer, &mut speed) {
+                ffi::FMOD_OK => Ok(speed),
+                error => Err(err_fmod!("FMOD_Sound_GetMusicSpeed", error)),
+            }
+        }
+    }
+    pub fn set_user_data(&self, userdata: *mut c_void) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Sound_SetUserData(self.pointer, userdata) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Sound_SetUserData", error)),
+            }
+        }
+    }
+    pub fn get_user_data(&self) -> Result<*mut c_void, Error> {
+        unsafe {
+            let mut userdata = null_mut();
+            match ffi::FMOD_Sound_GetUserData(self.pointer, &mut userdata) {
+                ffi::FMOD_OK => Ok(userdata),
+                error => Err(err_fmod!("FMOD_Sound_GetUserData", error)),
+            }
+        }
     }
 }
 
@@ -5828,11 +8842,161 @@ pub struct SoundGroup {
 }
 
 impl SoundGroup {
-    pub fn from_pointer(pointer: *mut ffi::FMOD_SOUNDGROUP) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_SOUNDGROUP) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_SOUNDGROUP {
         self.pointer
+    }
+    pub fn release(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_SoundGroup_Release(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_SoundGroup_Release", error)),
+            }
+        }
+    }
+    pub fn get_system_object(&self) -> Result<System, Error> {
+        unsafe {
+            let mut system = null_mut();
+            match ffi::FMOD_SoundGroup_GetSystemObject(self.pointer, &mut system) {
+                ffi::FMOD_OK => Ok(System::from(system)),
+                error => Err(err_fmod!("FMOD_SoundGroup_GetSystemObject", error)),
+            }
+        }
+    }
+    pub fn set_max_audible(&self, maxaudible: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_SoundGroup_SetMaxAudible(self.pointer, maxaudible) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_SoundGroup_SetMaxAudible", error)),
+            }
+        }
+    }
+    pub fn get_max_audible(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut maxaudible = i32::default();
+            match ffi::FMOD_SoundGroup_GetMaxAudible(self.pointer, &mut maxaudible) {
+                ffi::FMOD_OK => Ok(maxaudible),
+                error => Err(err_fmod!("FMOD_SoundGroup_GetMaxAudible", error)),
+            }
+        }
+    }
+    pub fn set_max_audible_behavior(&self, behavior: SoundGroupBehavior) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_SoundGroup_SetMaxAudibleBehavior(self.pointer, behavior.into()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_SoundGroup_SetMaxAudibleBehavior", error)),
+            }
+        }
+    }
+    pub fn get_max_audible_behavior(&self) -> Result<SoundGroupBehavior, Error> {
+        unsafe {
+            let mut behavior = ffi::FMOD_SOUNDGROUP_BEHAVIOR::default();
+            match ffi::FMOD_SoundGroup_GetMaxAudibleBehavior(self.pointer, &mut behavior) {
+                ffi::FMOD_OK => Ok(SoundGroupBehavior::from(behavior)?),
+                error => Err(err_fmod!("FMOD_SoundGroup_GetMaxAudibleBehavior", error)),
+            }
+        }
+    }
+    pub fn set_mute_fade_speed(&self, speed: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_SoundGroup_SetMuteFadeSpeed(self.pointer, speed) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_SoundGroup_SetMuteFadeSpeed", error)),
+            }
+        }
+    }
+    pub fn get_mute_fade_speed(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut speed = f32::default();
+            match ffi::FMOD_SoundGroup_GetMuteFadeSpeed(self.pointer, &mut speed) {
+                ffi::FMOD_OK => Ok(speed),
+                error => Err(err_fmod!("FMOD_SoundGroup_GetMuteFadeSpeed", error)),
+            }
+        }
+    }
+    pub fn set_volume(&self, volume: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_SoundGroup_SetVolume(self.pointer, volume) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_SoundGroup_SetVolume", error)),
+            }
+        }
+    }
+    pub fn get_volume(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut volume = f32::default();
+            match ffi::FMOD_SoundGroup_GetVolume(self.pointer, &mut volume) {
+                ffi::FMOD_OK => Ok(volume),
+                error => Err(err_fmod!("FMOD_SoundGroup_GetVolume", error)),
+            }
+        }
+    }
+    pub fn stop(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_SoundGroup_Stop(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_SoundGroup_Stop", error)),
+            }
+        }
+    }
+    pub fn get_name(&self, namelen: i32) -> Result<String, Error> {
+        unsafe {
+            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            match ffi::FMOD_SoundGroup_GetName(self.pointer, name, namelen) {
+                ffi::FMOD_OK => Ok(CString::from_raw(name)
+                    .into_string()
+                    .map_err(Error::String)?),
+                error => Err(err_fmod!("FMOD_SoundGroup_GetName", error)),
+            }
+        }
+    }
+    pub fn get_num_sounds(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numsounds = i32::default();
+            match ffi::FMOD_SoundGroup_GetNumSounds(self.pointer, &mut numsounds) {
+                ffi::FMOD_OK => Ok(numsounds),
+                error => Err(err_fmod!("FMOD_SoundGroup_GetNumSounds", error)),
+            }
+        }
+    }
+    pub fn get_sound(&self, index: i32) -> Result<Sound, Error> {
+        unsafe {
+            let mut sound = null_mut();
+            match ffi::FMOD_SoundGroup_GetSound(self.pointer, index, &mut sound) {
+                ffi::FMOD_OK => Ok(Sound::from(sound)),
+                error => Err(err_fmod!("FMOD_SoundGroup_GetSound", error)),
+            }
+        }
+    }
+    pub fn get_num_playing(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numplaying = i32::default();
+            match ffi::FMOD_SoundGroup_GetNumPlaying(self.pointer, &mut numplaying) {
+                ffi::FMOD_OK => Ok(numplaying),
+                error => Err(err_fmod!("FMOD_SoundGroup_GetNumPlaying", error)),
+            }
+        }
+    }
+    pub fn set_user_data(&self, userdata: *mut c_void) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_SoundGroup_SetUserData(self.pointer, userdata) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_SoundGroup_SetUserData", error)),
+            }
+        }
+    }
+    pub fn get_user_data(&self) -> Result<*mut c_void, Error> {
+        unsafe {
+            let mut userdata = null_mut();
+            match ffi::FMOD_SoundGroup_GetUserData(self.pointer, &mut userdata) {
+                ffi::FMOD_OK => Ok(userdata),
+                error => Err(err_fmod!("FMOD_SoundGroup_GetUserData", error)),
+            }
+        }
     }
 }
 
@@ -5842,11 +9006,195 @@ pub struct Bank {
 }
 
 impl Bank {
-    pub fn from_pointer(pointer: *mut ffi::FMOD_STUDIO_BANK) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_STUDIO_BANK) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_STUDIO_BANK {
         self.pointer
+    }
+    pub fn is_valid(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_Bank_IsValid(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_Bank_IsValid", error)),
+            }
+        }
+    }
+    pub fn get_id(&self) -> Result<Guid, Error> {
+        unsafe {
+            let mut id = ffi::FMOD_GUID::default();
+            match ffi::FMOD_Studio_Bank_GetID(self.pointer, &mut id) {
+                ffi::FMOD_OK => Ok(Guid::from(id)?),
+                error => Err(err_fmod!("FMOD_Studio_Bank_GetID", error)),
+            }
+        }
+    }
+    pub fn get_path(&self, size: i32) -> Result<(String, i32), Error> {
+        unsafe {
+            let path = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut retrieved = i32::default();
+            match ffi::FMOD_Studio_Bank_GetPath(self.pointer, path, size, &mut retrieved) {
+                ffi::FMOD_OK => Ok((
+                    CString::from_raw(path)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    retrieved,
+                )),
+                error => Err(err_fmod!("FMOD_Studio_Bank_GetPath", error)),
+            }
+        }
+    }
+    pub fn unload(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_Bank_Unload(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_Bank_Unload", error)),
+            }
+        }
+    }
+    pub fn load_sample_data(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_Bank_LoadSampleData(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_Bank_LoadSampleData", error)),
+            }
+        }
+    }
+    pub fn unload_sample_data(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_Bank_UnloadSampleData(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_Bank_UnloadSampleData", error)),
+            }
+        }
+    }
+    pub fn get_loading_state(&self) -> Result<LoadingState, Error> {
+        unsafe {
+            let mut state = ffi::FMOD_STUDIO_LOADING_STATE::default();
+            match ffi::FMOD_Studio_Bank_GetLoadingState(self.pointer, &mut state) {
+                ffi::FMOD_OK => Ok(LoadingState::from(state)?),
+                error => Err(err_fmod!("FMOD_Studio_Bank_GetLoadingState", error)),
+            }
+        }
+    }
+    pub fn get_sample_loading_state(&self) -> Result<LoadingState, Error> {
+        unsafe {
+            let mut state = ffi::FMOD_STUDIO_LOADING_STATE::default();
+            match ffi::FMOD_Studio_Bank_GetSampleLoadingState(self.pointer, &mut state) {
+                ffi::FMOD_OK => Ok(LoadingState::from(state)?),
+                error => Err(err_fmod!("FMOD_Studio_Bank_GetSampleLoadingState", error)),
+            }
+        }
+    }
+    pub fn get_string_count(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_Bank_GetStringCount(self.pointer, &mut count) {
+                ffi::FMOD_OK => Ok(count),
+                error => Err(err_fmod!("FMOD_Studio_Bank_GetStringCount", error)),
+            }
+        }
+    }
+    pub fn get_string_info(&self, index: i32, size: i32) -> Result<(Guid, String, i32), Error> {
+        unsafe {
+            let mut id = ffi::FMOD_GUID::default();
+            let path = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut retrieved = i32::default();
+            match ffi::FMOD_Studio_Bank_GetStringInfo(
+                self.pointer,
+                index,
+                &mut id,
+                path,
+                size,
+                &mut retrieved,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    Guid::from(id)?,
+                    CString::from_raw(path)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    retrieved,
+                )),
+                error => Err(err_fmod!("FMOD_Studio_Bank_GetStringInfo", error)),
+            }
+        }
+    }
+    pub fn get_event_count(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_Bank_GetEventCount(self.pointer, &mut count) {
+                ffi::FMOD_OK => Ok(count),
+                error => Err(err_fmod!("FMOD_Studio_Bank_GetEventCount", error)),
+            }
+        }
+    }
+    pub fn get_event_list(&self, capacity: i32) -> Result<(EventDescription, i32), Error> {
+        unsafe {
+            let mut array = null_mut();
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_Bank_GetEventList(self.pointer, &mut array, capacity, &mut count)
+            {
+                ffi::FMOD_OK => Ok((EventDescription::from(array), count)),
+                error => Err(err_fmod!("FMOD_Studio_Bank_GetEventList", error)),
+            }
+        }
+    }
+    pub fn get_bus_count(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_Bank_GetBusCount(self.pointer, &mut count) {
+                ffi::FMOD_OK => Ok(count),
+                error => Err(err_fmod!("FMOD_Studio_Bank_GetBusCount", error)),
+            }
+        }
+    }
+    pub fn get_bus_list(&self, capacity: i32) -> Result<(Bus, i32), Error> {
+        unsafe {
+            let mut array = null_mut();
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_Bank_GetBusList(self.pointer, &mut array, capacity, &mut count) {
+                ffi::FMOD_OK => Ok((Bus::from(array), count)),
+                error => Err(err_fmod!("FMOD_Studio_Bank_GetBusList", error)),
+            }
+        }
+    }
+    pub fn get_vca_count(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_Bank_GetVCACount(self.pointer, &mut count) {
+                ffi::FMOD_OK => Ok(count),
+                error => Err(err_fmod!("FMOD_Studio_Bank_GetVCACount", error)),
+            }
+        }
+    }
+    pub fn get_vca_list(&self, capacity: i32) -> Result<(Vca, i32), Error> {
+        unsafe {
+            let mut array = null_mut();
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_Bank_GetVCAList(self.pointer, &mut array, capacity, &mut count) {
+                ffi::FMOD_OK => Ok((Vca::from(array), count)),
+                error => Err(err_fmod!("FMOD_Studio_Bank_GetVCAList", error)),
+            }
+        }
+    }
+    pub fn get_user_data(&self) -> Result<*mut c_void, Error> {
+        unsafe {
+            let mut userdata = null_mut();
+            match ffi::FMOD_Studio_Bank_GetUserData(self.pointer, &mut userdata) {
+                ffi::FMOD_OK => Ok(userdata),
+                error => Err(err_fmod!("FMOD_Studio_Bank_GetUserData", error)),
+            }
+        }
+    }
+    pub fn set_user_data(&self, userdata: *mut c_void) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_Bank_SetUserData(self.pointer, userdata) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_Bank_SetUserData", error)),
+            }
+        }
     }
 }
 
@@ -5856,11 +9204,166 @@ pub struct Bus {
 }
 
 impl Bus {
-    pub fn from_pointer(pointer: *mut ffi::FMOD_STUDIO_BUS) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_STUDIO_BUS) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_STUDIO_BUS {
         self.pointer
+    }
+    pub fn is_valid(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_Bus_IsValid(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_Bus_IsValid", error)),
+            }
+        }
+    }
+    pub fn get_id(&self) -> Result<Guid, Error> {
+        unsafe {
+            let mut id = ffi::FMOD_GUID::default();
+            match ffi::FMOD_Studio_Bus_GetID(self.pointer, &mut id) {
+                ffi::FMOD_OK => Ok(Guid::from(id)?),
+                error => Err(err_fmod!("FMOD_Studio_Bus_GetID", error)),
+            }
+        }
+    }
+    pub fn get_path(&self, size: i32) -> Result<(String, i32), Error> {
+        unsafe {
+            let path = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut retrieved = i32::default();
+            match ffi::FMOD_Studio_Bus_GetPath(self.pointer, path, size, &mut retrieved) {
+                ffi::FMOD_OK => Ok((
+                    CString::from_raw(path)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    retrieved,
+                )),
+                error => Err(err_fmod!("FMOD_Studio_Bus_GetPath", error)),
+            }
+        }
+    }
+    pub fn get_volume(&self) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut volume = f32::default();
+            let mut finalvolume = f32::default();
+            match ffi::FMOD_Studio_Bus_GetVolume(self.pointer, &mut volume, &mut finalvolume) {
+                ffi::FMOD_OK => Ok((volume, finalvolume)),
+                error => Err(err_fmod!("FMOD_Studio_Bus_GetVolume", error)),
+            }
+        }
+    }
+    pub fn set_volume(&self, volume: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_Bus_SetVolume(self.pointer, volume) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_Bus_SetVolume", error)),
+            }
+        }
+    }
+    pub fn get_paused(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut paused = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Studio_Bus_GetPaused(self.pointer, &mut paused) {
+                ffi::FMOD_OK => Ok(to_bool!(paused)),
+                error => Err(err_fmod!("FMOD_Studio_Bus_GetPaused", error)),
+            }
+        }
+    }
+    pub fn set_paused(&self, paused: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_Bus_SetPaused(self.pointer, from_bool!(paused)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_Bus_SetPaused", error)),
+            }
+        }
+    }
+    pub fn get_mute(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut mute = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Studio_Bus_GetMute(self.pointer, &mut mute) {
+                ffi::FMOD_OK => Ok(to_bool!(mute)),
+                error => Err(err_fmod!("FMOD_Studio_Bus_GetMute", error)),
+            }
+        }
+    }
+    pub fn set_mute(&self, mute: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_Bus_SetMute(self.pointer, from_bool!(mute)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_Bus_SetMute", error)),
+            }
+        }
+    }
+    pub fn stop_all_events(&self, mode: StopMode) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_Bus_StopAllEvents(self.pointer, mode.into()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_Bus_StopAllEvents", error)),
+            }
+        }
+    }
+    pub fn get_port_index(&self) -> Result<u64, Error> {
+        unsafe {
+            let mut index = u64::default();
+            match ffi::FMOD_Studio_Bus_GetPortIndex(self.pointer, &mut index) {
+                ffi::FMOD_OK => Ok(index),
+                error => Err(err_fmod!("FMOD_Studio_Bus_GetPortIndex", error)),
+            }
+        }
+    }
+    pub fn set_port_index(&self, index: u64) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_Bus_SetPortIndex(self.pointer, index) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_Bus_SetPortIndex", error)),
+            }
+        }
+    }
+    pub fn lock_channel_group(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_Bus_LockChannelGroup(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_Bus_LockChannelGroup", error)),
+            }
+        }
+    }
+    pub fn unlock_channel_group(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_Bus_UnlockChannelGroup(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_Bus_UnlockChannelGroup", error)),
+            }
+        }
+    }
+    pub fn get_channel_group(&self) -> Result<ChannelGroup, Error> {
+        unsafe {
+            let mut group = null_mut();
+            match ffi::FMOD_Studio_Bus_GetChannelGroup(self.pointer, &mut group) {
+                ffi::FMOD_OK => Ok(ChannelGroup::from(group)),
+                error => Err(err_fmod!("FMOD_Studio_Bus_GetChannelGroup", error)),
+            }
+        }
+    }
+    pub fn get_cpu_usage(&self) -> Result<(u32, u32), Error> {
+        unsafe {
+            let mut exclusive = u32::default();
+            let mut inclusive = u32::default();
+            match ffi::FMOD_Studio_Bus_GetCPUUsage(self.pointer, &mut exclusive, &mut inclusive) {
+                ffi::FMOD_OK => Ok((exclusive, inclusive)),
+                error => Err(err_fmod!("FMOD_Studio_Bus_GetCPUUsage", error)),
+            }
+        }
+    }
+    pub fn get_memory_usage(&self) -> Result<MemoryUsage, Error> {
+        unsafe {
+            let mut memoryusage = ffi::FMOD_STUDIO_MEMORY_USAGE::default();
+            match ffi::FMOD_Studio_Bus_GetMemoryUsage(self.pointer, &mut memoryusage) {
+                ffi::FMOD_OK => Ok(MemoryUsage::from(memoryusage)?),
+                error => Err(err_fmod!("FMOD_Studio_Bus_GetMemoryUsage", error)),
+            }
+        }
     }
 }
 
@@ -5870,11 +9373,255 @@ pub struct CommandReplay {
 }
 
 impl CommandReplay {
-    pub fn from_pointer(pointer: *mut ffi::FMOD_STUDIO_COMMANDREPLAY) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_STUDIO_COMMANDREPLAY) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_STUDIO_COMMANDREPLAY {
         self.pointer
+    }
+    pub fn is_valid(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_CommandReplay_IsValid(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_CommandReplay_IsValid", error)),
+            }
+        }
+    }
+    pub fn get_system(&self) -> Result<Studio, Error> {
+        unsafe {
+            let mut system = null_mut();
+            match ffi::FMOD_Studio_CommandReplay_GetSystem(self.pointer, &mut system) {
+                ffi::FMOD_OK => Ok(Studio::from(system)),
+                error => Err(err_fmod!("FMOD_Studio_CommandReplay_GetSystem", error)),
+            }
+        }
+    }
+    pub fn get_length(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut length = f32::default();
+            match ffi::FMOD_Studio_CommandReplay_GetLength(self.pointer, &mut length) {
+                ffi::FMOD_OK => Ok(length),
+                error => Err(err_fmod!("FMOD_Studio_CommandReplay_GetLength", error)),
+            }
+        }
+    }
+    pub fn get_command_count(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_CommandReplay_GetCommandCount(self.pointer, &mut count) {
+                ffi::FMOD_OK => Ok(count),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_CommandReplay_GetCommandCount",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_command_info(&self, commandindex: i32) -> Result<CommandInfo, Error> {
+        unsafe {
+            let mut info = ffi::FMOD_STUDIO_COMMAND_INFO::default();
+            match ffi::FMOD_Studio_CommandReplay_GetCommandInfo(
+                self.pointer,
+                commandindex,
+                &mut info,
+            ) {
+                ffi::FMOD_OK => Ok(CommandInfo::from(info)?),
+                error => Err(err_fmod!("FMOD_Studio_CommandReplay_GetCommandInfo", error)),
+            }
+        }
+    }
+    pub fn get_command_string(&self, commandindex: i32, length: i32) -> Result<String, Error> {
+        unsafe {
+            let buffer = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            match ffi::FMOD_Studio_CommandReplay_GetCommandString(
+                self.pointer,
+                commandindex,
+                buffer,
+                length,
+            ) {
+                ffi::FMOD_OK => Ok(CString::from_raw(buffer)
+                    .into_string()
+                    .map_err(Error::String)?),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_CommandReplay_GetCommandString",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_command_at_time(&self, time: f32) -> Result<i32, Error> {
+        unsafe {
+            let mut commandindex = i32::default();
+            match ffi::FMOD_Studio_CommandReplay_GetCommandAtTime(
+                self.pointer,
+                time,
+                &mut commandindex,
+            ) {
+                ffi::FMOD_OK => Ok(commandindex),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_CommandReplay_GetCommandAtTime",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn set_bank_path(&self, bank_path: &str) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_CommandReplay_SetBankPath(
+                self.pointer,
+                bank_path.as_ptr().cast(),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_CommandReplay_SetBankPath", error)),
+            }
+        }
+    }
+    pub fn start(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_CommandReplay_Start(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_CommandReplay_Start", error)),
+            }
+        }
+    }
+    pub fn stop(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_CommandReplay_Stop(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_CommandReplay_Stop", error)),
+            }
+        }
+    }
+    pub fn seek_to_time(&self, time: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_CommandReplay_SeekToTime(self.pointer, time) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_CommandReplay_SeekToTime", error)),
+            }
+        }
+    }
+    pub fn seek_to_command(&self, commandindex: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_CommandReplay_SeekToCommand(self.pointer, commandindex) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_CommandReplay_SeekToCommand", error)),
+            }
+        }
+    }
+    pub fn get_paused(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut paused = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Studio_CommandReplay_GetPaused(self.pointer, &mut paused) {
+                ffi::FMOD_OK => Ok(to_bool!(paused)),
+                error => Err(err_fmod!("FMOD_Studio_CommandReplay_GetPaused", error)),
+            }
+        }
+    }
+    pub fn set_paused(&self, paused: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_CommandReplay_SetPaused(self.pointer, from_bool!(paused)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_CommandReplay_SetPaused", error)),
+            }
+        }
+    }
+    pub fn get_playback_state(&self) -> Result<PlaybackState, Error> {
+        unsafe {
+            let mut state = ffi::FMOD_STUDIO_PLAYBACK_STATE::default();
+            match ffi::FMOD_Studio_CommandReplay_GetPlaybackState(self.pointer, &mut state) {
+                ffi::FMOD_OK => Ok(PlaybackState::from(state)?),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_CommandReplay_GetPlaybackState",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_current_command(&self) -> Result<(i32, f32), Error> {
+        unsafe {
+            let mut commandindex = i32::default();
+            let mut currenttime = f32::default();
+            match ffi::FMOD_Studio_CommandReplay_GetCurrentCommand(
+                self.pointer,
+                &mut commandindex,
+                &mut currenttime,
+            ) {
+                ffi::FMOD_OK => Ok((commandindex, currenttime)),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_CommandReplay_GetCurrentCommand",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn release(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_CommandReplay_Release(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_CommandReplay_Release", error)),
+            }
+        }
+    }
+    pub fn set_frame_callback(
+        &self,
+        callback: ffi::FMOD_STUDIO_COMMANDREPLAY_FRAME_CALLBACK,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_CommandReplay_SetFrameCallback(self.pointer, callback) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_CommandReplay_SetFrameCallback",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn set_load_bank_callback(
+        &self,
+        callback: ffi::FMOD_STUDIO_COMMANDREPLAY_LOAD_BANK_CALLBACK,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_CommandReplay_SetLoadBankCallback(self.pointer, callback) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_CommandReplay_SetLoadBankCallback",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn set_create_instance_callback(
+        &self,
+        callback: ffi::FMOD_STUDIO_COMMANDREPLAY_CREATE_INSTANCE_CALLBACK,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_CommandReplay_SetCreateInstanceCallback(self.pointer, callback) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_CommandReplay_SetCreateInstanceCallback",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_user_data(&self) -> Result<*mut c_void, Error> {
+        unsafe {
+            let mut userdata = null_mut();
+            match ffi::FMOD_Studio_CommandReplay_GetUserData(self.pointer, &mut userdata) {
+                ffi::FMOD_OK => Ok(userdata),
+                error => Err(err_fmod!("FMOD_Studio_CommandReplay_GetUserData", error)),
+            }
+        }
+    }
+    pub fn set_user_data(&self, userdata: *mut c_void) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_CommandReplay_SetUserData(self.pointer, userdata) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_CommandReplay_SetUserData", error)),
+            }
+        }
     }
 }
 
@@ -5884,11 +9631,478 @@ pub struct EventDescription {
 }
 
 impl EventDescription {
-    pub fn from_pointer(pointer: *mut ffi::FMOD_STUDIO_EVENTDESCRIPTION) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_STUDIO_EVENTDESCRIPTION) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_STUDIO_EVENTDESCRIPTION {
         self.pointer
+    }
+    pub fn is_valid(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventDescription_IsValid(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_EventDescription_IsValid", error)),
+            }
+        }
+    }
+    pub fn get_id(&self) -> Result<Guid, Error> {
+        unsafe {
+            let mut id = ffi::FMOD_GUID::default();
+            match ffi::FMOD_Studio_EventDescription_GetID(self.pointer, &mut id) {
+                ffi::FMOD_OK => Ok(Guid::from(id)?),
+                error => Err(err_fmod!("FMOD_Studio_EventDescription_GetID", error)),
+            }
+        }
+    }
+    pub fn get_path(&self, size: i32) -> Result<(String, i32), Error> {
+        unsafe {
+            let path = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut retrieved = i32::default();
+            match ffi::FMOD_Studio_EventDescription_GetPath(
+                self.pointer,
+                path,
+                size,
+                &mut retrieved,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    CString::from_raw(path)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    retrieved,
+                )),
+                error => Err(err_fmod!("FMOD_Studio_EventDescription_GetPath", error)),
+            }
+        }
+    }
+    pub fn get_parameter_description_count(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_EventDescription_GetParameterDescriptionCount(
+                self.pointer,
+                &mut count,
+            ) {
+                ffi::FMOD_OK => Ok(count),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_GetParameterDescriptionCount",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_parameter_description_by_index(
+        &self,
+        index: i32,
+    ) -> Result<ParameterDescription, Error> {
+        unsafe {
+            let mut parameter = ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION::default();
+            match ffi::FMOD_Studio_EventDescription_GetParameterDescriptionByIndex(
+                self.pointer,
+                index,
+                &mut parameter,
+            ) {
+                ffi::FMOD_OK => Ok(ParameterDescription::from(parameter)?),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_GetParameterDescriptionByIndex",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_parameter_description_by_name(
+        &self,
+        name: &str,
+    ) -> Result<ParameterDescription, Error> {
+        unsafe {
+            let mut parameter = ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION::default();
+            match ffi::FMOD_Studio_EventDescription_GetParameterDescriptionByName(
+                self.pointer,
+                name.as_ptr().cast(),
+                &mut parameter,
+            ) {
+                ffi::FMOD_OK => Ok(ParameterDescription::from(parameter)?),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_GetParameterDescriptionByName",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_parameter_description_by_id(
+        &self,
+        id: ParameterId,
+    ) -> Result<ParameterDescription, Error> {
+        unsafe {
+            let mut parameter = ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION::default();
+            match ffi::FMOD_Studio_EventDescription_GetParameterDescriptionByID(
+                self.pointer,
+                id.into(),
+                &mut parameter,
+            ) {
+                ffi::FMOD_OK => Ok(ParameterDescription::from(parameter)?),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_GetParameterDescriptionByID",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_parameter_label_by_index(
+        &self,
+        index: i32,
+        labelindex: i32,
+        size: i32,
+    ) -> Result<(String, i32), Error> {
+        unsafe {
+            let label = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut retrieved = i32::default();
+            match ffi::FMOD_Studio_EventDescription_GetParameterLabelByIndex(
+                self.pointer,
+                index,
+                labelindex,
+                label,
+                size,
+                &mut retrieved,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    CString::from_raw(label)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    retrieved,
+                )),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_GetParameterLabelByIndex",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_parameter_label_by_name(
+        &self,
+        name: &str,
+        labelindex: i32,
+        size: i32,
+    ) -> Result<(String, i32), Error> {
+        unsafe {
+            let label = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut retrieved = i32::default();
+            match ffi::FMOD_Studio_EventDescription_GetParameterLabelByName(
+                self.pointer,
+                name.as_ptr().cast(),
+                labelindex,
+                label,
+                size,
+                &mut retrieved,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    CString::from_raw(label)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    retrieved,
+                )),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_GetParameterLabelByName",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_parameter_label_by_id(
+        &self,
+        id: ParameterId,
+        labelindex: i32,
+        size: i32,
+    ) -> Result<(String, i32), Error> {
+        unsafe {
+            let label = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut retrieved = i32::default();
+            match ffi::FMOD_Studio_EventDescription_GetParameterLabelByID(
+                self.pointer,
+                id.into(),
+                labelindex,
+                label,
+                size,
+                &mut retrieved,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    CString::from_raw(label)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    retrieved,
+                )),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_GetParameterLabelByID",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_user_property_count(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_EventDescription_GetUserPropertyCount(self.pointer, &mut count) {
+                ffi::FMOD_OK => Ok(count),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_GetUserPropertyCount",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_user_property_by_index(&self, index: i32) -> Result<UserProperty, Error> {
+        unsafe {
+            let mut property = ffi::FMOD_STUDIO_USER_PROPERTY::default();
+            match ffi::FMOD_Studio_EventDescription_GetUserPropertyByIndex(
+                self.pointer,
+                index,
+                &mut property,
+            ) {
+                ffi::FMOD_OK => Ok(UserProperty::from(property)?),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_GetUserPropertyByIndex",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_user_property(&self, name: &str) -> Result<UserProperty, Error> {
+        unsafe {
+            let mut property = ffi::FMOD_STUDIO_USER_PROPERTY::default();
+            match ffi::FMOD_Studio_EventDescription_GetUserProperty(
+                self.pointer,
+                name.as_ptr().cast(),
+                &mut property,
+            ) {
+                ffi::FMOD_OK => Ok(UserProperty::from(property)?),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_GetUserProperty",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_length(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut length = i32::default();
+            match ffi::FMOD_Studio_EventDescription_GetLength(self.pointer, &mut length) {
+                ffi::FMOD_OK => Ok(length),
+                error => Err(err_fmod!("FMOD_Studio_EventDescription_GetLength", error)),
+            }
+        }
+    }
+    pub fn get_min_max_distance(&self) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut min = f32::default();
+            let mut max = f32::default();
+            match ffi::FMOD_Studio_EventDescription_GetMinMaxDistance(
+                self.pointer,
+                &mut min,
+                &mut max,
+            ) {
+                ffi::FMOD_OK => Ok((min, max)),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_GetMinMaxDistance",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_sound_size(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut size = f32::default();
+            match ffi::FMOD_Studio_EventDescription_GetSoundSize(self.pointer, &mut size) {
+                ffi::FMOD_OK => Ok(size),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_GetSoundSize",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn is_snapshot(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut snapshot = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Studio_EventDescription_IsSnapshot(self.pointer, &mut snapshot) {
+                ffi::FMOD_OK => Ok(to_bool!(snapshot)),
+                error => Err(err_fmod!("FMOD_Studio_EventDescription_IsSnapshot", error)),
+            }
+        }
+    }
+    pub fn is_oneshot(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut oneshot = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Studio_EventDescription_IsOneshot(self.pointer, &mut oneshot) {
+                ffi::FMOD_OK => Ok(to_bool!(oneshot)),
+                error => Err(err_fmod!("FMOD_Studio_EventDescription_IsOneshot", error)),
+            }
+        }
+    }
+    pub fn is_stream(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut is_stream = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Studio_EventDescription_IsStream(self.pointer, &mut is_stream) {
+                ffi::FMOD_OK => Ok(to_bool!(is_stream)),
+                error => Err(err_fmod!("FMOD_Studio_EventDescription_IsStream", error)),
+            }
+        }
+    }
+    pub fn is_3_d(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut is_3_d = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Studio_EventDescription_Is3D(self.pointer, &mut is_3_d) {
+                ffi::FMOD_OK => Ok(to_bool!(is_3_d)),
+                error => Err(err_fmod!("FMOD_Studio_EventDescription_Is3D", error)),
+            }
+        }
+    }
+    pub fn is_doppler_enabled(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut doppler = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Studio_EventDescription_IsDopplerEnabled(self.pointer, &mut doppler) {
+                ffi::FMOD_OK => Ok(to_bool!(doppler)),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_IsDopplerEnabled",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn has_sustain_point(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut sustain_point = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Studio_EventDescription_HasSustainPoint(
+                self.pointer,
+                &mut sustain_point,
+            ) {
+                ffi::FMOD_OK => Ok(to_bool!(sustain_point)),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_HasSustainPoint",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn create_instance(&self) -> Result<EventInstance, Error> {
+        unsafe {
+            let mut instance = null_mut();
+            match ffi::FMOD_Studio_EventDescription_CreateInstance(self.pointer, &mut instance) {
+                ffi::FMOD_OK => Ok(EventInstance::from(instance)),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_CreateInstance",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_instance_count(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_EventDescription_GetInstanceCount(self.pointer, &mut count) {
+                ffi::FMOD_OK => Ok(count),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_GetInstanceCount",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_instance_list(&self, capacity: i32) -> Result<(EventInstance, i32), Error> {
+        unsafe {
+            let mut array = null_mut();
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_EventDescription_GetInstanceList(
+                self.pointer,
+                &mut array,
+                capacity,
+                &mut count,
+            ) {
+                ffi::FMOD_OK => Ok((EventInstance::from(array), count)),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_GetInstanceList",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn load_sample_data(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventDescription_LoadSampleData(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_LoadSampleData",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn unload_sample_data(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventDescription_UnloadSampleData(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_UnloadSampleData",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_sample_loading_state(&self) -> Result<LoadingState, Error> {
+        unsafe {
+            let mut state = ffi::FMOD_STUDIO_LOADING_STATE::default();
+            match ffi::FMOD_Studio_EventDescription_GetSampleLoadingState(self.pointer, &mut state)
+            {
+                ffi::FMOD_OK => Ok(LoadingState::from(state)?),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_GetSampleLoadingState",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn release_all_instances(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventDescription_ReleaseAllInstances(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventDescription_ReleaseAllInstances",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn set_callback(
+        &self,
+        callback: ffi::FMOD_STUDIO_EVENT_CALLBACK,
+        callbackmask: ffi::FMOD_STUDIO_EVENT_CALLBACK_TYPE,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventDescription_SetCallback(
+                self.pointer,
+                callback,
+                callbackmask,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_EventDescription_SetCallback", error)),
+            }
+        }
+    }
+    pub fn get_user_data(&self) -> Result<*mut c_void, Error> {
+        unsafe {
+            let mut userdata = null_mut();
+            match ffi::FMOD_Studio_EventDescription_GetUserData(self.pointer, &mut userdata) {
+                ffi::FMOD_OK => Ok(userdata),
+                error => Err(err_fmod!("FMOD_Studio_EventDescription_GetUserData", error)),
+            }
+        }
+    }
+    pub fn set_user_data(&self, userdata: *mut c_void) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventDescription_SetUserData(self.pointer, userdata) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_EventDescription_SetUserData", error)),
+            }
+        }
     }
 }
 
@@ -5898,11 +10112,467 @@ pub struct EventInstance {
 }
 
 impl EventInstance {
-    pub fn from_pointer(pointer: *mut ffi::FMOD_STUDIO_EVENTINSTANCE) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_STUDIO_EVENTINSTANCE) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_STUDIO_EVENTINSTANCE {
         self.pointer
+    }
+    pub fn is_valid(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_IsValid(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_IsValid", error)),
+            }
+        }
+    }
+    pub fn get_description(&self) -> Result<EventDescription, Error> {
+        unsafe {
+            let mut description = null_mut();
+            match ffi::FMOD_Studio_EventInstance_GetDescription(self.pointer, &mut description) {
+                ffi::FMOD_OK => Ok(EventDescription::from(description)),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_GetDescription", error)),
+            }
+        }
+    }
+    pub fn get_volume(&self) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut volume = f32::default();
+            let mut finalvolume = f32::default();
+            match ffi::FMOD_Studio_EventInstance_GetVolume(
+                self.pointer,
+                &mut volume,
+                &mut finalvolume,
+            ) {
+                ffi::FMOD_OK => Ok((volume, finalvolume)),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_GetVolume", error)),
+            }
+        }
+    }
+    pub fn set_volume(&self, volume: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_SetVolume(self.pointer, volume) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_SetVolume", error)),
+            }
+        }
+    }
+    pub fn get_pitch(&self) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut pitch = f32::default();
+            let mut finalpitch = f32::default();
+            match ffi::FMOD_Studio_EventInstance_GetPitch(self.pointer, &mut pitch, &mut finalpitch)
+            {
+                ffi::FMOD_OK => Ok((pitch, finalpitch)),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_GetPitch", error)),
+            }
+        }
+    }
+    pub fn set_pitch(&self, pitch: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_SetPitch(self.pointer, pitch) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_SetPitch", error)),
+            }
+        }
+    }
+    pub fn get_3_d_attributes(&self) -> Result<Attributes3d, Error> {
+        unsafe {
+            let mut attributes = ffi::FMOD_3D_ATTRIBUTES::default();
+            match ffi::FMOD_Studio_EventInstance_Get3DAttributes(self.pointer, &mut attributes) {
+                ffi::FMOD_OK => Ok(Attributes3d::from(attributes)?),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_Get3DAttributes",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn set_3_d_attributes(&self) -> Result<Attributes3d, Error> {
+        unsafe {
+            let mut attributes = ffi::FMOD_3D_ATTRIBUTES::default();
+            match ffi::FMOD_Studio_EventInstance_Set3DAttributes(self.pointer, &mut attributes) {
+                ffi::FMOD_OK => Ok(Attributes3d::from(attributes)?),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_Set3DAttributes",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_listener_mask(&self) -> Result<u32, Error> {
+        unsafe {
+            let mut mask = u32::default();
+            match ffi::FMOD_Studio_EventInstance_GetListenerMask(self.pointer, &mut mask) {
+                ffi::FMOD_OK => Ok(mask),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_GetListenerMask",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn set_listener_mask(&self, mask: u32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_SetListenerMask(self.pointer, mask) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_SetListenerMask",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_property(&self, index: EventProperty) -> Result<f32, Error> {
+        unsafe {
+            let mut value = f32::default();
+            match ffi::FMOD_Studio_EventInstance_GetProperty(self.pointer, index.into(), &mut value)
+            {
+                ffi::FMOD_OK => Ok(value),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_GetProperty", error)),
+            }
+        }
+    }
+    pub fn set_property(&self, index: EventProperty, value: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_SetProperty(self.pointer, index.into(), value) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_SetProperty", error)),
+            }
+        }
+    }
+    pub fn get_reverb_level(&self, index: i32) -> Result<f32, Error> {
+        unsafe {
+            let mut level = f32::default();
+            match ffi::FMOD_Studio_EventInstance_GetReverbLevel(self.pointer, index, &mut level) {
+                ffi::FMOD_OK => Ok(level),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_GetReverbLevel", error)),
+            }
+        }
+    }
+    pub fn set_reverb_level(&self, index: i32, level: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_SetReverbLevel(self.pointer, index, level) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_SetReverbLevel", error)),
+            }
+        }
+    }
+    pub fn get_paused(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut paused = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Studio_EventInstance_GetPaused(self.pointer, &mut paused) {
+                ffi::FMOD_OK => Ok(to_bool!(paused)),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_GetPaused", error)),
+            }
+        }
+    }
+    pub fn set_paused(&self, paused: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_SetPaused(self.pointer, from_bool!(paused)) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_SetPaused", error)),
+            }
+        }
+    }
+    pub fn start(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_Start(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_Start", error)),
+            }
+        }
+    }
+    pub fn stop(&self, mode: StopMode) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_Stop(self.pointer, mode.into()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_Stop", error)),
+            }
+        }
+    }
+    pub fn get_timeline_position(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut position = i32::default();
+            match ffi::FMOD_Studio_EventInstance_GetTimelinePosition(self.pointer, &mut position) {
+                ffi::FMOD_OK => Ok(position),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_GetTimelinePosition",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn set_timeline_position(&self, position: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_SetTimelinePosition(self.pointer, position) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_SetTimelinePosition",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_playback_state(&self) -> Result<PlaybackState, Error> {
+        unsafe {
+            let mut state = ffi::FMOD_STUDIO_PLAYBACK_STATE::default();
+            match ffi::FMOD_Studio_EventInstance_GetPlaybackState(self.pointer, &mut state) {
+                ffi::FMOD_OK => Ok(PlaybackState::from(state)?),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_GetPlaybackState",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_channel_group(&self) -> Result<ChannelGroup, Error> {
+        unsafe {
+            let mut group = null_mut();
+            match ffi::FMOD_Studio_EventInstance_GetChannelGroup(self.pointer, &mut group) {
+                ffi::FMOD_OK => Ok(ChannelGroup::from(group)),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_GetChannelGroup",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_min_max_distance(&self) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut min = f32::default();
+            let mut max = f32::default();
+            match ffi::FMOD_Studio_EventInstance_GetMinMaxDistance(self.pointer, &mut min, &mut max)
+            {
+                ffi::FMOD_OK => Ok((min, max)),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_GetMinMaxDistance",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn release(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_Release(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_Release", error)),
+            }
+        }
+    }
+    pub fn is_virtual(&self) -> Result<bool, Error> {
+        unsafe {
+            let mut virtualstate = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_Studio_EventInstance_IsVirtual(self.pointer, &mut virtualstate) {
+                ffi::FMOD_OK => Ok(to_bool!(virtualstate)),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_IsVirtual", error)),
+            }
+        }
+    }
+    pub fn get_parameter_by_name(&self, name: &str) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut value = f32::default();
+            let mut finalvalue = f32::default();
+            match ffi::FMOD_Studio_EventInstance_GetParameterByName(
+                self.pointer,
+                name.as_ptr().cast(),
+                &mut value,
+                &mut finalvalue,
+            ) {
+                ffi::FMOD_OK => Ok((value, finalvalue)),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_GetParameterByName",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn set_parameter_by_name(
+        &self,
+        name: &str,
+        value: f32,
+        ignoreseekspeed: bool,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_SetParameterByName(
+                self.pointer,
+                name.as_ptr().cast(),
+                value,
+                from_bool!(ignoreseekspeed),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_SetParameterByName",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn set_parameter_by_name_with_label(
+        &self,
+        name: &str,
+        label: &str,
+        ignoreseekspeed: bool,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_SetParameterByNameWithLabel(
+                self.pointer,
+                name.as_ptr().cast(),
+                label.as_ptr().cast(),
+                from_bool!(ignoreseekspeed),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_SetParameterByNameWithLabel",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_parameter_by_id(&self, id: ParameterId) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut value = f32::default();
+            let mut finalvalue = f32::default();
+            match ffi::FMOD_Studio_EventInstance_GetParameterByID(
+                self.pointer,
+                id.into(),
+                &mut value,
+                &mut finalvalue,
+            ) {
+                ffi::FMOD_OK => Ok((value, finalvalue)),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_GetParameterByID",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn set_parameter_by_id(
+        &self,
+        id: ParameterId,
+        value: f32,
+        ignoreseekspeed: bool,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_SetParameterByID(
+                self.pointer,
+                id.into(),
+                value,
+                from_bool!(ignoreseekspeed),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_SetParameterByID",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn set_parameter_by_id_with_label(
+        &self,
+        id: ParameterId,
+        label: &str,
+        ignoreseekspeed: bool,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_SetParameterByIDWithLabel(
+                self.pointer,
+                id.into(),
+                label.as_ptr().cast(),
+                from_bool!(ignoreseekspeed),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_SetParameterByIDWithLabel",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn set_parameters_by_i_ds(
+        &self,
+        ids: ParameterId,
+        count: i32,
+        ignoreseekspeed: bool,
+    ) -> Result<f32, Error> {
+        unsafe {
+            let mut values = f32::default();
+            match ffi::FMOD_Studio_EventInstance_SetParametersByIDs(
+                self.pointer,
+                &ids.into(),
+                &mut values,
+                count,
+                from_bool!(ignoreseekspeed),
+            ) {
+                ffi::FMOD_OK => Ok(values),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_EventInstance_SetParametersByIDs",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn key_off(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_KeyOff(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_KeyOff", error)),
+            }
+        }
+    }
+    pub fn set_callback(
+        &self,
+        callback: ffi::FMOD_STUDIO_EVENT_CALLBACK,
+        callbackmask: ffi::FMOD_STUDIO_EVENT_CALLBACK_TYPE,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_SetCallback(self.pointer, callback, callbackmask) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_SetCallback", error)),
+            }
+        }
+    }
+    pub fn get_user_data(&self) -> Result<*mut c_void, Error> {
+        unsafe {
+            let mut userdata = null_mut();
+            match ffi::FMOD_Studio_EventInstance_GetUserData(self.pointer, &mut userdata) {
+                ffi::FMOD_OK => Ok(userdata),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_GetUserData", error)),
+            }
+        }
+    }
+    pub fn set_user_data(&self, userdata: *mut c_void) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_EventInstance_SetUserData(self.pointer, userdata) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_SetUserData", error)),
+            }
+        }
+    }
+    pub fn get_cpu_usage(&self) -> Result<(u32, u32), Error> {
+        unsafe {
+            let mut exclusive = u32::default();
+            let mut inclusive = u32::default();
+            match ffi::FMOD_Studio_EventInstance_GetCPUUsage(
+                self.pointer,
+                &mut exclusive,
+                &mut inclusive,
+            ) {
+                ffi::FMOD_OK => Ok((exclusive, inclusive)),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_GetCPUUsage", error)),
+            }
+        }
+    }
+    pub fn get_memory_usage(&self) -> Result<MemoryUsage, Error> {
+        unsafe {
+            let mut memoryusage = ffi::FMOD_STUDIO_MEMORY_USAGE::default();
+            match ffi::FMOD_Studio_EventInstance_GetMemoryUsage(self.pointer, &mut memoryusage) {
+                ffi::FMOD_OK => Ok(MemoryUsage::from(memoryusage)?),
+                error => Err(err_fmod!("FMOD_Studio_EventInstance_GetMemoryUsage", error)),
+            }
+        }
     }
 }
 
@@ -5912,20 +10582,770 @@ pub struct Studio {
 }
 
 impl Studio {
-    pub fn create() -> Result<Self, Error> {
-        let mut pointer = null_mut();
-        let result = unsafe { ffi::FMOD_Studio_System_Create(&mut pointer, ffi::FMOD_VERSION) };
-        if result == ffi::FMOD_OK {
-            Ok(Self { pointer })
-        } else {
-            Err(err_fmod!("FMOD_Studio_System_Create", result))
-        }
-    }
-    pub fn from_pointer(pointer: *mut ffi::FMOD_STUDIO_SYSTEM) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_STUDIO_SYSTEM) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_STUDIO_SYSTEM {
         self.pointer
+    }
+    pub fn create(headerversion: u32) -> Result<Studio, Error> {
+        unsafe {
+            let mut system = null_mut();
+            match ffi::FMOD_Studio_System_Create(&mut system, headerversion) {
+                ffi::FMOD_OK => Ok(Studio::from(system)),
+                error => Err(err_fmod!("FMOD_Studio_System_Create", error)),
+            }
+        }
+    }
+    pub fn is_valid(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_IsValid(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_IsValid", error)),
+            }
+        }
+    }
+    pub fn set_advanced_settings(&self) -> Result<StudioAdvancedSettings, Error> {
+        unsafe {
+            let mut settings = ffi::FMOD_STUDIO_ADVANCEDSETTINGS::default();
+            match ffi::FMOD_Studio_System_SetAdvancedSettings(self.pointer, &mut settings) {
+                ffi::FMOD_OK => Ok(StudioAdvancedSettings::from(settings)?),
+                error => Err(err_fmod!("FMOD_Studio_System_SetAdvancedSettings", error)),
+            }
+        }
+    }
+    pub fn get_advanced_settings(&self) -> Result<StudioAdvancedSettings, Error> {
+        unsafe {
+            let mut settings = ffi::FMOD_STUDIO_ADVANCEDSETTINGS::default();
+            match ffi::FMOD_Studio_System_GetAdvancedSettings(self.pointer, &mut settings) {
+                ffi::FMOD_OK => Ok(StudioAdvancedSettings::from(settings)?),
+                error => Err(err_fmod!("FMOD_Studio_System_GetAdvancedSettings", error)),
+            }
+        }
+    }
+    pub fn initialize(
+        &self,
+        maxchannels: i32,
+        studioflags: ffi::FMOD_STUDIO_INITFLAGS,
+        flags: ffi::FMOD_INITFLAGS,
+        extradriverdata: *mut c_void,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_Initialize(
+                self.pointer,
+                maxchannels,
+                studioflags,
+                flags,
+                extradriverdata,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_Initialize", error)),
+            }
+        }
+    }
+    pub fn release(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_Release(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_Release", error)),
+            }
+        }
+    }
+    pub fn update(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_Update(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_Update", error)),
+            }
+        }
+    }
+    pub fn get_core_system(&self) -> Result<System, Error> {
+        unsafe {
+            let mut coresystem = null_mut();
+            match ffi::FMOD_Studio_System_GetCoreSystem(self.pointer, &mut coresystem) {
+                ffi::FMOD_OK => Ok(System::from(coresystem)),
+                error => Err(err_fmod!("FMOD_Studio_System_GetCoreSystem", error)),
+            }
+        }
+    }
+    pub fn get_event(&self, path_or_id: &str) -> Result<EventDescription, Error> {
+        unsafe {
+            let mut event = null_mut();
+            match ffi::FMOD_Studio_System_GetEvent(
+                self.pointer,
+                path_or_id.as_ptr().cast(),
+                &mut event,
+            ) {
+                ffi::FMOD_OK => Ok(EventDescription::from(event)),
+                error => Err(err_fmod!("FMOD_Studio_System_GetEvent", error)),
+            }
+        }
+    }
+    pub fn get_bus(&self, path_or_id: &str) -> Result<Bus, Error> {
+        unsafe {
+            let mut bus = null_mut();
+            match ffi::FMOD_Studio_System_GetBus(self.pointer, path_or_id.as_ptr().cast(), &mut bus)
+            {
+                ffi::FMOD_OK => Ok(Bus::from(bus)),
+                error => Err(err_fmod!("FMOD_Studio_System_GetBus", error)),
+            }
+        }
+    }
+    pub fn get_vca(&self, path_or_id: &str) -> Result<Vca, Error> {
+        unsafe {
+            let mut vca = null_mut();
+            match ffi::FMOD_Studio_System_GetVCA(self.pointer, path_or_id.as_ptr().cast(), &mut vca)
+            {
+                ffi::FMOD_OK => Ok(Vca::from(vca)),
+                error => Err(err_fmod!("FMOD_Studio_System_GetVCA", error)),
+            }
+        }
+    }
+    pub fn get_bank(&self, path_or_id: &str) -> Result<Bank, Error> {
+        unsafe {
+            let mut bank = null_mut();
+            match ffi::FMOD_Studio_System_GetBank(
+                self.pointer,
+                path_or_id.as_ptr().cast(),
+                &mut bank,
+            ) {
+                ffi::FMOD_OK => Ok(Bank::from(bank)),
+                error => Err(err_fmod!("FMOD_Studio_System_GetBank", error)),
+            }
+        }
+    }
+    pub fn get_event_by_id(&self, id: Guid) -> Result<EventDescription, Error> {
+        unsafe {
+            let mut event = null_mut();
+            match ffi::FMOD_Studio_System_GetEventByID(self.pointer, &id.into(), &mut event) {
+                ffi::FMOD_OK => Ok(EventDescription::from(event)),
+                error => Err(err_fmod!("FMOD_Studio_System_GetEventByID", error)),
+            }
+        }
+    }
+    pub fn get_bus_by_id(&self, id: Guid) -> Result<Bus, Error> {
+        unsafe {
+            let mut bus = null_mut();
+            match ffi::FMOD_Studio_System_GetBusByID(self.pointer, &id.into(), &mut bus) {
+                ffi::FMOD_OK => Ok(Bus::from(bus)),
+                error => Err(err_fmod!("FMOD_Studio_System_GetBusByID", error)),
+            }
+        }
+    }
+    pub fn get_vca_by_id(&self, id: Guid) -> Result<Vca, Error> {
+        unsafe {
+            let mut vca = null_mut();
+            match ffi::FMOD_Studio_System_GetVCAByID(self.pointer, &id.into(), &mut vca) {
+                ffi::FMOD_OK => Ok(Vca::from(vca)),
+                error => Err(err_fmod!("FMOD_Studio_System_GetVCAByID", error)),
+            }
+        }
+    }
+    pub fn get_bank_by_id(&self, id: Guid) -> Result<Bank, Error> {
+        unsafe {
+            let mut bank = null_mut();
+            match ffi::FMOD_Studio_System_GetBankByID(self.pointer, &id.into(), &mut bank) {
+                ffi::FMOD_OK => Ok(Bank::from(bank)),
+                error => Err(err_fmod!("FMOD_Studio_System_GetBankByID", error)),
+            }
+        }
+    }
+    pub fn get_sound_info(&self, key: &str) -> Result<SoundInfo, Error> {
+        unsafe {
+            let mut info = ffi::FMOD_STUDIO_SOUND_INFO::default();
+            match ffi::FMOD_Studio_System_GetSoundInfo(self.pointer, key.as_ptr().cast(), &mut info)
+            {
+                ffi::FMOD_OK => Ok(SoundInfo::from(info)?),
+                error => Err(err_fmod!("FMOD_Studio_System_GetSoundInfo", error)),
+            }
+        }
+    }
+    pub fn get_parameter_description_by_name(
+        &self,
+        name: &str,
+    ) -> Result<ParameterDescription, Error> {
+        unsafe {
+            let mut parameter = ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION::default();
+            match ffi::FMOD_Studio_System_GetParameterDescriptionByName(
+                self.pointer,
+                name.as_ptr().cast(),
+                &mut parameter,
+            ) {
+                ffi::FMOD_OK => Ok(ParameterDescription::from(parameter)?),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_System_GetParameterDescriptionByName",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_parameter_description_by_id(
+        &self,
+        id: ParameterId,
+    ) -> Result<ParameterDescription, Error> {
+        unsafe {
+            let mut parameter = ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION::default();
+            match ffi::FMOD_Studio_System_GetParameterDescriptionByID(
+                self.pointer,
+                id.into(),
+                &mut parameter,
+            ) {
+                ffi::FMOD_OK => Ok(ParameterDescription::from(parameter)?),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_System_GetParameterDescriptionByID",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_parameter_label_by_name(
+        &self,
+        name: &str,
+        labelindex: i32,
+        size: i32,
+    ) -> Result<(String, i32), Error> {
+        unsafe {
+            let label = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut retrieved = i32::default();
+            match ffi::FMOD_Studio_System_GetParameterLabelByName(
+                self.pointer,
+                name.as_ptr().cast(),
+                labelindex,
+                label,
+                size,
+                &mut retrieved,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    CString::from_raw(label)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    retrieved,
+                )),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_System_GetParameterLabelByName",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_parameter_label_by_id(
+        &self,
+        id: ParameterId,
+        labelindex: i32,
+        size: i32,
+    ) -> Result<(String, i32), Error> {
+        unsafe {
+            let label = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut retrieved = i32::default();
+            match ffi::FMOD_Studio_System_GetParameterLabelByID(
+                self.pointer,
+                id.into(),
+                labelindex,
+                label,
+                size,
+                &mut retrieved,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    CString::from_raw(label)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    retrieved,
+                )),
+                error => Err(err_fmod!("FMOD_Studio_System_GetParameterLabelByID", error)),
+            }
+        }
+    }
+    pub fn get_parameter_by_id(&self, id: ParameterId) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut value = f32::default();
+            let mut finalvalue = f32::default();
+            match ffi::FMOD_Studio_System_GetParameterByID(
+                self.pointer,
+                id.into(),
+                &mut value,
+                &mut finalvalue,
+            ) {
+                ffi::FMOD_OK => Ok((value, finalvalue)),
+                error => Err(err_fmod!("FMOD_Studio_System_GetParameterByID", error)),
+            }
+        }
+    }
+    pub fn set_parameter_by_id(
+        &self,
+        id: ParameterId,
+        value: f32,
+        ignoreseekspeed: bool,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_SetParameterByID(
+                self.pointer,
+                id.into(),
+                value,
+                from_bool!(ignoreseekspeed),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_SetParameterByID", error)),
+            }
+        }
+    }
+    pub fn set_parameter_by_id_with_label(
+        &self,
+        id: ParameterId,
+        label: &str,
+        ignoreseekspeed: bool,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_SetParameterByIDWithLabel(
+                self.pointer,
+                id.into(),
+                label.as_ptr().cast(),
+                from_bool!(ignoreseekspeed),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_System_SetParameterByIDWithLabel",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn set_parameters_by_i_ds(
+        &self,
+        ids: ParameterId,
+        count: i32,
+        ignoreseekspeed: bool,
+    ) -> Result<f32, Error> {
+        unsafe {
+            let mut values = f32::default();
+            match ffi::FMOD_Studio_System_SetParametersByIDs(
+                self.pointer,
+                &ids.into(),
+                &mut values,
+                count,
+                from_bool!(ignoreseekspeed),
+            ) {
+                ffi::FMOD_OK => Ok(values),
+                error => Err(err_fmod!("FMOD_Studio_System_SetParametersByIDs", error)),
+            }
+        }
+    }
+    pub fn get_parameter_by_name(&self, name: &str) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut value = f32::default();
+            let mut finalvalue = f32::default();
+            match ffi::FMOD_Studio_System_GetParameterByName(
+                self.pointer,
+                name.as_ptr().cast(),
+                &mut value,
+                &mut finalvalue,
+            ) {
+                ffi::FMOD_OK => Ok((value, finalvalue)),
+                error => Err(err_fmod!("FMOD_Studio_System_GetParameterByName", error)),
+            }
+        }
+    }
+    pub fn set_parameter_by_name(
+        &self,
+        name: &str,
+        value: f32,
+        ignoreseekspeed: bool,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_SetParameterByName(
+                self.pointer,
+                name.as_ptr().cast(),
+                value,
+                from_bool!(ignoreseekspeed),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_SetParameterByName", error)),
+            }
+        }
+    }
+    pub fn set_parameter_by_name_with_label(
+        &self,
+        name: &str,
+        label: &str,
+        ignoreseekspeed: bool,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_SetParameterByNameWithLabel(
+                self.pointer,
+                name.as_ptr().cast(),
+                label.as_ptr().cast(),
+                from_bool!(ignoreseekspeed),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_System_SetParameterByNameWithLabel",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn lookup_id(&self, path: &str) -> Result<Guid, Error> {
+        unsafe {
+            let mut id = ffi::FMOD_GUID::default();
+            match ffi::FMOD_Studio_System_LookupID(self.pointer, path.as_ptr().cast(), &mut id) {
+                ffi::FMOD_OK => Ok(Guid::from(id)?),
+                error => Err(err_fmod!("FMOD_Studio_System_LookupID", error)),
+            }
+        }
+    }
+    pub fn lookup_path(&self, id: Guid, size: i32) -> Result<(String, i32), Error> {
+        unsafe {
+            let path = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut retrieved = i32::default();
+            match ffi::FMOD_Studio_System_LookupPath(
+                self.pointer,
+                &id.into(),
+                path,
+                size,
+                &mut retrieved,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    CString::from_raw(path)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    retrieved,
+                )),
+                error => Err(err_fmod!("FMOD_Studio_System_LookupPath", error)),
+            }
+        }
+    }
+    pub fn get_num_listeners(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numlisteners = i32::default();
+            match ffi::FMOD_Studio_System_GetNumListeners(self.pointer, &mut numlisteners) {
+                ffi::FMOD_OK => Ok(numlisteners),
+                error => Err(err_fmod!("FMOD_Studio_System_GetNumListeners", error)),
+            }
+        }
+    }
+    pub fn set_num_listeners(&self, numlisteners: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_SetNumListeners(self.pointer, numlisteners) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_SetNumListeners", error)),
+            }
+        }
+    }
+    pub fn get_listener_attributes(&self, index: i32) -> Result<(Attributes3d, Vector), Error> {
+        unsafe {
+            let mut attributes = ffi::FMOD_3D_ATTRIBUTES::default();
+            let mut attenuationposition = ffi::FMOD_VECTOR::default();
+            match ffi::FMOD_Studio_System_GetListenerAttributes(
+                self.pointer,
+                index,
+                &mut attributes,
+                &mut attenuationposition,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    Attributes3d::from(attributes)?,
+                    Vector::from(attenuationposition)?,
+                )),
+                error => Err(err_fmod!("FMOD_Studio_System_GetListenerAttributes", error)),
+            }
+        }
+    }
+    pub fn set_listener_attributes(
+        &self,
+        index: i32,
+        attributes: Attributes3d,
+        attenuationposition: Vector,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_SetListenerAttributes(
+                self.pointer,
+                index,
+                &attributes.into(),
+                &attenuationposition.into(),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_SetListenerAttributes", error)),
+            }
+        }
+    }
+    pub fn get_listener_weight(&self, index: i32) -> Result<f32, Error> {
+        unsafe {
+            let mut weight = f32::default();
+            match ffi::FMOD_Studio_System_GetListenerWeight(self.pointer, index, &mut weight) {
+                ffi::FMOD_OK => Ok(weight),
+                error => Err(err_fmod!("FMOD_Studio_System_GetListenerWeight", error)),
+            }
+        }
+    }
+    pub fn set_listener_weight(&self, index: i32, weight: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_SetListenerWeight(self.pointer, index, weight) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_SetListenerWeight", error)),
+            }
+        }
+    }
+    pub fn load_bank_file(
+        &self,
+        filename: &str,
+        flags: ffi::FMOD_STUDIO_LOAD_BANK_FLAGS,
+    ) -> Result<Bank, Error> {
+        unsafe {
+            let mut bank = null_mut();
+            match ffi::FMOD_Studio_System_LoadBankFile(
+                self.pointer,
+                filename.as_ptr().cast(),
+                flags,
+                &mut bank,
+            ) {
+                ffi::FMOD_OK => Ok(Bank::from(bank)),
+                error => Err(err_fmod!("FMOD_Studio_System_LoadBankFile", error)),
+            }
+        }
+    }
+    pub fn load_bank_memory(
+        &self,
+        buffer: &str,
+        length: i32,
+        mode: LoadMemoryMode,
+        flags: ffi::FMOD_STUDIO_LOAD_BANK_FLAGS,
+    ) -> Result<Bank, Error> {
+        unsafe {
+            let mut bank = null_mut();
+            match ffi::FMOD_Studio_System_LoadBankMemory(
+                self.pointer,
+                buffer.as_ptr().cast(),
+                length,
+                mode.into(),
+                flags,
+                &mut bank,
+            ) {
+                ffi::FMOD_OK => Ok(Bank::from(bank)),
+                error => Err(err_fmod!("FMOD_Studio_System_LoadBankMemory", error)),
+            }
+        }
+    }
+    pub fn load_bank_custom(
+        &self,
+        info: BankInfo,
+        flags: ffi::FMOD_STUDIO_LOAD_BANK_FLAGS,
+    ) -> Result<Bank, Error> {
+        unsafe {
+            let mut bank = null_mut();
+            match ffi::FMOD_Studio_System_LoadBankCustom(
+                self.pointer,
+                &info.into(),
+                flags,
+                &mut bank,
+            ) {
+                ffi::FMOD_OK => Ok(Bank::from(bank)),
+                error => Err(err_fmod!("FMOD_Studio_System_LoadBankCustom", error)),
+            }
+        }
+    }
+    pub fn register_plugin(&self, description: DspDescription) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_RegisterPlugin(self.pointer, &description.into()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_RegisterPlugin", error)),
+            }
+        }
+    }
+    pub fn unregister_plugin(&self, name: &str) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_UnregisterPlugin(self.pointer, name.as_ptr().cast()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_UnregisterPlugin", error)),
+            }
+        }
+    }
+    pub fn unload_all(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_UnloadAll(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_UnloadAll", error)),
+            }
+        }
+    }
+    pub fn flush_commands(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_FlushCommands(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_FlushCommands", error)),
+            }
+        }
+    }
+    pub fn flush_sample_loading(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_FlushSampleLoading(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_FlushSampleLoading", error)),
+            }
+        }
+    }
+    pub fn start_command_capture(
+        &self,
+        filename: &str,
+        flags: ffi::FMOD_STUDIO_COMMANDCAPTURE_FLAGS,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_StartCommandCapture(
+                self.pointer,
+                filename.as_ptr().cast(),
+                flags,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_StartCommandCapture", error)),
+            }
+        }
+    }
+    pub fn stop_command_capture(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_StopCommandCapture(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_StopCommandCapture", error)),
+            }
+        }
+    }
+    pub fn load_command_replay(
+        &self,
+        filename: &str,
+        flags: ffi::FMOD_STUDIO_COMMANDREPLAY_FLAGS,
+    ) -> Result<CommandReplay, Error> {
+        unsafe {
+            let mut replay = null_mut();
+            match ffi::FMOD_Studio_System_LoadCommandReplay(
+                self.pointer,
+                filename.as_ptr().cast(),
+                flags,
+                &mut replay,
+            ) {
+                ffi::FMOD_OK => Ok(CommandReplay::from(replay)),
+                error => Err(err_fmod!("FMOD_Studio_System_LoadCommandReplay", error)),
+            }
+        }
+    }
+    pub fn get_bank_count(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_System_GetBankCount(self.pointer, &mut count) {
+                ffi::FMOD_OK => Ok(count),
+                error => Err(err_fmod!("FMOD_Studio_System_GetBankCount", error)),
+            }
+        }
+    }
+    pub fn get_bank_list(&self, capacity: i32) -> Result<(Bank, i32), Error> {
+        unsafe {
+            let mut array = null_mut();
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_System_GetBankList(
+                self.pointer,
+                &mut array,
+                capacity,
+                &mut count,
+            ) {
+                ffi::FMOD_OK => Ok((Bank::from(array), count)),
+                error => Err(err_fmod!("FMOD_Studio_System_GetBankList", error)),
+            }
+        }
+    }
+    pub fn get_parameter_description_count(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_System_GetParameterDescriptionCount(self.pointer, &mut count) {
+                ffi::FMOD_OK => Ok(count),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_System_GetParameterDescriptionCount",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_parameter_description_list(
+        &self,
+        capacity: i32,
+    ) -> Result<(ParameterDescription, i32), Error> {
+        unsafe {
+            let mut array = ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION::default();
+            let mut count = i32::default();
+            match ffi::FMOD_Studio_System_GetParameterDescriptionList(
+                self.pointer,
+                &mut array,
+                capacity,
+                &mut count,
+            ) {
+                ffi::FMOD_OK => Ok((ParameterDescription::from(array)?, count)),
+                error => Err(err_fmod!(
+                    "FMOD_Studio_System_GetParameterDescriptionList",
+                    error
+                )),
+            }
+        }
+    }
+    pub fn get_cpu_usage(&self) -> Result<(StudioCpuUsage, CpuUsage), Error> {
+        unsafe {
+            let mut usage = ffi::FMOD_STUDIO_CPU_USAGE::default();
+            let mut usage_core = ffi::FMOD_CPU_USAGE::default();
+            match ffi::FMOD_Studio_System_GetCPUUsage(self.pointer, &mut usage, &mut usage_core) {
+                ffi::FMOD_OK => Ok((StudioCpuUsage::from(usage)?, CpuUsage::from(usage_core)?)),
+                error => Err(err_fmod!("FMOD_Studio_System_GetCPUUsage", error)),
+            }
+        }
+    }
+    pub fn get_buffer_usage(&self) -> Result<BufferUsage, Error> {
+        unsafe {
+            let mut usage = ffi::FMOD_STUDIO_BUFFER_USAGE::default();
+            match ffi::FMOD_Studio_System_GetBufferUsage(self.pointer, &mut usage) {
+                ffi::FMOD_OK => Ok(BufferUsage::from(usage)?),
+                error => Err(err_fmod!("FMOD_Studio_System_GetBufferUsage", error)),
+            }
+        }
+    }
+    pub fn reset_buffer_usage(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_ResetBufferUsage(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_ResetBufferUsage", error)),
+            }
+        }
+    }
+    pub fn set_callback(
+        &self,
+        callback: ffi::FMOD_STUDIO_SYSTEM_CALLBACK,
+        callbackmask: ffi::FMOD_STUDIO_SYSTEM_CALLBACK_TYPE,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_SetCallback(self.pointer, callback, callbackmask) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_SetCallback", error)),
+            }
+        }
+    }
+    pub fn set_user_data(&self, userdata: *mut c_void) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_System_SetUserData(self.pointer, userdata) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_System_SetUserData", error)),
+            }
+        }
+    }
+    pub fn get_user_data(&self) -> Result<*mut c_void, Error> {
+        unsafe {
+            let mut userdata = null_mut();
+            match ffi::FMOD_Studio_System_GetUserData(self.pointer, &mut userdata) {
+                ffi::FMOD_OK => Ok(userdata),
+                error => Err(err_fmod!("FMOD_Studio_System_GetUserData", error)),
+            }
+        }
+    }
+    pub fn get_memory_usage(&self) -> Result<MemoryUsage, Error> {
+        unsafe {
+            let mut memoryusage = ffi::FMOD_STUDIO_MEMORY_USAGE::default();
+            match ffi::FMOD_Studio_System_GetMemoryUsage(self.pointer, &mut memoryusage) {
+                ffi::FMOD_OK => Ok(MemoryUsage::from(memoryusage)?),
+                error => Err(err_fmod!("FMOD_Studio_System_GetMemoryUsage", error)),
+            }
+        }
     }
 }
 
@@ -5935,10 +11355,78 @@ pub struct Vca {
 }
 
 impl Vca {
-    pub fn from_pointer(pointer: *mut ffi::FMOD_STUDIO_VCA) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_STUDIO_VCA) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_STUDIO_VCA {
+        self.pointer
+    }
+    pub fn is_valid(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_VCA_IsValid(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_VCA_IsValid", error)),
+            }
+        }
+    }
+    pub fn get_id(&self) -> Result<Guid, Error> {
+        unsafe {
+            let mut id = ffi::FMOD_GUID::default();
+            match ffi::FMOD_Studio_VCA_GetID(self.pointer, &mut id) {
+                ffi::FMOD_OK => Ok(Guid::from(id)?),
+                error => Err(err_fmod!("FMOD_Studio_VCA_GetID", error)),
+            }
+        }
+    }
+    pub fn get_path(&self, size: i32) -> Result<(String, i32), Error> {
+        unsafe {
+            let path = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut retrieved = i32::default();
+            match ffi::FMOD_Studio_VCA_GetPath(self.pointer, path, size, &mut retrieved) {
+                ffi::FMOD_OK => Ok((
+                    CString::from_raw(path)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    retrieved,
+                )),
+                error => Err(err_fmod!("FMOD_Studio_VCA_GetPath", error)),
+            }
+        }
+    }
+    pub fn get_volume(&self) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut volume = f32::default();
+            let mut finalvolume = f32::default();
+            match ffi::FMOD_Studio_VCA_GetVolume(self.pointer, &mut volume, &mut finalvolume) {
+                ffi::FMOD_OK => Ok((volume, finalvolume)),
+                error => Err(err_fmod!("FMOD_Studio_VCA_GetVolume", error)),
+            }
+        }
+    }
+    pub fn set_volume(&self, volume: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_Studio_VCA_SetVolume(self.pointer, volume) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_Studio_VCA_SetVolume", error)),
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct SyncPoint {
+    pointer: *mut ffi::FMOD_SYNCPOINT,
+}
+
+impl SyncPoint {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_SYNCPOINT) -> Self {
+        Self { pointer }
+    }
+    #[inline]
+    pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_SYNCPOINT {
         self.pointer
     }
 }
@@ -5949,19 +11437,1172 @@ pub struct System {
 }
 
 impl System {
-    pub fn create() -> Result<Self, Error> {
-        let mut pointer = null_mut();
-        let result = unsafe { ffi::FMOD_System_Create(&mut pointer, ffi::FMOD_VERSION) };
-        if result == ffi::FMOD_OK {
-            Ok(Self { pointer })
-        } else {
-            Err(err_fmod!("FMOD_System_Create", result))
-        }
-    }
-    pub fn from_pointer(pointer: *mut ffi::FMOD_SYSTEM) -> Self {
+    #[inline]
+    pub fn from(pointer: *mut ffi::FMOD_SYSTEM) -> Self {
         Self { pointer }
     }
+    #[inline]
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_SYSTEM {
         self.pointer
+    }
+    pub fn create(headerversion: u32) -> Result<System, Error> {
+        unsafe {
+            let mut system = null_mut();
+            match ffi::FMOD_System_Create(&mut system, headerversion) {
+                ffi::FMOD_OK => Ok(System::from(system)),
+                error => Err(err_fmod!("FMOD_System_Create", error)),
+            }
+        }
+    }
+    pub fn release(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_Release(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_Release", error)),
+            }
+        }
+    }
+    pub fn set_output(&self, output: OutputType) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetOutput(self.pointer, output.into()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetOutput", error)),
+            }
+        }
+    }
+    pub fn get_output(&self) -> Result<OutputType, Error> {
+        unsafe {
+            let mut output = ffi::FMOD_OUTPUTTYPE::default();
+            match ffi::FMOD_System_GetOutput(self.pointer, &mut output) {
+                ffi::FMOD_OK => Ok(OutputType::from(output)?),
+                error => Err(err_fmod!("FMOD_System_GetOutput", error)),
+            }
+        }
+    }
+    pub fn get_num_drivers(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numdrivers = i32::default();
+            match ffi::FMOD_System_GetNumDrivers(self.pointer, &mut numdrivers) {
+                ffi::FMOD_OK => Ok(numdrivers),
+                error => Err(err_fmod!("FMOD_System_GetNumDrivers", error)),
+            }
+        }
+    }
+    pub fn get_driver_info(
+        &self,
+        id: i32,
+        namelen: i32,
+    ) -> Result<(String, Guid, i32, SpeakerMode, i32), Error> {
+        unsafe {
+            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut guid = ffi::FMOD_GUID::default();
+            let mut systemrate = i32::default();
+            let mut speakermode = ffi::FMOD_SPEAKERMODE::default();
+            let mut speakermodechannels = i32::default();
+            match ffi::FMOD_System_GetDriverInfo(
+                self.pointer,
+                id,
+                name,
+                namelen,
+                &mut guid,
+                &mut systemrate,
+                &mut speakermode,
+                &mut speakermodechannels,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    CString::from_raw(name)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    Guid::from(guid)?,
+                    systemrate,
+                    SpeakerMode::from(speakermode)?,
+                    speakermodechannels,
+                )),
+                error => Err(err_fmod!("FMOD_System_GetDriverInfo", error)),
+            }
+        }
+    }
+    pub fn set_driver(&self, driver: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetDriver(self.pointer, driver) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetDriver", error)),
+            }
+        }
+    }
+    pub fn get_driver(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut driver = i32::default();
+            match ffi::FMOD_System_GetDriver(self.pointer, &mut driver) {
+                ffi::FMOD_OK => Ok(driver),
+                error => Err(err_fmod!("FMOD_System_GetDriver", error)),
+            }
+        }
+    }
+    pub fn set_software_channels(&self, numsoftwarechannels: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetSoftwareChannels(self.pointer, numsoftwarechannels) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetSoftwareChannels", error)),
+            }
+        }
+    }
+    pub fn get_software_channels(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numsoftwarechannels = i32::default();
+            match ffi::FMOD_System_GetSoftwareChannels(self.pointer, &mut numsoftwarechannels) {
+                ffi::FMOD_OK => Ok(numsoftwarechannels),
+                error => Err(err_fmod!("FMOD_System_GetSoftwareChannels", error)),
+            }
+        }
+    }
+    pub fn set_software_format(
+        &self,
+        samplerate: i32,
+        speakermode: SpeakerMode,
+        numrawspeakers: i32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetSoftwareFormat(
+                self.pointer,
+                samplerate,
+                speakermode.into(),
+                numrawspeakers,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetSoftwareFormat", error)),
+            }
+        }
+    }
+    pub fn get_software_format(&self) -> Result<(i32, SpeakerMode, i32), Error> {
+        unsafe {
+            let mut samplerate = i32::default();
+            let mut speakermode = ffi::FMOD_SPEAKERMODE::default();
+            let mut numrawspeakers = i32::default();
+            match ffi::FMOD_System_GetSoftwareFormat(
+                self.pointer,
+                &mut samplerate,
+                &mut speakermode,
+                &mut numrawspeakers,
+            ) {
+                ffi::FMOD_OK => Ok((samplerate, SpeakerMode::from(speakermode)?, numrawspeakers)),
+                error => Err(err_fmod!("FMOD_System_GetSoftwareFormat", error)),
+            }
+        }
+    }
+    pub fn set_dsp_buffer_size(&self, bufferlength: u32, numbuffers: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetDSPBufferSize(self.pointer, bufferlength, numbuffers) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetDSPBufferSize", error)),
+            }
+        }
+    }
+    pub fn get_dsp_buffer_size(&self) -> Result<(u32, i32), Error> {
+        unsafe {
+            let mut bufferlength = u32::default();
+            let mut numbuffers = i32::default();
+            match ffi::FMOD_System_GetDSPBufferSize(
+                self.pointer,
+                &mut bufferlength,
+                &mut numbuffers,
+            ) {
+                ffi::FMOD_OK => Ok((bufferlength, numbuffers)),
+                error => Err(err_fmod!("FMOD_System_GetDSPBufferSize", error)),
+            }
+        }
+    }
+    pub fn set_file_system(
+        &self,
+        useropen: ffi::FMOD_FILE_OPEN_CALLBACK,
+        userclose: ffi::FMOD_FILE_CLOSE_CALLBACK,
+        userread: ffi::FMOD_FILE_READ_CALLBACK,
+        userseek: ffi::FMOD_FILE_SEEK_CALLBACK,
+        userasyncread: ffi::FMOD_FILE_ASYNCREAD_CALLBACK,
+        userasynccancel: ffi::FMOD_FILE_ASYNCCANCEL_CALLBACK,
+        blockalign: i32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetFileSystem(
+                self.pointer,
+                useropen,
+                userclose,
+                userread,
+                userseek,
+                userasyncread,
+                userasynccancel,
+                blockalign,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetFileSystem", error)),
+            }
+        }
+    }
+    pub fn attach_file_system(
+        &self,
+        useropen: ffi::FMOD_FILE_OPEN_CALLBACK,
+        userclose: ffi::FMOD_FILE_CLOSE_CALLBACK,
+        userread: ffi::FMOD_FILE_READ_CALLBACK,
+        userseek: ffi::FMOD_FILE_SEEK_CALLBACK,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_AttachFileSystem(
+                self.pointer,
+                useropen,
+                userclose,
+                userread,
+                userseek,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_AttachFileSystem", error)),
+            }
+        }
+    }
+    pub fn set_advanced_settings(&self) -> Result<AdvancedSettings, Error> {
+        unsafe {
+            let mut settings = ffi::FMOD_ADVANCEDSETTINGS::default();
+            match ffi::FMOD_System_SetAdvancedSettings(self.pointer, &mut settings) {
+                ffi::FMOD_OK => Ok(AdvancedSettings::from(settings)?),
+                error => Err(err_fmod!("FMOD_System_SetAdvancedSettings", error)),
+            }
+        }
+    }
+    pub fn get_advanced_settings(&self) -> Result<AdvancedSettings, Error> {
+        unsafe {
+            let mut settings = ffi::FMOD_ADVANCEDSETTINGS::default();
+            match ffi::FMOD_System_GetAdvancedSettings(self.pointer, &mut settings) {
+                ffi::FMOD_OK => Ok(AdvancedSettings::from(settings)?),
+                error => Err(err_fmod!("FMOD_System_GetAdvancedSettings", error)),
+            }
+        }
+    }
+    pub fn set_callback(
+        &self,
+        callback: ffi::FMOD_SYSTEM_CALLBACK,
+        callbackmask: ffi::FMOD_SYSTEM_CALLBACK_TYPE,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetCallback(self.pointer, callback, callbackmask) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetCallback", error)),
+            }
+        }
+    }
+    pub fn set_plugin_path(&self, path: &str) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetPluginPath(self.pointer, path.as_ptr().cast()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetPluginPath", error)),
+            }
+        }
+    }
+    pub fn load_plugin(&self, filename: &str, priority: u32) -> Result<u32, Error> {
+        unsafe {
+            let mut handle = u32::default();
+            match ffi::FMOD_System_LoadPlugin(
+                self.pointer,
+                filename.as_ptr().cast(),
+                &mut handle,
+                priority,
+            ) {
+                ffi::FMOD_OK => Ok(handle),
+                error => Err(err_fmod!("FMOD_System_LoadPlugin", error)),
+            }
+        }
+    }
+    pub fn unload_plugin(&self, handle: u32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_UnloadPlugin(self.pointer, handle) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_UnloadPlugin", error)),
+            }
+        }
+    }
+    pub fn get_num_nested_plugins(&self, handle: u32) -> Result<i32, Error> {
+        unsafe {
+            let mut count = i32::default();
+            match ffi::FMOD_System_GetNumNestedPlugins(self.pointer, handle, &mut count) {
+                ffi::FMOD_OK => Ok(count),
+                error => Err(err_fmod!("FMOD_System_GetNumNestedPlugins", error)),
+            }
+        }
+    }
+    pub fn get_nested_plugin(&self, handle: u32, index: i32) -> Result<u32, Error> {
+        unsafe {
+            let mut nestedhandle = u32::default();
+            match ffi::FMOD_System_GetNestedPlugin(self.pointer, handle, index, &mut nestedhandle) {
+                ffi::FMOD_OK => Ok(nestedhandle),
+                error => Err(err_fmod!("FMOD_System_GetNestedPlugin", error)),
+            }
+        }
+    }
+    pub fn get_num_plugins(&self, plugintype: PluginType) -> Result<i32, Error> {
+        unsafe {
+            let mut numplugins = i32::default();
+            match ffi::FMOD_System_GetNumPlugins(self.pointer, plugintype.into(), &mut numplugins) {
+                ffi::FMOD_OK => Ok(numplugins),
+                error => Err(err_fmod!("FMOD_System_GetNumPlugins", error)),
+            }
+        }
+    }
+    pub fn get_plugin_handle(&self, plugintype: PluginType, index: i32) -> Result<u32, Error> {
+        unsafe {
+            let mut handle = u32::default();
+            match ffi::FMOD_System_GetPluginHandle(
+                self.pointer,
+                plugintype.into(),
+                index,
+                &mut handle,
+            ) {
+                ffi::FMOD_OK => Ok(handle),
+                error => Err(err_fmod!("FMOD_System_GetPluginHandle", error)),
+            }
+        }
+    }
+    pub fn get_plugin_info(
+        &self,
+        handle: u32,
+        namelen: i32,
+    ) -> Result<(PluginType, String, u32), Error> {
+        unsafe {
+            let mut plugintype = ffi::FMOD_PLUGINTYPE::default();
+            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut version = u32::default();
+            match ffi::FMOD_System_GetPluginInfo(
+                self.pointer,
+                handle,
+                &mut plugintype,
+                name,
+                namelen,
+                &mut version,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    PluginType::from(plugintype)?,
+                    CString::from_raw(name)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    version,
+                )),
+                error => Err(err_fmod!("FMOD_System_GetPluginInfo", error)),
+            }
+        }
+    }
+    pub fn set_output_by_plugin(&self, handle: u32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetOutputByPlugin(self.pointer, handle) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetOutputByPlugin", error)),
+            }
+        }
+    }
+    pub fn get_output_by_plugin(&self) -> Result<u32, Error> {
+        unsafe {
+            let mut handle = u32::default();
+            match ffi::FMOD_System_GetOutputByPlugin(self.pointer, &mut handle) {
+                ffi::FMOD_OK => Ok(handle),
+                error => Err(err_fmod!("FMOD_System_GetOutputByPlugin", error)),
+            }
+        }
+    }
+    pub fn create_dsp_by_plugin(&self, handle: u32) -> Result<Dsp, Error> {
+        unsafe {
+            let mut dsp = null_mut();
+            match ffi::FMOD_System_CreateDSPByPlugin(self.pointer, handle, &mut dsp) {
+                ffi::FMOD_OK => Ok(Dsp::from(dsp)),
+                error => Err(err_fmod!("FMOD_System_CreateDSPByPlugin", error)),
+            }
+        }
+    }
+    pub fn get_dsp_info_by_plugin(&self, handle: u32) -> Result<Vec<DspDescription>, Error> {
+        unsafe {
+            let mut description = null();
+            match ffi::FMOD_System_GetDSPInfoByPlugin(self.pointer, handle, &mut description) {
+                ffi::FMOD_OK => Ok(to_vec!(description, 1, DspDescription::from)?),
+                error => Err(err_fmod!("FMOD_System_GetDSPInfoByPlugin", error)),
+            }
+        }
+    }
+    pub fn register_codec(&self, priority: u32) -> Result<(CodecDescription, u32), Error> {
+        unsafe {
+            let mut description = ffi::FMOD_CODEC_DESCRIPTION::default();
+            let mut handle = u32::default();
+            match ffi::FMOD_System_RegisterCodec(
+                self.pointer,
+                &mut description,
+                &mut handle,
+                priority,
+            ) {
+                ffi::FMOD_OK => Ok((CodecDescription::from(description)?, handle)),
+                error => Err(err_fmod!("FMOD_System_RegisterCodec", error)),
+            }
+        }
+    }
+    pub fn register_dsp(&self, description: DspDescription) -> Result<u32, Error> {
+        unsafe {
+            let mut handle = u32::default();
+            match ffi::FMOD_System_RegisterDSP(self.pointer, &description.into(), &mut handle) {
+                ffi::FMOD_OK => Ok(handle),
+                error => Err(err_fmod!("FMOD_System_RegisterDSP", error)),
+            }
+        }
+    }
+    pub fn register_output(&self, description: OutputDescription) -> Result<u32, Error> {
+        unsafe {
+            let mut handle = u32::default();
+            match ffi::FMOD_System_RegisterOutput(self.pointer, &description.into(), &mut handle) {
+                ffi::FMOD_OK => Ok(handle),
+                error => Err(err_fmod!("FMOD_System_RegisterOutput", error)),
+            }
+        }
+    }
+    pub fn init(
+        &self,
+        maxchannels: i32,
+        flags: ffi::FMOD_INITFLAGS,
+        extradriverdata: *mut c_void,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_Init(self.pointer, maxchannels, flags, extradriverdata) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_Init", error)),
+            }
+        }
+    }
+    pub fn close(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_Close(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_Close", error)),
+            }
+        }
+    }
+    pub fn update(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_Update(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_Update", error)),
+            }
+        }
+    }
+    pub fn set_speaker_position(
+        &self,
+        speaker: Speaker,
+        x: f32,
+        y: f32,
+        active: bool,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetSpeakerPosition(
+                self.pointer,
+                speaker.into(),
+                x,
+                y,
+                from_bool!(active),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetSpeakerPosition", error)),
+            }
+        }
+    }
+    pub fn get_speaker_position(&self, speaker: Speaker) -> Result<(f32, f32, bool), Error> {
+        unsafe {
+            let mut x = f32::default();
+            let mut y = f32::default();
+            let mut active = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_System_GetSpeakerPosition(
+                self.pointer,
+                speaker.into(),
+                &mut x,
+                &mut y,
+                &mut active,
+            ) {
+                ffi::FMOD_OK => Ok((x, y, to_bool!(active))),
+                error => Err(err_fmod!("FMOD_System_GetSpeakerPosition", error)),
+            }
+        }
+    }
+    pub fn set_stream_buffer_size(
+        &self,
+        filebuffersize: u32,
+        filebuffersizetype: ffi::FMOD_TIMEUNIT,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetStreamBufferSize(
+                self.pointer,
+                filebuffersize,
+                filebuffersizetype,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetStreamBufferSize", error)),
+            }
+        }
+    }
+    pub fn get_stream_buffer_size(&self) -> Result<(u32, ffi::FMOD_TIMEUNIT), Error> {
+        unsafe {
+            let mut filebuffersize = u32::default();
+            let mut filebuffersizetype = ffi::FMOD_TIMEUNIT::default();
+            match ffi::FMOD_System_GetStreamBufferSize(
+                self.pointer,
+                &mut filebuffersize,
+                &mut filebuffersizetype,
+            ) {
+                ffi::FMOD_OK => Ok((filebuffersize, filebuffersizetype)),
+                error => Err(err_fmod!("FMOD_System_GetStreamBufferSize", error)),
+            }
+        }
+    }
+    pub fn set_3_d_settings(
+        &self,
+        dopplerscale: f32,
+        distancefactor: f32,
+        rolloffscale: f32,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_Set3DSettings(
+                self.pointer,
+                dopplerscale,
+                distancefactor,
+                rolloffscale,
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_Set3DSettings", error)),
+            }
+        }
+    }
+    pub fn get_3_d_settings(&self) -> Result<(f32, f32, f32), Error> {
+        unsafe {
+            let mut dopplerscale = f32::default();
+            let mut distancefactor = f32::default();
+            let mut rolloffscale = f32::default();
+            match ffi::FMOD_System_Get3DSettings(
+                self.pointer,
+                &mut dopplerscale,
+                &mut distancefactor,
+                &mut rolloffscale,
+            ) {
+                ffi::FMOD_OK => Ok((dopplerscale, distancefactor, rolloffscale)),
+                error => Err(err_fmod!("FMOD_System_Get3DSettings", error)),
+            }
+        }
+    }
+    pub fn set_3_d_num_listeners(&self, numlisteners: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_Set3DNumListeners(self.pointer, numlisteners) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_Set3DNumListeners", error)),
+            }
+        }
+    }
+    pub fn get_3_d_num_listeners(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut numlisteners = i32::default();
+            match ffi::FMOD_System_Get3DNumListeners(self.pointer, &mut numlisteners) {
+                ffi::FMOD_OK => Ok(numlisteners),
+                error => Err(err_fmod!("FMOD_System_Get3DNumListeners", error)),
+            }
+        }
+    }
+    pub fn set_3_d_listener_attributes(
+        &self,
+        listener: i32,
+        pos: Vector,
+        vel: Vector,
+        forward: Vector,
+        up: Vector,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_Set3DListenerAttributes(
+                self.pointer,
+                listener,
+                &pos.into(),
+                &vel.into(),
+                &forward.into(),
+                &up.into(),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_Set3DListenerAttributes", error)),
+            }
+        }
+    }
+    pub fn get_3_d_listener_attributes(
+        &self,
+        listener: i32,
+    ) -> Result<(Vector, Vector, Vector, Vector), Error> {
+        unsafe {
+            let mut pos = ffi::FMOD_VECTOR::default();
+            let mut vel = ffi::FMOD_VECTOR::default();
+            let mut forward = ffi::FMOD_VECTOR::default();
+            let mut up = ffi::FMOD_VECTOR::default();
+            match ffi::FMOD_System_Get3DListenerAttributes(
+                self.pointer,
+                listener,
+                &mut pos,
+                &mut vel,
+                &mut forward,
+                &mut up,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    Vector::from(pos)?,
+                    Vector::from(vel)?,
+                    Vector::from(forward)?,
+                    Vector::from(up)?,
+                )),
+                error => Err(err_fmod!("FMOD_System_Get3DListenerAttributes", error)),
+            }
+        }
+    }
+    pub fn set_3_d_rolloff_callback(
+        &self,
+        callback: ffi::FMOD_3D_ROLLOFF_CALLBACK,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_Set3DRolloffCallback(self.pointer, callback) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_Set3DRolloffCallback", error)),
+            }
+        }
+    }
+    pub fn mixer_suspend(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_MixerSuspend(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_MixerSuspend", error)),
+            }
+        }
+    }
+    pub fn mixer_resume(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_MixerResume(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_MixerResume", error)),
+            }
+        }
+    }
+    pub fn get_default_mix_matrix(
+        &self,
+        sourcespeakermode: SpeakerMode,
+        targetspeakermode: SpeakerMode,
+        matrixhop: i32,
+    ) -> Result<f32, Error> {
+        unsafe {
+            let mut matrix = f32::default();
+            match ffi::FMOD_System_GetDefaultMixMatrix(
+                self.pointer,
+                sourcespeakermode.into(),
+                targetspeakermode.into(),
+                &mut matrix,
+                matrixhop,
+            ) {
+                ffi::FMOD_OK => Ok(matrix),
+                error => Err(err_fmod!("FMOD_System_GetDefaultMixMatrix", error)),
+            }
+        }
+    }
+    pub fn get_speaker_mode_channels(&self, mode: SpeakerMode) -> Result<i32, Error> {
+        unsafe {
+            let mut channels = i32::default();
+            match ffi::FMOD_System_GetSpeakerModeChannels(self.pointer, mode.into(), &mut channels)
+            {
+                ffi::FMOD_OK => Ok(channels),
+                error => Err(err_fmod!("FMOD_System_GetSpeakerModeChannels", error)),
+            }
+        }
+    }
+    pub fn get_version(&self) -> Result<u32, Error> {
+        unsafe {
+            let mut version = u32::default();
+            match ffi::FMOD_System_GetVersion(self.pointer, &mut version) {
+                ffi::FMOD_OK => Ok(version),
+                error => Err(err_fmod!("FMOD_System_GetVersion", error)),
+            }
+        }
+    }
+    pub fn get_output_handle(&self) -> Result<*mut c_void, Error> {
+        unsafe {
+            let mut handle = null_mut();
+            match ffi::FMOD_System_GetOutputHandle(self.pointer, &mut handle) {
+                ffi::FMOD_OK => Ok(handle),
+                error => Err(err_fmod!("FMOD_System_GetOutputHandle", error)),
+            }
+        }
+    }
+    pub fn get_channels_playing(&self) -> Result<(i32, i32), Error> {
+        unsafe {
+            let mut channels = i32::default();
+            let mut realchannels = i32::default();
+            match ffi::FMOD_System_GetChannelsPlaying(
+                self.pointer,
+                &mut channels,
+                &mut realchannels,
+            ) {
+                ffi::FMOD_OK => Ok((channels, realchannels)),
+                error => Err(err_fmod!("FMOD_System_GetChannelsPlaying", error)),
+            }
+        }
+    }
+    pub fn get_cpu_usage(&self) -> Result<CpuUsage, Error> {
+        unsafe {
+            let mut usage = ffi::FMOD_CPU_USAGE::default();
+            match ffi::FMOD_System_GetCPUUsage(self.pointer, &mut usage) {
+                ffi::FMOD_OK => Ok(CpuUsage::from(usage)?),
+                error => Err(err_fmod!("FMOD_System_GetCPUUsage", error)),
+            }
+        }
+    }
+    pub fn get_file_usage(&self) -> Result<(i64, i64, i64), Error> {
+        unsafe {
+            let mut sample_bytes_read = i64::default();
+            let mut stream_bytes_read = i64::default();
+            let mut other_bytes_read = i64::default();
+            match ffi::FMOD_System_GetFileUsage(
+                self.pointer,
+                &mut sample_bytes_read,
+                &mut stream_bytes_read,
+                &mut other_bytes_read,
+            ) {
+                ffi::FMOD_OK => Ok((sample_bytes_read, stream_bytes_read, other_bytes_read)),
+                error => Err(err_fmod!("FMOD_System_GetFileUsage", error)),
+            }
+        }
+    }
+    pub fn create_sound(
+        &self,
+        name_or_data: &str,
+        mode: ffi::FMOD_MODE,
+    ) -> Result<(CreateSoundexInfo, Sound), Error> {
+        unsafe {
+            let mut exinfo = ffi::FMOD_CREATESOUNDEXINFO::default();
+            let mut sound = null_mut();
+            match ffi::FMOD_System_CreateSound(
+                self.pointer,
+                name_or_data.as_ptr().cast(),
+                mode,
+                &mut exinfo,
+                &mut sound,
+            ) {
+                ffi::FMOD_OK => Ok((CreateSoundexInfo::from(exinfo)?, Sound::from(sound))),
+                error => Err(err_fmod!("FMOD_System_CreateSound", error)),
+            }
+        }
+    }
+    pub fn create_stream(
+        &self,
+        name_or_data: &str,
+        mode: ffi::FMOD_MODE,
+    ) -> Result<(CreateSoundexInfo, Sound), Error> {
+        unsafe {
+            let mut exinfo = ffi::FMOD_CREATESOUNDEXINFO::default();
+            let mut sound = null_mut();
+            match ffi::FMOD_System_CreateStream(
+                self.pointer,
+                name_or_data.as_ptr().cast(),
+                mode,
+                &mut exinfo,
+                &mut sound,
+            ) {
+                ffi::FMOD_OK => Ok((CreateSoundexInfo::from(exinfo)?, Sound::from(sound))),
+                error => Err(err_fmod!("FMOD_System_CreateStream", error)),
+            }
+        }
+    }
+    pub fn create_dsp(&self, description: DspDescription) -> Result<Dsp, Error> {
+        unsafe {
+            let mut dsp = null_mut();
+            match ffi::FMOD_System_CreateDSP(self.pointer, &description.into(), &mut dsp) {
+                ffi::FMOD_OK => Ok(Dsp::from(dsp)),
+                error => Err(err_fmod!("FMOD_System_CreateDSP", error)),
+            }
+        }
+    }
+    pub fn create_dsp_by_type(&self, type_: DspType) -> Result<Dsp, Error> {
+        unsafe {
+            let mut dsp = null_mut();
+            match ffi::FMOD_System_CreateDSPByType(self.pointer, type_.into(), &mut dsp) {
+                ffi::FMOD_OK => Ok(Dsp::from(dsp)),
+                error => Err(err_fmod!("FMOD_System_CreateDSPByType", error)),
+            }
+        }
+    }
+    pub fn create_channel_group(&self, name: &str) -> Result<ChannelGroup, Error> {
+        unsafe {
+            let mut channelgroup = null_mut();
+            match ffi::FMOD_System_CreateChannelGroup(
+                self.pointer,
+                name.as_ptr().cast(),
+                &mut channelgroup,
+            ) {
+                ffi::FMOD_OK => Ok(ChannelGroup::from(channelgroup)),
+                error => Err(err_fmod!("FMOD_System_CreateChannelGroup", error)),
+            }
+        }
+    }
+    pub fn create_sound_group(&self, name: &str) -> Result<SoundGroup, Error> {
+        unsafe {
+            let mut soundgroup = null_mut();
+            match ffi::FMOD_System_CreateSoundGroup(
+                self.pointer,
+                name.as_ptr().cast(),
+                &mut soundgroup,
+            ) {
+                ffi::FMOD_OK => Ok(SoundGroup::from(soundgroup)),
+                error => Err(err_fmod!("FMOD_System_CreateSoundGroup", error)),
+            }
+        }
+    }
+    pub fn create_reverb_3_d(&self) -> Result<Reverb3d, Error> {
+        unsafe {
+            let mut reverb = null_mut();
+            match ffi::FMOD_System_CreateReverb3D(self.pointer, &mut reverb) {
+                ffi::FMOD_OK => Ok(Reverb3d::from(reverb)),
+                error => Err(err_fmod!("FMOD_System_CreateReverb3D", error)),
+            }
+        }
+    }
+    pub fn play_sound(
+        &self,
+        sound: Sound,
+        channelgroup: ChannelGroup,
+        paused: bool,
+    ) -> Result<Channel, Error> {
+        unsafe {
+            let mut channel = null_mut();
+            match ffi::FMOD_System_PlaySound(
+                self.pointer,
+                sound.as_mut_ptr(),
+                channelgroup.as_mut_ptr(),
+                from_bool!(paused),
+                &mut channel,
+            ) {
+                ffi::FMOD_OK => Ok(Channel::from(channel)),
+                error => Err(err_fmod!("FMOD_System_PlaySound", error)),
+            }
+        }
+    }
+    pub fn play_dsp(
+        &self,
+        dsp: Dsp,
+        channelgroup: ChannelGroup,
+        paused: bool,
+    ) -> Result<Channel, Error> {
+        unsafe {
+            let mut channel = null_mut();
+            match ffi::FMOD_System_PlayDSP(
+                self.pointer,
+                dsp.as_mut_ptr(),
+                channelgroup.as_mut_ptr(),
+                from_bool!(paused),
+                &mut channel,
+            ) {
+                ffi::FMOD_OK => Ok(Channel::from(channel)),
+                error => Err(err_fmod!("FMOD_System_PlayDSP", error)),
+            }
+        }
+    }
+    pub fn get_channel(&self, channelid: i32) -> Result<Channel, Error> {
+        unsafe {
+            let mut channel = null_mut();
+            match ffi::FMOD_System_GetChannel(self.pointer, channelid, &mut channel) {
+                ffi::FMOD_OK => Ok(Channel::from(channel)),
+                error => Err(err_fmod!("FMOD_System_GetChannel", error)),
+            }
+        }
+    }
+    pub fn get_dsp_info_by_type(&self, type_: DspType) -> Result<Vec<DspDescription>, Error> {
+        unsafe {
+            let mut description = null();
+            match ffi::FMOD_System_GetDSPInfoByType(self.pointer, type_.into(), &mut description) {
+                ffi::FMOD_OK => Ok(to_vec!(description, 1, DspDescription::from)?),
+                error => Err(err_fmod!("FMOD_System_GetDSPInfoByType", error)),
+            }
+        }
+    }
+    pub fn get_master_channel_group(&self) -> Result<ChannelGroup, Error> {
+        unsafe {
+            let mut channelgroup = null_mut();
+            match ffi::FMOD_System_GetMasterChannelGroup(self.pointer, &mut channelgroup) {
+                ffi::FMOD_OK => Ok(ChannelGroup::from(channelgroup)),
+                error => Err(err_fmod!("FMOD_System_GetMasterChannelGroup", error)),
+            }
+        }
+    }
+    pub fn get_master_sound_group(&self) -> Result<SoundGroup, Error> {
+        unsafe {
+            let mut soundgroup = null_mut();
+            match ffi::FMOD_System_GetMasterSoundGroup(self.pointer, &mut soundgroup) {
+                ffi::FMOD_OK => Ok(SoundGroup::from(soundgroup)),
+                error => Err(err_fmod!("FMOD_System_GetMasterSoundGroup", error)),
+            }
+        }
+    }
+    pub fn attach_channel_group_to_port(
+        &self,
+        port_type: PortType,
+        port_index: u64,
+        channelgroup: ChannelGroup,
+        pass_thru: bool,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_AttachChannelGroupToPort(
+                self.pointer,
+                port_type.into(),
+                port_index,
+                channelgroup.as_mut_ptr(),
+                from_bool!(pass_thru),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_AttachChannelGroupToPort", error)),
+            }
+        }
+    }
+    pub fn detach_channel_group_from_port(&self, channelgroup: ChannelGroup) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_DetachChannelGroupFromPort(
+                self.pointer,
+                channelgroup.as_mut_ptr(),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_DetachChannelGroupFromPort", error)),
+            }
+        }
+    }
+    pub fn set_reverb_properties(
+        &self,
+        instance: i32,
+        prop: ReverbProperties,
+    ) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetReverbProperties(self.pointer, instance, &prop.into()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetReverbProperties", error)),
+            }
+        }
+    }
+    pub fn get_reverb_properties(&self, instance: i32) -> Result<ReverbProperties, Error> {
+        unsafe {
+            let mut prop = ffi::FMOD_REVERB_PROPERTIES::default();
+            match ffi::FMOD_System_GetReverbProperties(self.pointer, instance, &mut prop) {
+                ffi::FMOD_OK => Ok(ReverbProperties::from(prop)?),
+                error => Err(err_fmod!("FMOD_System_GetReverbProperties", error)),
+            }
+        }
+    }
+    pub fn lock_dsp(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_LockDSP(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_LockDSP", error)),
+            }
+        }
+    }
+    pub fn unlock_dsp(&self) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_UnlockDSP(self.pointer) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_UnlockDSP", error)),
+            }
+        }
+    }
+    pub fn get_record_num_drivers(&self) -> Result<(i32, i32), Error> {
+        unsafe {
+            let mut numdrivers = i32::default();
+            let mut numconnected = i32::default();
+            match ffi::FMOD_System_GetRecordNumDrivers(
+                self.pointer,
+                &mut numdrivers,
+                &mut numconnected,
+            ) {
+                ffi::FMOD_OK => Ok((numdrivers, numconnected)),
+                error => Err(err_fmod!("FMOD_System_GetRecordNumDrivers", error)),
+            }
+        }
+    }
+    pub fn get_record_driver_info(
+        &self,
+        id: i32,
+        namelen: i32,
+    ) -> Result<(String, Guid, i32, SpeakerMode, i32, ffi::FMOD_DRIVER_STATE), Error> {
+        unsafe {
+            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let mut guid = ffi::FMOD_GUID::default();
+            let mut systemrate = i32::default();
+            let mut speakermode = ffi::FMOD_SPEAKERMODE::default();
+            let mut speakermodechannels = i32::default();
+            let mut state = ffi::FMOD_DRIVER_STATE::default();
+            match ffi::FMOD_System_GetRecordDriverInfo(
+                self.pointer,
+                id,
+                name,
+                namelen,
+                &mut guid,
+                &mut systemrate,
+                &mut speakermode,
+                &mut speakermodechannels,
+                &mut state,
+            ) {
+                ffi::FMOD_OK => Ok((
+                    CString::from_raw(name)
+                        .into_string()
+                        .map_err(Error::String)?,
+                    Guid::from(guid)?,
+                    systemrate,
+                    SpeakerMode::from(speakermode)?,
+                    speakermodechannels,
+                    state,
+                )),
+                error => Err(err_fmod!("FMOD_System_GetRecordDriverInfo", error)),
+            }
+        }
+    }
+    pub fn get_record_position(&self, id: i32) -> Result<u32, Error> {
+        unsafe {
+            let mut position = u32::default();
+            match ffi::FMOD_System_GetRecordPosition(self.pointer, id, &mut position) {
+                ffi::FMOD_OK => Ok(position),
+                error => Err(err_fmod!("FMOD_System_GetRecordPosition", error)),
+            }
+        }
+    }
+    pub fn record_start(&self, id: i32, sound: Sound, loop_: bool) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_RecordStart(
+                self.pointer,
+                id,
+                sound.as_mut_ptr(),
+                from_bool!(loop_),
+            ) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_RecordStart", error)),
+            }
+        }
+    }
+    pub fn record_stop(&self, id: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_RecordStop(self.pointer, id) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_RecordStop", error)),
+            }
+        }
+    }
+    pub fn is_recording(&self, id: i32) -> Result<bool, Error> {
+        unsafe {
+            let mut recording = ffi::FMOD_BOOL::default();
+            match ffi::FMOD_System_IsRecording(self.pointer, id, &mut recording) {
+                ffi::FMOD_OK => Ok(to_bool!(recording)),
+                error => Err(err_fmod!("FMOD_System_IsRecording", error)),
+            }
+        }
+    }
+    pub fn create_geometry(&self, maxpolygons: i32, maxvertices: i32) -> Result<Geometry, Error> {
+        unsafe {
+            let mut geometry = null_mut();
+            match ffi::FMOD_System_CreateGeometry(
+                self.pointer,
+                maxpolygons,
+                maxvertices,
+                &mut geometry,
+            ) {
+                ffi::FMOD_OK => Ok(Geometry::from(geometry)),
+                error => Err(err_fmod!("FMOD_System_CreateGeometry", error)),
+            }
+        }
+    }
+    pub fn set_geometry_settings(&self, maxworldsize: f32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetGeometrySettings(self.pointer, maxworldsize) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetGeometrySettings", error)),
+            }
+        }
+    }
+    pub fn get_geometry_settings(&self) -> Result<f32, Error> {
+        unsafe {
+            let mut maxworldsize = f32::default();
+            match ffi::FMOD_System_GetGeometrySettings(self.pointer, &mut maxworldsize) {
+                ffi::FMOD_OK => Ok(maxworldsize),
+                error => Err(err_fmod!("FMOD_System_GetGeometrySettings", error)),
+            }
+        }
+    }
+    pub fn load_geometry(&self, data: *const c_void, datasize: i32) -> Result<Geometry, Error> {
+        unsafe {
+            let mut geometry = null_mut();
+            match ffi::FMOD_System_LoadGeometry(self.pointer, data, datasize, &mut geometry) {
+                ffi::FMOD_OK => Ok(Geometry::from(geometry)),
+                error => Err(err_fmod!("FMOD_System_LoadGeometry", error)),
+            }
+        }
+    }
+    pub fn get_geometry_occlusion(
+        &self,
+        listener: Vector,
+        source: Vector,
+    ) -> Result<(f32, f32), Error> {
+        unsafe {
+            let mut direct = f32::default();
+            let mut reverb = f32::default();
+            match ffi::FMOD_System_GetGeometryOcclusion(
+                self.pointer,
+                &listener.into(),
+                &source.into(),
+                &mut direct,
+                &mut reverb,
+            ) {
+                ffi::FMOD_OK => Ok((direct, reverb)),
+                error => Err(err_fmod!("FMOD_System_GetGeometryOcclusion", error)),
+            }
+        }
+    }
+    pub fn set_network_proxy(&self, proxy: &str) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetNetworkProxy(self.pointer, proxy.as_ptr().cast()) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetNetworkProxy", error)),
+            }
+        }
+    }
+    pub fn get_network_proxy(&self, proxylen: i32) -> Result<String, Error> {
+        unsafe {
+            let proxy = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            match ffi::FMOD_System_GetNetworkProxy(self.pointer, proxy, proxylen) {
+                ffi::FMOD_OK => Ok(CString::from_raw(proxy)
+                    .into_string()
+                    .map_err(Error::String)?),
+                error => Err(err_fmod!("FMOD_System_GetNetworkProxy", error)),
+            }
+        }
+    }
+    pub fn set_network_timeout(&self, timeout: i32) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetNetworkTimeout(self.pointer, timeout) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetNetworkTimeout", error)),
+            }
+        }
+    }
+    pub fn get_network_timeout(&self) -> Result<i32, Error> {
+        unsafe {
+            let mut timeout = i32::default();
+            match ffi::FMOD_System_GetNetworkTimeout(self.pointer, &mut timeout) {
+                ffi::FMOD_OK => Ok(timeout),
+                error => Err(err_fmod!("FMOD_System_GetNetworkTimeout", error)),
+            }
+        }
+    }
+    pub fn set_user_data(&self, userdata: *mut c_void) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_System_SetUserData(self.pointer, userdata) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_System_SetUserData", error)),
+            }
+        }
+    }
+    pub fn get_user_data(&self) -> Result<*mut c_void, Error> {
+        unsafe {
+            let mut userdata = null_mut();
+            match ffi::FMOD_System_GetUserData(self.pointer, &mut userdata) {
+                ffi::FMOD_OK => Ok(userdata),
+                error => Err(err_fmod!("FMOD_System_GetUserData", error)),
+            }
+        }
     }
 }

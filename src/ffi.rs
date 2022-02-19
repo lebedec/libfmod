@@ -5,6 +5,7 @@
 use std::os::raw::{
     c_char, c_float, c_int, c_longlong, c_short, c_uchar, c_uint, c_ulonglong, c_ushort, c_void,
 };
+use std::ptr::null_mut;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -1414,11 +1415,34 @@ pub struct FMOD_STUDIO_BANK_INFO {
     pub seekcallback: FMOD_FILE_SEEK_CALLBACK,
 }
 
+impl Default for FMOD_STUDIO_BANK_INFO {
+    fn default() -> Self {
+        Self {
+            size: Default::default(),
+            userdata: null_mut(),
+            userdatalength: Default::default(),
+            opencallback: Default::default(),
+            closecallback: Default::default(),
+            readcallback: Default::default(),
+            seekcallback: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_STUDIO_PARAMETER_ID {
     pub data1: c_uint,
     pub data2: c_uint,
+}
+
+impl Default for FMOD_STUDIO_PARAMETER_ID {
+    fn default() -> Self {
+        Self {
+            data1: Default::default(),
+            data2: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1432,6 +1456,21 @@ pub struct FMOD_STUDIO_PARAMETER_DESCRIPTION {
     pub type_: FMOD_STUDIO_PARAMETER_TYPE,
     pub flags: FMOD_STUDIO_PARAMETER_FLAGS,
     pub guid: FMOD_GUID,
+}
+
+impl Default for FMOD_STUDIO_PARAMETER_DESCRIPTION {
+    fn default() -> Self {
+        Self {
+            name: null_mut(),
+            id: Default::default(),
+            minimum: Default::default(),
+            maximum: Default::default(),
+            defaultvalue: Default::default(),
+            type_: Default::default(),
+            flags: Default::default(),
+            guid: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1451,12 +1490,28 @@ pub union FMOD_STUDIO_USER_PROPERTY__union {
     pub stringvalue: *const c_char,
 }
 
+impl Default for FMOD_STUDIO_USER_PROPERTY {
+    fn default() -> Self {
+        unimplemented!()
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES {
     pub name: *const c_char,
     pub sound: *mut FMOD_SOUND,
     pub subsoundIndex: c_int,
+}
+
+impl Default for FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES {
+    fn default() -> Self {
+        Self {
+            name: null_mut(),
+            sound: null_mut(),
+            subsoundIndex: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1466,11 +1521,29 @@ pub struct FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES {
     pub dsp: *mut FMOD_DSP,
 }
 
+impl Default for FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES {
+    fn default() -> Self {
+        Self {
+            name: null_mut(),
+            dsp: null_mut(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES {
     pub name: *const c_char,
     pub position: c_int,
+}
+
+impl Default for FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES {
+    fn default() -> Self {
+        Self {
+            name: null_mut(),
+            position: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1484,11 +1557,33 @@ pub struct FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES {
     pub timesignaturelower: c_int,
 }
 
+impl Default for FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES {
+    fn default() -> Self {
+        Self {
+            bar: Default::default(),
+            beat: Default::default(),
+            position: Default::default(),
+            tempo: Default::default(),
+            timesignatureupper: Default::default(),
+            timesignaturelower: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES {
     pub eventid: FMOD_GUID,
     pub properties: FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES,
+}
+
+impl Default for FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES {
+    fn default() -> Self {
+        Self {
+            eventid: Default::default(),
+            properties: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1503,10 +1598,32 @@ pub struct FMOD_STUDIO_ADVANCEDSETTINGS {
     pub encryptionkey: *const c_char,
 }
 
+impl Default for FMOD_STUDIO_ADVANCEDSETTINGS {
+    fn default() -> Self {
+        Self {
+            cbsize: Default::default(),
+            commandqueuesize: Default::default(),
+            handleinitialsize: Default::default(),
+            studioupdateperiod: Default::default(),
+            idlesampledatapoolsize: Default::default(),
+            streamingscheduledelay: Default::default(),
+            encryptionkey: null_mut(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_STUDIO_CPU_USAGE {
     pub update: c_float,
+}
+
+impl Default for FMOD_STUDIO_CPU_USAGE {
+    fn default() -> Self {
+        Self {
+            update: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1519,11 +1636,32 @@ pub struct FMOD_STUDIO_BUFFER_INFO {
     pub stalltime: c_float,
 }
 
+impl Default for FMOD_STUDIO_BUFFER_INFO {
+    fn default() -> Self {
+        Self {
+            currentusage: Default::default(),
+            peakusage: Default::default(),
+            capacity: Default::default(),
+            stallcount: Default::default(),
+            stalltime: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_STUDIO_BUFFER_USAGE {
     pub studiocommandqueue: FMOD_STUDIO_BUFFER_INFO,
     pub studiohandle: FMOD_STUDIO_BUFFER_INFO,
+}
+
+impl Default for FMOD_STUDIO_BUFFER_USAGE {
+    fn default() -> Self {
+        Self {
+            studiocommandqueue: Default::default(),
+            studiohandle: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1533,6 +1671,17 @@ pub struct FMOD_STUDIO_SOUND_INFO {
     pub mode: FMOD_MODE,
     pub exinfo: FMOD_CREATESOUNDEXINFO,
     pub subsoundindex: c_int,
+}
+
+impl Default for FMOD_STUDIO_SOUND_INFO {
+    fn default() -> Self {
+        Self {
+            name_or_data: null_mut(),
+            mode: Default::default(),
+            exinfo: Default::default(),
+            subsoundindex: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1548,12 +1697,37 @@ pub struct FMOD_STUDIO_COMMAND_INFO {
     pub outputhandle: c_uint,
 }
 
+impl Default for FMOD_STUDIO_COMMAND_INFO {
+    fn default() -> Self {
+        Self {
+            commandname: null_mut(),
+            parentcommandindex: Default::default(),
+            framenumber: Default::default(),
+            frametime: Default::default(),
+            instancetype: Default::default(),
+            outputtype: Default::default(),
+            instancehandle: Default::default(),
+            outputhandle: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_STUDIO_MEMORY_USAGE {
     pub exclusive: c_int,
     pub inclusive: c_int,
     pub sampledata: c_int,
+}
+
+impl Default for FMOD_STUDIO_MEMORY_USAGE {
+    fn default() -> Self {
+        Self {
+            exclusive: Default::default(),
+            inclusive: Default::default(),
+            sampledata: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1569,12 +1743,37 @@ pub struct FMOD_ASYNCREADINFO {
     pub done: FMOD_FILE_ASYNCDONE_FUNC,
 }
 
+impl Default for FMOD_ASYNCREADINFO {
+    fn default() -> Self {
+        Self {
+            handle: null_mut(),
+            offset: Default::default(),
+            sizebytes: Default::default(),
+            priority: Default::default(),
+            userdata: null_mut(),
+            buffer: null_mut(),
+            bytesread: Default::default(),
+            done: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_VECTOR {
     pub x: c_float,
     pub y: c_float,
     pub z: c_float,
+}
+
+impl Default for FMOD_VECTOR {
+    fn default() -> Self {
+        Self {
+            x: Default::default(),
+            y: Default::default(),
+            z: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1586,6 +1785,17 @@ pub struct FMOD_3D_ATTRIBUTES {
     pub up: FMOD_VECTOR,
 }
 
+impl Default for FMOD_3D_ATTRIBUTES {
+    fn default() -> Self {
+        Self {
+            position: Default::default(),
+            velocity: Default::default(),
+            forward: Default::default(),
+            up: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_GUID {
@@ -1595,11 +1805,31 @@ pub struct FMOD_GUID {
     pub Data4: [c_uchar; 8 as usize],
 }
 
+impl Default for FMOD_GUID {
+    fn default() -> Self {
+        Self {
+            Data1: Default::default(),
+            Data2: Default::default(),
+            Data3: Default::default(),
+            Data4: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_PLUGINLIST {
     pub type_: FMOD_PLUGINTYPE,
     pub description: *mut c_void,
+}
+
+impl Default for FMOD_PLUGINLIST {
+    fn default() -> Self {
+        Self {
+            type_: Default::default(),
+            description: null_mut(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1629,6 +1859,35 @@ pub struct FMOD_ADVANCEDSETTINGS {
     pub maxOpusCodecs: c_int,
 }
 
+impl Default for FMOD_ADVANCEDSETTINGS {
+    fn default() -> Self {
+        Self {
+            cbSize: Default::default(),
+            maxMPEGCodecs: Default::default(),
+            maxADPCMCodecs: Default::default(),
+            maxXMACodecs: Default::default(),
+            maxVorbisCodecs: Default::default(),
+            maxAT9Codecs: Default::default(),
+            maxFADPCMCodecs: Default::default(),
+            maxPCMCodecs: Default::default(),
+            ASIONumChannels: Default::default(),
+            ASIOChannelList: null_mut(),
+            ASIOSpeakerList: null_mut(),
+            vol0virtualvol: Default::default(),
+            defaultDecodeBufferSize: Default::default(),
+            profilePort: Default::default(),
+            geometryMaxFadeTime: Default::default(),
+            distanceFilterCenterFreq: Default::default(),
+            reverb3Dinstance: Default::default(),
+            DSPBufferPoolSize: Default::default(),
+            resamplerMethod: Default::default(),
+            randomSeed: Default::default(),
+            maxConvolutionThreads: Default::default(),
+            maxOpusCodecs: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_TAG {
@@ -1638,6 +1897,19 @@ pub struct FMOD_TAG {
     pub data: *mut c_void,
     pub datalen: c_uint,
     pub updated: FMOD_BOOL,
+}
+
+impl Default for FMOD_TAG {
+    fn default() -> Self {
+        Self {
+            type_: Default::default(),
+            datatype: Default::default(),
+            name: null_mut(),
+            data: null_mut(),
+            datalen: Default::default(),
+            updated: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1681,6 +1953,49 @@ pub struct FMOD_CREATESOUNDEXINFO {
     pub fsbguid: *mut FMOD_GUID,
 }
 
+impl Default for FMOD_CREATESOUNDEXINFO {
+    fn default() -> Self {
+        Self {
+            cbsize: Default::default(),
+            length: Default::default(),
+            fileoffset: Default::default(),
+            numchannels: Default::default(),
+            defaultfrequency: Default::default(),
+            format: Default::default(),
+            decodebuffersize: Default::default(),
+            initialsubsound: Default::default(),
+            numsubsounds: Default::default(),
+            inclusionlist: null_mut(),
+            inclusionlistnum: Default::default(),
+            pcmreadcallback: Default::default(),
+            pcmsetposcallback: Default::default(),
+            nonblockcallback: Default::default(),
+            dlsname: null_mut(),
+            encryptionkey: null_mut(),
+            maxpolyphony: Default::default(),
+            userdata: null_mut(),
+            suggestedsoundtype: Default::default(),
+            fileuseropen: Default::default(),
+            fileuserclose: Default::default(),
+            fileuserread: Default::default(),
+            fileuserseek: Default::default(),
+            fileuserasyncread: Default::default(),
+            fileuserasynccancel: Default::default(),
+            fileuserdata: null_mut(),
+            filebuffersize: Default::default(),
+            channelorder: Default::default(),
+            initialsoundgroup: null_mut(),
+            initialseekposition: Default::default(),
+            initialseekpostype: Default::default(),
+            ignoresetfilesystem: Default::default(),
+            audioqueuepolicy: Default::default(),
+            minmidigranularity: Default::default(),
+            nonblockthreadid: Default::default(),
+            fsbguid: null_mut(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_REVERB_PROPERTIES {
@@ -1698,6 +2013,25 @@ pub struct FMOD_REVERB_PROPERTIES {
     pub WetLevel: c_float,
 }
 
+impl Default for FMOD_REVERB_PROPERTIES {
+    fn default() -> Self {
+        Self {
+            DecayTime: Default::default(),
+            EarlyDelay: Default::default(),
+            LateDelay: Default::default(),
+            HFReference: Default::default(),
+            HFDecayRatio: Default::default(),
+            Diffusion: Default::default(),
+            Density: Default::default(),
+            LowShelfFrequency: Default::default(),
+            LowShelfGain: Default::default(),
+            HighCut: Default::default(),
+            EarlyLateMix: Default::default(),
+            WetLevel: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_ERRORCALLBACK_INFO {
@@ -1706,6 +2040,18 @@ pub struct FMOD_ERRORCALLBACK_INFO {
     pub instance: *mut c_void,
     pub functionname: *const c_char,
     pub functionparams: *const c_char,
+}
+
+impl Default for FMOD_ERRORCALLBACK_INFO {
+    fn default() -> Self {
+        Self {
+            result: Default::default(),
+            instancetype: Default::default(),
+            instance: null_mut(),
+            functionname: null_mut(),
+            functionparams: null_mut(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1717,6 +2063,19 @@ pub struct FMOD_CPU_USAGE {
     pub update: c_float,
     pub convolution1: c_float,
     pub convolution2: c_float,
+}
+
+impl Default for FMOD_CPU_USAGE {
+    fn default() -> Self {
+        Self {
+            dsp: Default::default(),
+            stream: Default::default(),
+            geometry: Default::default(),
+            update: Default::default(),
+            convolution1: Default::default(),
+            convolution2: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1737,6 +2096,26 @@ pub struct FMOD_CODEC_DESCRIPTION {
     pub getwaveformat: FMOD_CODEC_GETWAVEFORMAT_CALLBACK,
 }
 
+impl Default for FMOD_CODEC_DESCRIPTION {
+    fn default() -> Self {
+        Self {
+            apiversion: Default::default(),
+            name: null_mut(),
+            version: Default::default(),
+            defaultasstream: Default::default(),
+            timeunits: Default::default(),
+            open: Default::default(),
+            close: Default::default(),
+            read: Default::default(),
+            getlength: Default::default(),
+            setposition: Default::default(),
+            getposition: Default::default(),
+            soundcreate: Default::default(),
+            getwaveformat: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_CODEC_WAVEFORMAT {
@@ -1755,6 +2134,26 @@ pub struct FMOD_CODEC_WAVEFORMAT {
     pub peakvolume: c_float,
 }
 
+impl Default for FMOD_CODEC_WAVEFORMAT {
+    fn default() -> Self {
+        Self {
+            name: null_mut(),
+            format: Default::default(),
+            channels: Default::default(),
+            frequency: Default::default(),
+            lengthbytes: Default::default(),
+            lengthpcm: Default::default(),
+            pcmblocksize: Default::default(),
+            loopstart: Default::default(),
+            loopend: Default::default(),
+            mode: Default::default(),
+            channelmask: Default::default(),
+            channelorder: Default::default(),
+            peakvolume: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_CODEC_STATE_FUNCTIONS {
@@ -1768,6 +2167,21 @@ pub struct FMOD_CODEC_STATE_FUNCTIONS {
     pub size: FMOD_CODEC_FILE_SIZE_FUNC,
 }
 
+impl Default for FMOD_CODEC_STATE_FUNCTIONS {
+    fn default() -> Self {
+        Self {
+            metadata: Default::default(),
+            alloc: Default::default(),
+            free: Default::default(),
+            log: Default::default(),
+            read: Default::default(),
+            seek: Default::default(),
+            tell: Default::default(),
+            size: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_CODEC_STATE {
@@ -1775,6 +2189,17 @@ pub struct FMOD_CODEC_STATE {
     pub waveformat: *mut FMOD_CODEC_WAVEFORMAT,
     pub functions: *mut FMOD_CODEC_STATE_FUNCTIONS,
     pub numsubsounds: c_int,
+}
+
+impl Default for FMOD_CODEC_STATE {
+    fn default() -> Self {
+        Self {
+            plugindata: null_mut(),
+            waveformat: null_mut(),
+            functions: null_mut(),
+            numsubsounds: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1802,6 +2227,33 @@ pub struct FMOD_OUTPUT_DESCRIPTION {
     pub devicelistchanged: FMOD_OUTPUT_DEVICELISTCHANGED_CALLBACK,
 }
 
+impl Default for FMOD_OUTPUT_DESCRIPTION {
+    fn default() -> Self {
+        Self {
+            apiversion: Default::default(),
+            name: null_mut(),
+            version: Default::default(),
+            method: Default::default(),
+            getnumdrivers: Default::default(),
+            getdriverinfo: Default::default(),
+            init: Default::default(),
+            start: Default::default(),
+            stop: Default::default(),
+            close: Default::default(),
+            update: Default::default(),
+            gethandle: Default::default(),
+            mixer: Default::default(),
+            object3dgetinfo: Default::default(),
+            object3dalloc: Default::default(),
+            object3dfree: Default::default(),
+            object3dupdate: Default::default(),
+            openport: Default::default(),
+            closeport: Default::default(),
+            devicelistchanged: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_OUTPUT_STATE {
@@ -1812,6 +2264,20 @@ pub struct FMOD_OUTPUT_STATE {
     pub log: FMOD_OUTPUT_LOG_FUNC,
     pub copyport: FMOD_OUTPUT_COPYPORT_FUNC,
     pub requestreset: FMOD_OUTPUT_REQUESTRESET_FUNC,
+}
+
+impl Default for FMOD_OUTPUT_STATE {
+    fn default() -> Self {
+        Self {
+            plugindata: null_mut(),
+            readfrommixer: Default::default(),
+            alloc: Default::default(),
+            free: Default::default(),
+            log: Default::default(),
+            copyport: Default::default(),
+            requestreset: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1825,6 +2291,19 @@ pub struct FMOD_OUTPUT_OBJECT3DINFO {
     pub priority: c_float,
 }
 
+impl Default for FMOD_OUTPUT_OBJECT3DINFO {
+    fn default() -> Self {
+        Self {
+            buffer: null_mut(),
+            bufferlength: Default::default(),
+            position: Default::default(),
+            gain: Default::default(),
+            spread: Default::default(),
+            priority: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_DSP_BUFFER_ARRAY {
@@ -1835,11 +2314,32 @@ pub struct FMOD_DSP_BUFFER_ARRAY {
     pub speakermode: FMOD_SPEAKERMODE,
 }
 
+impl Default for FMOD_DSP_BUFFER_ARRAY {
+    fn default() -> Self {
+        Self {
+            numbuffers: Default::default(),
+            buffernumchannels: null_mut(),
+            bufferchannelmask: null_mut(),
+            buffers: null_mut(),
+            speakermode: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_COMPLEX {
     pub real: c_float,
     pub imag: c_float,
+}
+
+impl Default for FMOD_COMPLEX {
+    fn default() -> Self {
+        Self {
+            real: Default::default(),
+            imag: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1850,11 +2350,30 @@ pub struct FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
     pub pointpositions: *mut c_float,
 }
 
+impl Default for FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
+    fn default() -> Self {
+        Self {
+            numpoints: Default::default(),
+            pointparamvalues: null_mut(),
+            pointpositions: null_mut(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_DSP_PARAMETER_FLOAT_MAPPING {
     pub type_: FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE,
     pub piecewiselinearmapping: FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR,
+}
+
+impl Default for FMOD_DSP_PARAMETER_FLOAT_MAPPING {
+    fn default() -> Self {
+        Self {
+            type_: Default::default(),
+            piecewiselinearmapping: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1864,6 +2383,17 @@ pub struct FMOD_DSP_PARAMETER_DESC_FLOAT {
     pub max: c_float,
     pub defaultval: c_float,
     pub mapping: FMOD_DSP_PARAMETER_FLOAT_MAPPING,
+}
+
+impl Default for FMOD_DSP_PARAMETER_DESC_FLOAT {
+    fn default() -> Self {
+        Self {
+            min: Default::default(),
+            max: Default::default(),
+            defaultval: Default::default(),
+            mapping: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1876,6 +2406,18 @@ pub struct FMOD_DSP_PARAMETER_DESC_INT {
     pub valuenames: *const *const c_char,
 }
 
+impl Default for FMOD_DSP_PARAMETER_DESC_INT {
+    fn default() -> Self {
+        Self {
+            min: Default::default(),
+            max: Default::default(),
+            defaultval: Default::default(),
+            goestoinf: Default::default(),
+            valuenames: null_mut(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_DSP_PARAMETER_DESC_BOOL {
@@ -1883,10 +2425,27 @@ pub struct FMOD_DSP_PARAMETER_DESC_BOOL {
     pub valuenames: *const *const c_char,
 }
 
+impl Default for FMOD_DSP_PARAMETER_DESC_BOOL {
+    fn default() -> Self {
+        Self {
+            defaultval: Default::default(),
+            valuenames: null_mut(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_DSP_PARAMETER_DESC_DATA {
     pub datatype: c_int,
+}
+
+impl Default for FMOD_DSP_PARAMETER_DESC_DATA {
+    fn default() -> Self {
+        Self {
+            datatype: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1908,6 +2467,12 @@ pub union FMOD_DSP_PARAMETER_DESC__union {
     pub datadesc: FMOD_DSP_PARAMETER_DESC_DATA,
 }
 
+impl Default for FMOD_DSP_PARAMETER_DESC {
+    fn default() -> Self {
+        unimplemented!()
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_DSP_PARAMETER_OVERALLGAIN {
@@ -1915,11 +2480,29 @@ pub struct FMOD_DSP_PARAMETER_OVERALLGAIN {
     pub linear_gain_additive: c_float,
 }
 
+impl Default for FMOD_DSP_PARAMETER_OVERALLGAIN {
+    fn default() -> Self {
+        Self {
+            linear_gain: Default::default(),
+            linear_gain_additive: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_DSP_PARAMETER_3DATTRIBUTES {
     pub relative: FMOD_3D_ATTRIBUTES,
     pub absolute: FMOD_3D_ATTRIBUTES,
+}
+
+impl Default for FMOD_DSP_PARAMETER_3DATTRIBUTES {
+    fn default() -> Self {
+        Self {
+            relative: Default::default(),
+            absolute: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1931,11 +2514,31 @@ pub struct FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI {
     pub absolute: FMOD_3D_ATTRIBUTES,
 }
 
+impl Default for FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI {
+    fn default() -> Self {
+        Self {
+            numlisteners: Default::default(),
+            relative: Default::default(),
+            weight: Default::default(),
+            absolute: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_DSP_PARAMETER_ATTENUATION_RANGE {
     pub min: c_float,
     pub max: c_float,
+}
+
+impl Default for FMOD_DSP_PARAMETER_ATTENUATION_RANGE {
+    fn default() -> Self {
+        Self {
+            min: Default::default(),
+            max: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1944,12 +2547,26 @@ pub struct FMOD_DSP_PARAMETER_SIDECHAIN {
     pub sidechainenable: FMOD_BOOL,
 }
 
+impl Default for FMOD_DSP_PARAMETER_SIDECHAIN {
+    fn default() -> Self {
+        Self {
+            sidechainenable: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_DSP_PARAMETER_FFT {
     pub length: c_int,
     pub numchannels: c_int,
     pub spectrum: [*mut c_float; 32 as usize],
+}
+
+impl Default for FMOD_DSP_PARAMETER_FFT {
+    fn default() -> Self {
+        unimplemented!()
+    }
 }
 
 #[repr(C)]
@@ -1983,11 +2600,53 @@ pub struct FMOD_DSP_DESCRIPTION {
     pub sys_mix: FMOD_DSP_SYSTEM_MIX_CALLBACK,
 }
 
+impl Default for FMOD_DSP_DESCRIPTION {
+    fn default() -> Self {
+        Self {
+            pluginsdkversion: Default::default(),
+            name: Default::default(),
+            version: Default::default(),
+            numinputbuffers: Default::default(),
+            numoutputbuffers: Default::default(),
+            create: Default::default(),
+            release: Default::default(),
+            reset: Default::default(),
+            read: Default::default(),
+            process: Default::default(),
+            setposition: Default::default(),
+            numparameters: Default::default(),
+            paramdesc: null_mut(),
+            setparameterfloat: Default::default(),
+            setparameterint: Default::default(),
+            setparameterbool: Default::default(),
+            setparameterdata: Default::default(),
+            getparameterfloat: Default::default(),
+            getparameterint: Default::default(),
+            getparameterbool: Default::default(),
+            getparameterdata: Default::default(),
+            shouldiprocess: Default::default(),
+            userdata: null_mut(),
+            sys_register: Default::default(),
+            sys_deregister: Default::default(),
+            sys_mix: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_DSP_STATE_DFT_FUNCTIONS {
     pub fftreal: FMOD_DSP_DFT_FFTREAL_FUNC,
     pub inversefftreal: FMOD_DSP_DFT_IFFTREAL_FUNC,
+}
+
+impl Default for FMOD_DSP_STATE_DFT_FUNCTIONS {
+    fn default() -> Self {
+        Self {
+            fftreal: Default::default(),
+            inversefftreal: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -1999,6 +2658,19 @@ pub struct FMOD_DSP_STATE_PAN_FUNCTIONS {
     pub summonotosurroundmatrix: FMOD_DSP_PAN_SUMMONOTOSURROUNDMATRIX_FUNC,
     pub sumstereotosurroundmatrix: FMOD_DSP_PAN_SUMSTEREOTOSURROUNDMATRIX_FUNC,
     pub getrolloffgain: FMOD_DSP_PAN_GETROLLOFFGAIN_FUNC,
+}
+
+impl Default for FMOD_DSP_STATE_PAN_FUNCTIONS {
+    fn default() -> Self {
+        Self {
+            summonomatrix: Default::default(),
+            sumstereomatrix: Default::default(),
+            sumsurroundmatrix: Default::default(),
+            summonotosurroundmatrix: Default::default(),
+            sumstereotosurroundmatrix: Default::default(),
+            getrolloffgain: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -2018,6 +2690,25 @@ pub struct FMOD_DSP_STATE_FUNCTIONS {
     pub getuserdata: FMOD_DSP_GETUSERDATA_FUNC,
 }
 
+impl Default for FMOD_DSP_STATE_FUNCTIONS {
+    fn default() -> Self {
+        Self {
+            alloc: Default::default(),
+            realloc: Default::default(),
+            free: Default::default(),
+            getsamplerate: Default::default(),
+            getblocksize: Default::default(),
+            dft: null_mut(),
+            pan: null_mut(),
+            getspeakermode: Default::default(),
+            getclock: Default::default(),
+            getlistenerattributes: Default::default(),
+            log: Default::default(),
+            getuserdata: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_DSP_STATE {
@@ -2031,6 +2722,21 @@ pub struct FMOD_DSP_STATE {
     pub systemobject: c_int,
 }
 
+impl Default for FMOD_DSP_STATE {
+    fn default() -> Self {
+        Self {
+            instance: null_mut(),
+            plugindata: null_mut(),
+            channelmask: Default::default(),
+            source_speakermode: Default::default(),
+            sidechaindata: null_mut(),
+            sidechainchannels: Default::default(),
+            functions: null_mut(),
+            systemobject: Default::default(),
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_DSP_METERING_INFO {
@@ -2038,6 +2744,17 @@ pub struct FMOD_DSP_METERING_INFO {
     pub peaklevel: [c_float; 32 as usize],
     pub rmslevel: [c_float; 32 as usize],
     pub numchannels: c_short,
+}
+
+impl Default for FMOD_DSP_METERING_INFO {
+    fn default() -> Self {
+        Self {
+            numsamples: Default::default(),
+            peaklevel: Default::default(),
+            rmslevel: Default::default(),
+            numchannels: Default::default(),
+        }
+    }
 }
 
 #[repr(C)]
@@ -2053,10 +2770,24 @@ pub struct FMOD_DSP_LOUDNESS_METER_INFO_TYPE {
     pub maxmomentaryloudness: c_float,
 }
 
+impl Default for FMOD_DSP_LOUDNESS_METER_INFO_TYPE {
+    fn default() -> Self {
+        unimplemented!()
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE {
     pub channelweight: [c_float; 32 as usize],
+}
+
+impl Default for FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE {
+    fn default() -> Self {
+        Self {
+            channelweight: Default::default(),
+        }
+    }
 }
 
 pub const FMOD_PRESET_OFF: FMOD_REVERB_PROPERTIES = FMOD_REVERB_PROPERTIES {
