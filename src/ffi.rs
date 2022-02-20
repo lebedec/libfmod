@@ -2,6 +2,7 @@
 #![allow(non_snake_case)]
 #![allow(unused_parens)]
 
+use std::mem::size_of;
 use std::os::raw::{
     c_char, c_float, c_int, c_longlong, c_short, c_uchar, c_uint, c_ulonglong, c_ushort, c_void,
 };
@@ -1601,7 +1602,7 @@ pub struct FMOD_STUDIO_ADVANCEDSETTINGS {
 impl Default for FMOD_STUDIO_ADVANCEDSETTINGS {
     fn default() -> Self {
         Self {
-            cbsize: Default::default(),
+            cbsize: size_of::<FMOD_STUDIO_ADVANCEDSETTINGS>() as i32,
             commandqueuesize: Default::default(),
             handleinitialsize: Default::default(),
             studioupdateperiod: Default::default(),
@@ -1862,7 +1863,7 @@ pub struct FMOD_ADVANCEDSETTINGS {
 impl Default for FMOD_ADVANCEDSETTINGS {
     fn default() -> Self {
         Self {
-            cbSize: Default::default(),
+            cbSize: size_of::<FMOD_ADVANCEDSETTINGS>() as i32,
             maxMPEGCodecs: Default::default(),
             maxADPCMCodecs: Default::default(),
             maxXMACodecs: Default::default(),

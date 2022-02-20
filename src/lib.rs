@@ -1,6 +1,7 @@
 #![allow(unused_unsafe)]
 
 use std::ffi::{c_void, CStr, CString, IntoStringError};
+use std::mem::size_of;
 use std::ptr::{null, null_mut};
 use std::slice;
 
@@ -3940,7 +3941,6 @@ impl TimelineNestedBeatProperties {
 
 #[derive(Debug, Clone)]
 pub struct StudioAdvancedSettings {
-    pub cbsize: i32,
     pub commandqueuesize: u32,
     pub handleinitialsize: u32,
     pub studioupdateperiod: i32,
@@ -3953,7 +3953,6 @@ impl StudioAdvancedSettings {
     pub fn from(value: ffi::FMOD_STUDIO_ADVANCEDSETTINGS) -> Result<StudioAdvancedSettings, Error> {
         unsafe {
             Ok(StudioAdvancedSettings {
-                cbsize: value.cbsize,
                 commandqueuesize: value.commandqueuesize,
                 handleinitialsize: value.handleinitialsize,
                 studioupdateperiod: value.studioupdateperiod,
@@ -3965,7 +3964,7 @@ impl StudioAdvancedSettings {
     }
     pub fn into(self) -> ffi::FMOD_STUDIO_ADVANCEDSETTINGS {
         ffi::FMOD_STUDIO_ADVANCEDSETTINGS {
-            cbsize: self.cbsize,
+            cbsize: size_of::<ffi::FMOD_STUDIO_ADVANCEDSETTINGS>() as i32,
             commandqueuesize: self.commandqueuesize,
             handleinitialsize: self.handleinitialsize,
             studioupdateperiod: self.studioupdateperiod,
@@ -4297,7 +4296,6 @@ impl PluginList {
 
 #[derive(Debug, Clone)]
 pub struct AdvancedSettings {
-    pub cb_size: i32,
     pub max_mpeg_codecs: i32,
     pub max_adpcm_codecs: i32,
     pub max_xma_codecs: i32,
@@ -4325,7 +4323,6 @@ impl AdvancedSettings {
     pub fn from(value: ffi::FMOD_ADVANCEDSETTINGS) -> Result<AdvancedSettings, Error> {
         unsafe {
             Ok(AdvancedSettings {
-                cb_size: value.cbSize,
                 max_mpeg_codecs: value.maxMPEGCodecs,
                 max_adpcm_codecs: value.maxADPCMCodecs,
                 max_xma_codecs: value.maxXMACodecs,
@@ -4360,7 +4357,7 @@ impl AdvancedSettings {
     }
     pub fn into(self) -> ffi::FMOD_ADVANCEDSETTINGS {
         ffi::FMOD_ADVANCEDSETTINGS {
-            cbSize: self.cb_size,
+            cbSize: size_of::<ffi::FMOD_ADVANCEDSETTINGS>() as i32,
             maxMPEGCodecs: self.max_mpeg_codecs,
             maxADPCMCodecs: self.max_adpcm_codecs,
             maxXMACodecs: self.max_xma_codecs,
@@ -10590,10 +10587,10 @@ impl Studio {
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_STUDIO_SYSTEM {
         self.pointer
     }
-    pub fn create(headerversion: u32) -> Result<Studio, Error> {
+    pub fn create() -> Result<Studio, Error> {
         unsafe {
             let mut system = null_mut();
-            match ffi::FMOD_Studio_System_Create(&mut system, headerversion) {
+            match ffi::FMOD_Studio_System_Create(&mut system, ffi::FMOD_VERSION) {
                 ffi::FMOD_OK => Ok(Studio::from(system)),
                 error => Err(err_fmod!("FMOD_Studio_System_Create", error)),
             }
@@ -10607,11 +10604,10 @@ impl Studio {
             }
         }
     }
-    pub fn set_advanced_settings(&self) -> Result<StudioAdvancedSettings, Error> {
+    pub fn set_advanced_settings(&self, settings: StudioAdvancedSettings) -> Result<(), Error> {
         unsafe {
-            let mut settings = ffi::FMOD_STUDIO_ADVANCEDSETTINGS::default();
-            match ffi::FMOD_Studio_System_SetAdvancedSettings(self.pointer, &mut settings) {
-                ffi::FMOD_OK => Ok(StudioAdvancedSettings::from(settings)?),
+            match ffi::FMOD_Studio_System_SetAdvancedSettings(self.pointer, &mut settings.into()) {
+                ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Studio_System_SetAdvancedSettings", error)),
             }
         }
@@ -11445,10 +11441,10 @@ impl System {
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_SYSTEM {
         self.pointer
     }
-    pub fn create(headerversion: u32) -> Result<System, Error> {
+    pub fn create() -> Result<System, Error> {
         unsafe {
             let mut system = null_mut();
-            match ffi::FMOD_System_Create(&mut system, headerversion) {
+            match ffi::FMOD_System_Create(&mut system, ffi::FMOD_VERSION) {
                 ffi::FMOD_OK => Ok(System::from(system)),
                 error => Err(err_fmod!("FMOD_System_Create", error)),
             }
@@ -11658,11 +11654,10 @@ impl System {
             }
         }
     }
-    pub fn set_advanced_settings(&self) -> Result<AdvancedSettings, Error> {
+    pub fn set_advanced_settings(&self, settings: AdvancedSettings) -> Result<(), Error> {
         unsafe {
-            let mut settings = ffi::FMOD_ADVANCEDSETTINGS::default();
-            match ffi::FMOD_System_SetAdvancedSettings(self.pointer, &mut settings) {
-                ffi::FMOD_OK => Ok(AdvancedSettings::from(settings)?),
+            match ffi::FMOD_System_SetAdvancedSettings(self.pointer, &mut settings.into()) {
+                ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_System_SetAdvancedSettings", error)),
             }
         }
