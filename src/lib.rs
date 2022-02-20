@@ -5980,40 +5980,40 @@ impl Channel {
             }
         }
     }
-    pub fn set_mix_levels_input(&self, numlevels: i32) -> Result<f32, Error> {
+    pub fn set_mix_levels_input(&self, levels: *mut f32, numlevels: i32) -> Result<(), Error> {
         unsafe {
-            let mut levels = f32::default();
-            match ffi::FMOD_Channel_SetMixLevelsInput(self.pointer, &mut levels, numlevels) {
-                ffi::FMOD_OK => Ok(levels),
+            match ffi::FMOD_Channel_SetMixLevelsInput(self.pointer, levels, numlevels) {
+                ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Channel_SetMixLevelsInput", error)),
             }
         }
     }
     pub fn set_mix_matrix(
         &self,
+        matrix: Option<*mut f32>,
         outchannels: i32,
         inchannels: i32,
-        inchannel_hop: i32,
-    ) -> Result<f32, Error> {
+        inchannel_hop: Option<i32>,
+    ) -> Result<(), Error> {
         unsafe {
-            let mut matrix = f32::default();
             match ffi::FMOD_Channel_SetMixMatrix(
                 self.pointer,
-                &mut matrix,
+                matrix.unwrap_or(null_mut()),
                 outchannels,
                 inchannels,
-                inchannel_hop,
+                inchannel_hop.unwrap_or(0),
             ) {
-                ffi::FMOD_OK => Ok(matrix),
+                ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Channel_SetMixMatrix", error)),
             }
         }
     }
-    pub fn get_mix_matrix(&self, inchannel_hop: i32) -> Result<(f32, i32, i32), Error> {
+    pub fn get_mix_matrix(&self) -> Result<(f32, i32, i32, i32), Error> {
         unsafe {
             let mut matrix = f32::default();
             let mut outchannels = i32::default();
             let mut inchannels = i32::default();
+            let mut inchannel_hop = i32::default();
             match ffi::FMOD_Channel_GetMixMatrix(
                 self.pointer,
                 &mut matrix,
@@ -6021,7 +6021,7 @@ impl Channel {
                 &mut inchannels,
                 inchannel_hop,
             ) {
-                ffi::FMOD_OK => Ok((matrix, outchannels, inchannels)),
+                ffi::FMOD_OK => Ok((matrix, outchannels, inchannels, inchannel_hop)),
                 error => Err(err_fmod!("FMOD_Channel_GetMixMatrix", error)),
             }
         }
@@ -6038,15 +6038,15 @@ impl Channel {
     }
     pub fn set_delay(
         &self,
-        dspclock_start: u64,
-        dspclock_end: u64,
+        dspclock_start: Option<u64>,
+        dspclock_end: Option<u64>,
         stopchannels: bool,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Channel_SetDelay(
                 self.pointer,
-                dspclock_start,
-                dspclock_end,
+                dspclock_start.unwrap_or(0),
+                dspclock_end.unwrap_or(0),
                 from_bool!(stopchannels),
             ) {
                 ffi::FMOD_OK => Ok(()),
@@ -6161,9 +6161,17 @@ impl Channel {
             }
         }
     }
-    pub fn set_3_d_attributes(&self, pos: Vector, vel: Vector) -> Result<(), Error> {
+    pub fn set_3_d_attributes(
+        &self,
+        pos: Option<Vector>,
+        vel: Option<Vector>,
+    ) -> Result<(), Error> {
         unsafe {
-            match ffi::FMOD_Channel_Set3DAttributes(self.pointer, &pos.into(), &vel.into()) {
+            match ffi::FMOD_Channel_Set3DAttributes(
+                self.pointer,
+                pos.map(|value| &value.into() as *const _).unwrap_or(null()),
+                vel.map(|value| &value.into() as *const _).unwrap_or(null()),
+            ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Channel_Set3DAttributes", error)),
             }
@@ -6239,11 +6247,10 @@ impl Channel {
             }
         }
     }
-    pub fn set_3_d_cone_orientation(&self) -> Result<Vector, Error> {
+    pub fn set_3_d_cone_orientation(&self, orientation: Vector) -> Result<(), Error> {
         unsafe {
-            let mut orientation = ffi::FMOD_VECTOR::default();
-            match ffi::FMOD_Channel_Set3DConeOrientation(self.pointer, &mut orientation) {
-                ffi::FMOD_OK => Ok(Vector::from(orientation)?),
+            match ffi::FMOD_Channel_Set3DConeOrientation(self.pointer, &mut orientation.into()) {
+                ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Channel_Set3DConeOrientation", error)),
             }
         }
@@ -6257,11 +6264,11 @@ impl Channel {
             }
         }
     }
-    pub fn set_3_d_custom_rolloff(&self, numpoints: i32) -> Result<Vector, Error> {
+    pub fn set_3_d_custom_rolloff(&self, points: Vector, numpoints: i32) -> Result<(), Error> {
         unsafe {
-            let mut points = ffi::FMOD_VECTOR::default();
-            match ffi::FMOD_Channel_Set3DCustomRolloff(self.pointer, &mut points, numpoints) {
-                ffi::FMOD_OK => Ok(Vector::from(points)?),
+            match ffi::FMOD_Channel_Set3DCustomRolloff(self.pointer, &mut points.into(), numpoints)
+            {
+                ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Channel_Set3DCustomRolloff", error)),
             }
         }
@@ -6357,14 +6364,14 @@ impl Channel {
         &self,
         custom: bool,
         custom_level: f32,
-        center_freq: f32,
+        center_freq: Option<f32>,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Channel_Set3DDistanceFilter(
                 self.pointer,
                 from_bool!(custom),
                 custom_level,
-                center_freq,
+                center_freq.unwrap_or(0.0),
             ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Channel_Set3DDistanceFilter", error)),
@@ -6803,40 +6810,40 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_mix_levels_input(&self, numlevels: i32) -> Result<f32, Error> {
+    pub fn set_mix_levels_input(&self, levels: *mut f32, numlevels: i32) -> Result<(), Error> {
         unsafe {
-            let mut levels = f32::default();
-            match ffi::FMOD_ChannelGroup_SetMixLevelsInput(self.pointer, &mut levels, numlevels) {
-                ffi::FMOD_OK => Ok(levels),
+            match ffi::FMOD_ChannelGroup_SetMixLevelsInput(self.pointer, levels, numlevels) {
+                ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_ChannelGroup_SetMixLevelsInput", error)),
             }
         }
     }
     pub fn set_mix_matrix(
         &self,
+        matrix: Option<*mut f32>,
         outchannels: i32,
         inchannels: i32,
-        inchannel_hop: i32,
-    ) -> Result<f32, Error> {
+        inchannel_hop: Option<i32>,
+    ) -> Result<(), Error> {
         unsafe {
-            let mut matrix = f32::default();
             match ffi::FMOD_ChannelGroup_SetMixMatrix(
                 self.pointer,
-                &mut matrix,
+                matrix.unwrap_or(null_mut()),
                 outchannels,
                 inchannels,
-                inchannel_hop,
+                inchannel_hop.unwrap_or(0),
             ) {
-                ffi::FMOD_OK => Ok(matrix),
+                ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_ChannelGroup_SetMixMatrix", error)),
             }
         }
     }
-    pub fn get_mix_matrix(&self, inchannel_hop: i32) -> Result<(f32, i32, i32), Error> {
+    pub fn get_mix_matrix(&self) -> Result<(f32, i32, i32, i32), Error> {
         unsafe {
             let mut matrix = f32::default();
             let mut outchannels = i32::default();
             let mut inchannels = i32::default();
+            let mut inchannel_hop = i32::default();
             match ffi::FMOD_ChannelGroup_GetMixMatrix(
                 self.pointer,
                 &mut matrix,
@@ -6844,7 +6851,7 @@ impl ChannelGroup {
                 &mut inchannels,
                 inchannel_hop,
             ) {
-                ffi::FMOD_OK => Ok((matrix, outchannels, inchannels)),
+                ffi::FMOD_OK => Ok((matrix, outchannels, inchannels, inchannel_hop)),
                 error => Err(err_fmod!("FMOD_ChannelGroup_GetMixMatrix", error)),
             }
         }
@@ -6862,15 +6869,15 @@ impl ChannelGroup {
     }
     pub fn set_delay(
         &self,
-        dspclock_start: u64,
-        dspclock_end: u64,
+        dspclock_start: Option<u64>,
+        dspclock_end: Option<u64>,
         stopchannels: bool,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_ChannelGroup_SetDelay(
                 self.pointer,
-                dspclock_start,
-                dspclock_end,
+                dspclock_start.unwrap_or(0),
+                dspclock_end.unwrap_or(0),
                 from_bool!(stopchannels),
             ) {
                 ffi::FMOD_OK => Ok(()),
@@ -6989,9 +6996,17 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_3_d_attributes(&self, pos: Vector, vel: Vector) -> Result<(), Error> {
+    pub fn set_3_d_attributes(
+        &self,
+        pos: Option<Vector>,
+        vel: Option<Vector>,
+    ) -> Result<(), Error> {
         unsafe {
-            match ffi::FMOD_ChannelGroup_Set3DAttributes(self.pointer, &pos.into(), &vel.into()) {
+            match ffi::FMOD_ChannelGroup_Set3DAttributes(
+                self.pointer,
+                pos.map(|value| &value.into() as *const _).unwrap_or(null()),
+                vel.map(|value| &value.into() as *const _).unwrap_or(null()),
+            ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_ChannelGroup_Set3DAttributes", error)),
             }
@@ -7068,11 +7083,11 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_3_d_cone_orientation(&self) -> Result<Vector, Error> {
+    pub fn set_3_d_cone_orientation(&self, orientation: Vector) -> Result<(), Error> {
         unsafe {
-            let mut orientation = ffi::FMOD_VECTOR::default();
-            match ffi::FMOD_ChannelGroup_Set3DConeOrientation(self.pointer, &mut orientation) {
-                ffi::FMOD_OK => Ok(Vector::from(orientation)?),
+            match ffi::FMOD_ChannelGroup_Set3DConeOrientation(self.pointer, &mut orientation.into())
+            {
+                ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_ChannelGroup_Set3DConeOrientation", error)),
             }
         }
@@ -7086,11 +7101,14 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_3_d_custom_rolloff(&self, numpoints: i32) -> Result<Vector, Error> {
+    pub fn set_3_d_custom_rolloff(&self, points: Vector, numpoints: i32) -> Result<(), Error> {
         unsafe {
-            let mut points = ffi::FMOD_VECTOR::default();
-            match ffi::FMOD_ChannelGroup_Set3DCustomRolloff(self.pointer, &mut points, numpoints) {
-                ffi::FMOD_OK => Ok(Vector::from(points)?),
+            match ffi::FMOD_ChannelGroup_Set3DCustomRolloff(
+                self.pointer,
+                &mut points.into(),
+                numpoints,
+            ) {
+                ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_ChannelGroup_Set3DCustomRolloff", error)),
             }
         }
@@ -7194,14 +7212,14 @@ impl ChannelGroup {
         &self,
         custom: bool,
         custom_level: f32,
-        center_freq: f32,
+        center_freq: Option<f32>,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_ChannelGroup_Set3DDistanceFilter(
                 self.pointer,
                 from_bool!(custom),
                 custom_level,
-                center_freq,
+                center_freq.unwrap_or(0.0),
             ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_ChannelGroup_Set3DDistanceFilter", error)),
@@ -7370,12 +7388,18 @@ impl Dsp {
             }
         }
     }
-    pub fn disconnect_from(&self, target: Dsp, connection: DspConnection) -> Result<(), Error> {
+    pub fn disconnect_from(
+        &self,
+        target: Option<Dsp>,
+        connection: Option<DspConnection>,
+    ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_DSP_DisconnectFrom(
                 self.pointer,
-                target.as_mut_ptr(),
-                connection.as_mut_ptr(),
+                target.map(|value| value.as_mut_ptr()).unwrap_or(null_mut()),
+                connection
+                    .map(|value| value.as_mut_ptr())
+                    .unwrap_or(null_mut()),
             ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_DSP_DisconnectFrom", error)),
@@ -7892,25 +7916,25 @@ impl DspConnection {
     }
     pub fn set_mix_matrix(
         &self,
+        matrix: Option<*mut f32>,
         outchannels: i32,
         inchannels: i32,
-        inchannel_hop: i32,
-    ) -> Result<f32, Error> {
+        inchannel_hop: Option<i32>,
+    ) -> Result<(), Error> {
         unsafe {
-            let mut matrix = f32::default();
             match ffi::FMOD_DSPConnection_SetMixMatrix(
                 self.pointer,
-                &mut matrix,
+                matrix.unwrap_or(null_mut()),
                 outchannels,
                 inchannels,
-                inchannel_hop,
+                inchannel_hop.unwrap_or(0),
             ) {
-                ffi::FMOD_OK => Ok(matrix),
+                ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_DSPConnection_SetMixMatrix", error)),
             }
         }
     }
-    pub fn get_mix_matrix(&self, inchannel_hop: i32) -> Result<(f32, i32, i32), Error> {
+    pub fn get_mix_matrix(&self, inchannel_hop: Option<i32>) -> Result<(f32, i32, i32), Error> {
         unsafe {
             let mut matrix = f32::default();
             let mut outchannels = i32::default();
@@ -7920,7 +7944,7 @@ impl DspConnection {
                 &mut matrix,
                 &mut outchannels,
                 &mut inchannels,
-                inchannel_hop,
+                inchannel_hop.unwrap_or(0),
             ) {
                 ffi::FMOD_OK => Ok((matrix, outchannels, inchannels)),
                 error => Err(err_fmod!("FMOD_DSPConnection_GetMixMatrix", error)),
@@ -8115,9 +8139,15 @@ impl Geometry {
             }
         }
     }
-    pub fn set_rotation(&self, forward: Vector, up: Vector) -> Result<(), Error> {
+    pub fn set_rotation(&self, forward: Option<Vector>, up: Option<Vector>) -> Result<(), Error> {
         unsafe {
-            match ffi::FMOD_Geometry_SetRotation(self.pointer, &forward.into(), &up.into()) {
+            match ffi::FMOD_Geometry_SetRotation(
+                self.pointer,
+                forward
+                    .map(|value| &value.into() as *const _)
+                    .unwrap_or(null()),
+                up.map(|value| &value.into() as *const _).unwrap_or(null()),
+            ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Geometry_SetRotation", error)),
             }
@@ -8167,11 +8197,12 @@ impl Geometry {
             }
         }
     }
-    pub fn save(&self, data: *mut c_void) -> Result<i32, Error> {
+    pub fn save(&self) -> Result<(*mut c_void, i32), Error> {
         unsafe {
+            let mut data = null_mut();
             let mut datasize = i32::default();
             match ffi::FMOD_Geometry_Save(self.pointer, data, &mut datasize) {
-                ffi::FMOD_OK => Ok(datasize),
+                ffi::FMOD_OK => Ok((data, datasize)),
                 error => Err(err_fmod!("FMOD_Geometry_Save", error)),
             }
         }
@@ -8235,14 +8266,16 @@ impl Reverb3d {
     }
     pub fn set_3_d_attributes(
         &self,
-        position: Vector,
+        position: Option<Vector>,
         mindistance: f32,
         maxdistance: f32,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Reverb3D_Set3DAttributes(
                 self.pointer,
-                &position.into(),
+                position
+                    .map(|value| &value.into() as *const _)
+                    .unwrap_or(null()),
                 mindistance,
                 maxdistance,
             ) {
@@ -8459,11 +8492,10 @@ impl Sound {
             }
         }
     }
-    pub fn set_3_d_custom_rolloff(&self, numpoints: i32) -> Result<Vector, Error> {
+    pub fn set_3_d_custom_rolloff(&self, points: Vector, numpoints: i32) -> Result<(), Error> {
         unsafe {
-            let mut points = ffi::FMOD_VECTOR::default();
-            match ffi::FMOD_Sound_Set3DCustomRolloff(self.pointer, &mut points, numpoints) {
-                ffi::FMOD_OK => Ok(Vector::from(points)?),
+            match ffi::FMOD_Sound_Set3DCustomRolloff(self.pointer, &mut points.into(), numpoints) {
+                ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Sound_Set3DCustomRolloff", error)),
             }
         }
@@ -8558,10 +8590,15 @@ impl Sound {
             }
         }
     }
-    pub fn get_tag(&self, name: &str, index: i32) -> Result<Tag, Error> {
+    pub fn get_tag(&self, name: &str, index: Option<i32>) -> Result<Tag, Error> {
         unsafe {
             let mut tag = ffi::FMOD_TAG::default();
-            match ffi::FMOD_Sound_GetTag(self.pointer, name.as_ptr().cast(), index, &mut tag) {
+            match ffi::FMOD_Sound_GetTag(
+                self.pointer,
+                name.as_ptr().cast(),
+                index.unwrap_or(0),
+                &mut tag,
+            ) {
                 ffi::FMOD_OK => Ok(Tag::from(tag)?),
                 error => Err(err_fmod!("FMOD_Sound_GetTag", error)),
             }
@@ -8673,7 +8710,7 @@ impl Sound {
         &self,
         offset: u32,
         offsettype: ffi::FMOD_TIMEUNIT,
-        name: &str,
+        name: Option<String>,
     ) -> Result<SyncPoint, Error> {
         unsafe {
             let mut point = null_mut();
@@ -8681,7 +8718,8 @@ impl Sound {
                 self.pointer,
                 offset,
                 offsettype,
-                name.as_ptr().cast(),
+                name.map(|value| value.as_ptr().cast())
+                    .unwrap_or(null_mut()),
                 &mut point,
             ) {
                 ffi::FMOD_OK => Ok(SyncPoint::from(point)),
@@ -10187,11 +10225,13 @@ impl EventInstance {
             }
         }
     }
-    pub fn set_3_d_attributes(&self) -> Result<Attributes3d, Error> {
+    pub fn set_3_d_attributes(&self, attributes: Attributes3d) -> Result<(), Error> {
         unsafe {
-            let mut attributes = ffi::FMOD_3D_ATTRIBUTES::default();
-            match ffi::FMOD_Studio_EventInstance_Set3DAttributes(self.pointer, &mut attributes) {
-                ffi::FMOD_OK => Ok(Attributes3d::from(attributes)?),
+            match ffi::FMOD_Studio_EventInstance_Set3DAttributes(
+                self.pointer,
+                &mut attributes.into(),
+            ) {
+                ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!(
                     "FMOD_Studio_EventInstance_Set3DAttributes",
                     error
@@ -10491,19 +10531,19 @@ impl EventInstance {
     pub fn set_parameters_by_i_ds(
         &self,
         ids: ParameterId,
+        values: *mut f32,
         count: i32,
         ignoreseekspeed: bool,
-    ) -> Result<f32, Error> {
+    ) -> Result<(), Error> {
         unsafe {
-            let mut values = f32::default();
             match ffi::FMOD_Studio_EventInstance_SetParametersByIDs(
                 self.pointer,
                 &ids.into(),
-                &mut values,
+                values,
                 count,
                 from_bool!(ignoreseekspeed),
             ) {
-                ffi::FMOD_OK => Ok(values),
+                ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!(
                     "FMOD_Studio_EventInstance_SetParametersByIDs",
                     error
@@ -10626,7 +10666,7 @@ impl Studio {
         maxchannels: i32,
         studioflags: ffi::FMOD_STUDIO_INITFLAGS,
         flags: ffi::FMOD_INITFLAGS,
-        extradriverdata: *mut c_void,
+        extradriverdata: Option<*mut c_void>,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Studio_System_Initialize(
@@ -10634,7 +10674,7 @@ impl Studio {
                 maxchannels,
                 studioflags,
                 flags,
-                extradriverdata,
+                extradriverdata.unwrap_or(null_mut()),
             ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Studio_System_Initialize", error)),
@@ -10910,19 +10950,19 @@ impl Studio {
     pub fn set_parameters_by_i_ds(
         &self,
         ids: ParameterId,
+        values: *mut f32,
         count: i32,
         ignoreseekspeed: bool,
-    ) -> Result<f32, Error> {
+    ) -> Result<(), Error> {
         unsafe {
-            let mut values = f32::default();
             match ffi::FMOD_Studio_System_SetParametersByIDs(
                 self.pointer,
                 &ids.into(),
-                &mut values,
+                values,
                 count,
                 from_bool!(ignoreseekspeed),
             ) {
-                ffi::FMOD_OK => Ok(values),
+                ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Studio_System_SetParametersByIDs", error)),
             }
         }
@@ -11050,14 +11090,16 @@ impl Studio {
         &self,
         index: i32,
         attributes: Attributes3d,
-        attenuationposition: Vector,
+        attenuationposition: Option<Vector>,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Studio_System_SetListenerAttributes(
                 self.pointer,
                 index,
                 &attributes.into(),
-                &attenuationposition.into(),
+                attenuationposition
+                    .map(|value| &value.into() as *const _)
+                    .unwrap_or(null()),
             ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Studio_System_SetListenerAttributes", error)),
@@ -11554,16 +11596,16 @@ impl System {
     }
     pub fn set_software_format(
         &self,
-        samplerate: i32,
-        speakermode: SpeakerMode,
-        numrawspeakers: i32,
+        samplerate: Option<i32>,
+        speakermode: Option<SpeakerMode>,
+        numrawspeakers: Option<i32>,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_System_SetSoftwareFormat(
                 self.pointer,
-                samplerate,
-                speakermode.into(),
-                numrawspeakers,
+                samplerate.unwrap_or(0),
+                speakermode.map(|value| value.into()).unwrap_or(0),
+                numrawspeakers.unwrap_or(0),
             ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_System_SetSoftwareFormat", error)),
@@ -11616,7 +11658,7 @@ impl System {
         userseek: ffi::FMOD_FILE_SEEK_CALLBACK,
         userasyncread: ffi::FMOD_FILE_ASYNCREAD_CALLBACK,
         userasynccancel: ffi::FMOD_FILE_ASYNCCANCEL_CALLBACK,
-        blockalign: i32,
+        blockalign: Option<i32>,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_System_SetFileSystem(
@@ -11627,7 +11669,7 @@ impl System {
                 userseek,
                 userasyncread,
                 userasynccancel,
-                blockalign,
+                blockalign.unwrap_or(0),
             ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_System_SetFileSystem", error)),
@@ -11691,14 +11733,14 @@ impl System {
             }
         }
     }
-    pub fn load_plugin(&self, filename: &str, priority: u32) -> Result<u32, Error> {
+    pub fn load_plugin(&self, filename: &str, priority: Option<u32>) -> Result<u32, Error> {
         unsafe {
             let mut handle = u32::default();
             match ffi::FMOD_System_LoadPlugin(
                 self.pointer,
                 filename.as_ptr().cast(),
                 &mut handle,
-                priority,
+                priority.unwrap_or(0),
             ) {
                 ffi::FMOD_OK => Ok(handle),
                 error => Err(err_fmod!("FMOD_System_LoadPlugin", error)),
@@ -11817,17 +11859,20 @@ impl System {
             }
         }
     }
-    pub fn register_codec(&self, priority: u32) -> Result<(CodecDescription, u32), Error> {
+    pub fn register_codec(
+        &self,
+        description: CodecDescription,
+        priority: Option<u32>,
+    ) -> Result<u32, Error> {
         unsafe {
-            let mut description = ffi::FMOD_CODEC_DESCRIPTION::default();
             let mut handle = u32::default();
             match ffi::FMOD_System_RegisterCodec(
                 self.pointer,
-                &mut description,
+                &mut description.into(),
                 &mut handle,
-                priority,
+                priority.unwrap_or(0),
             ) {
-                ffi::FMOD_OK => Ok((CodecDescription::from(description)?, handle)),
+                ffi::FMOD_OK => Ok(handle),
                 error => Err(err_fmod!("FMOD_System_RegisterCodec", error)),
             }
         }
@@ -11854,10 +11899,15 @@ impl System {
         &self,
         maxchannels: i32,
         flags: ffi::FMOD_INITFLAGS,
-        extradriverdata: *mut c_void,
+        extradriverdata: Option<*mut c_void>,
     ) -> Result<(), Error> {
         unsafe {
-            match ffi::FMOD_System_Init(self.pointer, maxchannels, flags, extradriverdata) {
+            match ffi::FMOD_System_Init(
+                self.pointer,
+                maxchannels,
+                flags,
+                extradriverdata.unwrap_or(null_mut()),
+            ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_System_Init", error)),
             }
@@ -11980,10 +12030,11 @@ impl System {
             }
         }
     }
-    pub fn set_3_d_num_listeners(&self, numlisteners: i32) -> Result<(), Error> {
+    pub fn set_3_d_num_listeners(&self) -> Result<i32, Error> {
         unsafe {
+            let mut numlisteners = i32::default();
             match ffi::FMOD_System_Set3DNumListeners(self.pointer, numlisteners) {
-                ffi::FMOD_OK => Ok(()),
+                ffi::FMOD_OK => Ok(numlisteners),
                 error => Err(err_fmod!("FMOD_System_Set3DNumListeners", error)),
             }
         }
@@ -12000,19 +12051,21 @@ impl System {
     pub fn set_3_d_listener_attributes(
         &self,
         listener: i32,
-        pos: Vector,
-        vel: Vector,
-        forward: Vector,
-        up: Vector,
+        pos: Option<Vector>,
+        vel: Option<Vector>,
+        forward: Option<Vector>,
+        up: Option<Vector>,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_System_Set3DListenerAttributes(
                 self.pointer,
                 listener,
-                &pos.into(),
-                &vel.into(),
-                &forward.into(),
-                &up.into(),
+                pos.map(|value| &value.into() as *const _).unwrap_or(null()),
+                vel.map(|value| &value.into() as *const _).unwrap_or(null()),
+                forward
+                    .map(|value| &value.into() as *const _)
+                    .unwrap_or(null()),
+                up.map(|value| &value.into() as *const _).unwrap_or(null()),
             ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_System_Set3DListenerAttributes", error)),
@@ -12077,7 +12130,7 @@ impl System {
         &self,
         sourcespeakermode: SpeakerMode,
         targetspeakermode: SpeakerMode,
-        matrixhop: i32,
+        matrixhop: Option<i32>,
     ) -> Result<f32, Error> {
         unsafe {
             let mut matrix = f32::default();
@@ -12086,7 +12139,7 @@ impl System {
                 sourcespeakermode.into(),
                 targetspeakermode.into(),
                 &mut matrix,
-                matrixhop,
+                matrixhop.unwrap_or(0),
             ) {
                 ffi::FMOD_OK => Ok(matrix),
                 error => Err(err_fmod!("FMOD_System_GetDefaultMixMatrix", error)),
@@ -12164,18 +12217,20 @@ impl System {
         &self,
         name_or_data: &str,
         mode: ffi::FMOD_MODE,
-    ) -> Result<(CreateSoundexInfo, Sound), Error> {
+        exinfo: Option<CreateSoundexInfo>,
+    ) -> Result<Sound, Error> {
         unsafe {
-            let mut exinfo = ffi::FMOD_CREATESOUNDEXINFO::default();
             let mut sound = null_mut();
             match ffi::FMOD_System_CreateSound(
                 self.pointer,
                 name_or_data.as_ptr().cast(),
                 mode,
-                &mut exinfo,
+                exinfo
+                    .map(|value| &mut value.into() as *mut _)
+                    .unwrap_or(null_mut()),
                 &mut sound,
             ) {
-                ffi::FMOD_OK => Ok((CreateSoundexInfo::from(exinfo)?, Sound::from(sound))),
+                ffi::FMOD_OK => Ok(Sound::from(sound)),
                 error => Err(err_fmod!("FMOD_System_CreateSound", error)),
             }
         }
@@ -12184,18 +12239,20 @@ impl System {
         &self,
         name_or_data: &str,
         mode: ffi::FMOD_MODE,
-    ) -> Result<(CreateSoundexInfo, Sound), Error> {
+        exinfo: Option<CreateSoundexInfo>,
+    ) -> Result<Sound, Error> {
         unsafe {
-            let mut exinfo = ffi::FMOD_CREATESOUNDEXINFO::default();
             let mut sound = null_mut();
             match ffi::FMOD_System_CreateStream(
                 self.pointer,
                 name_or_data.as_ptr().cast(),
                 mode,
-                &mut exinfo,
+                exinfo
+                    .map(|value| &mut value.into() as *mut _)
+                    .unwrap_or(null_mut()),
                 &mut sound,
             ) {
-                ffi::FMOD_OK => Ok((CreateSoundexInfo::from(exinfo)?, Sound::from(sound))),
+                ffi::FMOD_OK => Ok(Sound::from(sound)),
                 error => Err(err_fmod!("FMOD_System_CreateStream", error)),
             }
         }
@@ -12218,12 +12275,13 @@ impl System {
             }
         }
     }
-    pub fn create_channel_group(&self, name: &str) -> Result<ChannelGroup, Error> {
+    pub fn create_channel_group(&self, name: Option<String>) -> Result<ChannelGroup, Error> {
         unsafe {
             let mut channelgroup = null_mut();
             match ffi::FMOD_System_CreateChannelGroup(
                 self.pointer,
-                name.as_ptr().cast(),
+                name.map(|value| value.as_ptr().cast())
+                    .unwrap_or(null_mut()),
                 &mut channelgroup,
             ) {
                 ffi::FMOD_OK => Ok(ChannelGroup::from(channelgroup)),
@@ -12256,7 +12314,7 @@ impl System {
     pub fn play_sound(
         &self,
         sound: Sound,
-        channelgroup: ChannelGroup,
+        channelgroup: Option<ChannelGroup>,
         paused: bool,
     ) -> Result<Channel, Error> {
         unsafe {
@@ -12264,7 +12322,9 @@ impl System {
             match ffi::FMOD_System_PlaySound(
                 self.pointer,
                 sound.as_mut_ptr(),
-                channelgroup.as_mut_ptr(),
+                channelgroup
+                    .map(|value| value.as_mut_ptr())
+                    .unwrap_or(null_mut()),
                 from_bool!(paused),
                 &mut channel,
             ) {
@@ -12276,7 +12336,7 @@ impl System {
     pub fn play_dsp(
         &self,
         dsp: Dsp,
-        channelgroup: ChannelGroup,
+        channelgroup: Option<ChannelGroup>,
         paused: bool,
     ) -> Result<Channel, Error> {
         unsafe {
@@ -12284,7 +12344,9 @@ impl System {
             match ffi::FMOD_System_PlayDSP(
                 self.pointer,
                 dsp.as_mut_ptr(),
-                channelgroup.as_mut_ptr(),
+                channelgroup
+                    .map(|value| value.as_mut_ptr())
+                    .unwrap_or(null_mut()),
                 from_bool!(paused),
                 &mut channel,
             ) {

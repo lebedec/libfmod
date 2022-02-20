@@ -10,33 +10,40 @@ FMOD development libraries can't be integrated and distributed as part of this c
 You should download and install it considering your current licensing option from:
 https://www.fmod.com/download
 
-#### Usage Example (wip)
+#### Installation
 
-Adaptation of official simple event example for FMOD v2.02.03 (all banks included in FMOD Studio application):
+A crate uses FMOD development libraries version number to simplify version match.
+The concept of "pre-releases" with a dash in the version used to specify 
+backwards compatible changes and bug fixes in libFMOD code. 
+Be aware that Cargo will avoid automatically using pre-releases unless explicitly asked.
+
+```toml
+[dependencies]
+libfmod = "2.2.3-r.1"
+```
+
+#### Getting Started
+
+The simplest way to get started is to initialize the FMOD system, load a sound, and play it.
+Playing a sound does not block the application, all functions execute immediately, so we should poll for the sound to finish.
 
 ```rust
-fn example() -> Result<(), Error> {
-    let studio = Studio::create()?;
-    let system = studio.get_core_system()?;
-    
-    system.set_software_format(0, 6, 0)?;
-    studio.initialize(1024, 0, 0, null_mut())?;
-    
-    let master = studio.load_bank_file("./assets/Master.bank", 0)?;
-    let strings = studio.load_bank_file("./assets/Master.strings.bank", 0)?;
-    let sfx = studio.load_bank_file("./assets/SFX.bank", 0)?;
+use libfmod::{Error, System};
+use libfmod::ffi::{FMOD_DEFAULT, FMOD_INIT_NORMAL};
 
-    let looping_ambience_description = studio.get_event("event:/Ambience/Country")?;
-    let looping_ambience = looping_ambience_description.create_instance()?;
-    looping_ambience.start()?;
-
-    while studio.update().is_ok() {}
-
-    studio.release()?;
+fn test_playing_sound() -> Result<(), Error> {
+    let system = System::create()?;
+    system.init(512, FMOD_INIT_NORMAL, None)?;
+    let sound = system.create_sound("./data/heartbeat.ogg", FMOD_DEFAULT, None)?;
+    let channel = system.play_sound(sound, None, false)?;
+    while channel.is_playing()? {
+        // do something else
+    }
+    system.release()
 }
-
-
 ```
+
+See more examples in [tests](tests) folder.
 
 #### Contributing
 

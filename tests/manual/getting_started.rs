@@ -1,4 +1,5 @@
-use std::ptr::null_mut;
+use std::thread::sleep;
+use std::time::Duration;
 use libfmod::{AdvancedSettings, DspResampler, Error, ffi, Studio, StudioAdvancedSettings, System};
 use libfmod::ffi::{FMOD_DEFAULT, FMOD_INIT_NORMAL, FMOD_STUDIO_INIT_NORMAL};
 
@@ -6,7 +7,7 @@ use libfmod::ffi::{FMOD_DEFAULT, FMOD_INIT_NORMAL, FMOD_STUDIO_INIT_NORMAL};
 #[test]
 fn test_core_system_initialization() -> Result<(), Error> {
     let system = System::create()?;
-    system.init(512, FMOD_INIT_NORMAL, null_mut())
+    system.init(512, FMOD_INIT_NORMAL, None)
 }
 
 #[test]
@@ -44,7 +45,7 @@ fn test_core_system_advanced_settings() -> Result<(), Error> {
 #[test]
 fn test_studio_system_initialization() -> Result<(), Error> {
     let studio = Studio::create()?;
-    studio.initialize(512, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, null_mut())
+    studio.initialize(512, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, None)
 }
 
 #[test]
@@ -67,12 +68,11 @@ fn test_studio_system_advanced_settings() -> Result<(), Error> {
 #[test]
 fn test_playing_sound() -> Result<(), Error> {
     let system = System::create()?;
-    system.init(512, FMOD_INIT_NORMAL, null_mut())?;
-    /*
-    let sound = system.create_sound("sample.ogg", FMOD_DEFAULT)?;
-    let channel = system.play_sound(sound, NOne, false)?;
+    system.init(512, FMOD_INIT_NORMAL, None)?;
+    let sound = system.create_sound("./data/heartbeat.ogg", FMOD_DEFAULT, None)?;
+    let channel = system.play_sound(sound, None, false)?;
     while channel.is_playing()? {
-
-    }*/
-    Ok(())
+        // do something else
+    }
+    system.release()
 }
