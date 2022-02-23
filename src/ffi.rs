@@ -1957,7 +1957,7 @@ pub struct FMOD_CREATESOUNDEXINFO {
 impl Default for FMOD_CREATESOUNDEXINFO {
     fn default() -> Self {
         Self {
-            cbsize: Default::default(),
+            cbsize: size_of::<FMOD_CREATESOUNDEXINFO>() as i32,
             length: Default::default(),
             fileoffset: Default::default(),
             numchannels: Default::default(),

@@ -4311,7 +4311,7 @@ pub struct AdvancedSettings {
     pub profile_port: u16,
     pub geometry_max_fade_time: u32,
     pub distance_filter_center_freq: f32,
-    pub reverb_3_dinstance: i32,
+    pub reverb_3_d_instance: i32,
     pub dsp_buffer_pool_size: i32,
     pub resampler_method: DspResampler,
     pub random_seed: u32,
@@ -4346,7 +4346,7 @@ impl AdvancedSettings {
                 profile_port: value.profilePort,
                 geometry_max_fade_time: value.geometryMaxFadeTime,
                 distance_filter_center_freq: value.distanceFilterCenterFreq,
-                reverb_3_dinstance: value.reverb3Dinstance,
+                reverb_3_d_instance: value.reverb3Dinstance,
                 dsp_buffer_pool_size: value.DSPBufferPoolSize,
                 resampler_method: DspResampler::from(value.resamplerMethod)?,
                 random_seed: value.randomSeed,
@@ -4384,7 +4384,7 @@ impl AdvancedSettings {
             profilePort: self.profile_port,
             geometryMaxFadeTime: self.geometry_max_fade_time,
             distanceFilterCenterFreq: self.distance_filter_center_freq,
-            reverb3Dinstance: self.reverb_3_dinstance,
+            reverb3Dinstance: self.reverb_3_d_instance,
             DSPBufferPoolSize: self.dsp_buffer_pool_size,
             resamplerMethod: self.resampler_method.into(),
             randomSeed: self.random_seed,
@@ -4431,7 +4431,6 @@ impl Tag {
 
 #[derive(Debug, Clone)]
 pub struct CreateSoundexInfo {
-    pub cbsize: i32,
     pub length: u32,
     pub fileoffset: u32,
     pub numchannels: i32,
@@ -4473,7 +4472,6 @@ impl CreateSoundexInfo {
     pub fn from(value: ffi::FMOD_CREATESOUNDEXINFO) -> Result<CreateSoundexInfo, Error> {
         unsafe {
             Ok(CreateSoundexInfo {
-                cbsize: value.cbsize,
                 length: value.length,
                 fileoffset: value.fileoffset,
                 numchannels: value.numchannels,
@@ -4514,7 +4512,7 @@ impl CreateSoundexInfo {
     }
     pub fn into(self) -> ffi::FMOD_CREATESOUNDEXINFO {
         ffi::FMOD_CREATESOUNDEXINFO {
-            cbsize: self.cbsize,
+            cbsize: size_of::<ffi::FMOD_CREATESOUNDEXINFO>() as i32,
             length: self.length,
             fileoffset: self.fileoffset,
             numchannels: self.numchannels,
@@ -4604,6 +4602,102 @@ impl ReverbProperties {
             EarlyLateMix: self.early_late_mix,
             WetLevel: self.wet_level,
         }
+    }
+    #[inline]
+    pub fn off() -> Self {
+        Self::from(ffi::FMOD_PRESET_OFF).unwrap()
+    }
+    #[inline]
+    pub fn generic() -> Self {
+        Self::from(ffi::FMOD_PRESET_GENERIC).unwrap()
+    }
+    #[inline]
+    pub fn paddedcell() -> Self {
+        Self::from(ffi::FMOD_PRESET_PADDEDCELL).unwrap()
+    }
+    #[inline]
+    pub fn room() -> Self {
+        Self::from(ffi::FMOD_PRESET_ROOM).unwrap()
+    }
+    #[inline]
+    pub fn bathroom() -> Self {
+        Self::from(ffi::FMOD_PRESET_BATHROOM).unwrap()
+    }
+    #[inline]
+    pub fn livingroom() -> Self {
+        Self::from(ffi::FMOD_PRESET_LIVINGROOM).unwrap()
+    }
+    #[inline]
+    pub fn stoneroom() -> Self {
+        Self::from(ffi::FMOD_PRESET_STONEROOM).unwrap()
+    }
+    #[inline]
+    pub fn auditorium() -> Self {
+        Self::from(ffi::FMOD_PRESET_AUDITORIUM).unwrap()
+    }
+    #[inline]
+    pub fn concerthall() -> Self {
+        Self::from(ffi::FMOD_PRESET_CONCERTHALL).unwrap()
+    }
+    #[inline]
+    pub fn cave() -> Self {
+        Self::from(ffi::FMOD_PRESET_CAVE).unwrap()
+    }
+    #[inline]
+    pub fn arena() -> Self {
+        Self::from(ffi::FMOD_PRESET_ARENA).unwrap()
+    }
+    #[inline]
+    pub fn hangar() -> Self {
+        Self::from(ffi::FMOD_PRESET_HANGAR).unwrap()
+    }
+    #[inline]
+    pub fn carpettedhallway() -> Self {
+        Self::from(ffi::FMOD_PRESET_CARPETTEDHALLWAY).unwrap()
+    }
+    #[inline]
+    pub fn hallway() -> Self {
+        Self::from(ffi::FMOD_PRESET_HALLWAY).unwrap()
+    }
+    #[inline]
+    pub fn stonecorridor() -> Self {
+        Self::from(ffi::FMOD_PRESET_STONECORRIDOR).unwrap()
+    }
+    #[inline]
+    pub fn alley() -> Self {
+        Self::from(ffi::FMOD_PRESET_ALLEY).unwrap()
+    }
+    #[inline]
+    pub fn forest() -> Self {
+        Self::from(ffi::FMOD_PRESET_FOREST).unwrap()
+    }
+    #[inline]
+    pub fn city() -> Self {
+        Self::from(ffi::FMOD_PRESET_CITY).unwrap()
+    }
+    #[inline]
+    pub fn mountains() -> Self {
+        Self::from(ffi::FMOD_PRESET_MOUNTAINS).unwrap()
+    }
+    #[inline]
+    pub fn quarry() -> Self {
+        Self::from(ffi::FMOD_PRESET_QUARRY).unwrap()
+    }
+    #[inline]
+    pub fn plain() -> Self {
+        Self::from(ffi::FMOD_PRESET_PLAIN).unwrap()
+    }
+    #[inline]
+    pub fn parkinglot() -> Self {
+        Self::from(ffi::FMOD_PRESET_PARKINGLOT).unwrap()
+    }
+    #[inline]
+    pub fn sewerpipe() -> Self {
+        Self::from(ffi::FMOD_PRESET_SEWERPIPE).unwrap()
+    }
+    #[inline]
+    pub fn underwater() -> Self {
+        Self::from(ffi::FMOD_PRESET_UNDERWATER).unwrap()
     }
 }
 
@@ -6161,11 +6255,7 @@ impl Channel {
             }
         }
     }
-    pub fn set_3_d_attributes(
-        &self,
-        pos: Option<Vector>,
-        vel: Option<Vector>,
-    ) -> Result<(), Error> {
+    pub fn set_3d_attributes(&self, pos: Option<Vector>, vel: Option<Vector>) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Channel_Set3DAttributes(
                 self.pointer,
@@ -6177,7 +6267,7 @@ impl Channel {
             }
         }
     }
-    pub fn get_3_d_attributes(&self) -> Result<(Vector, Vector), Error> {
+    pub fn get_3d_attributes(&self) -> Result<(Vector, Vector), Error> {
         unsafe {
             let mut pos = ffi::FMOD_VECTOR::default();
             let mut vel = ffi::FMOD_VECTOR::default();
@@ -6187,11 +6277,7 @@ impl Channel {
             }
         }
     }
-    pub fn set_3_d_min_max_distance(
-        &self,
-        mindistance: f32,
-        maxdistance: f32,
-    ) -> Result<(), Error> {
+    pub fn set_3d_min_max_distance(&self, mindistance: f32, maxdistance: f32) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Channel_Set3DMinMaxDistance(self.pointer, mindistance, maxdistance) {
                 ffi::FMOD_OK => Ok(()),
@@ -6199,7 +6285,7 @@ impl Channel {
             }
         }
     }
-    pub fn get_3_d_min_max_distance(&self) -> Result<(f32, f32), Error> {
+    pub fn get_3d_min_max_distance(&self) -> Result<(f32, f32), Error> {
         unsafe {
             let mut mindistance = f32::default();
             let mut maxdistance = f32::default();
@@ -6213,7 +6299,7 @@ impl Channel {
             }
         }
     }
-    pub fn set_3_d_cone_settings(
+    pub fn set_3d_cone_settings(
         &self,
         insideconeangle: f32,
         outsideconeangle: f32,
@@ -6231,7 +6317,7 @@ impl Channel {
             }
         }
     }
-    pub fn get_3_d_cone_settings(&self) -> Result<(f32, f32, f32), Error> {
+    pub fn get_3d_cone_settings(&self) -> Result<(f32, f32, f32), Error> {
         unsafe {
             let mut insideconeangle = f32::default();
             let mut outsideconeangle = f32::default();
@@ -6247,7 +6333,7 @@ impl Channel {
             }
         }
     }
-    pub fn set_3_d_cone_orientation(&self, orientation: Vector) -> Result<(), Error> {
+    pub fn set_3d_cone_orientation(&self, orientation: Vector) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Channel_Set3DConeOrientation(self.pointer, &mut orientation.into()) {
                 ffi::FMOD_OK => Ok(()),
@@ -6255,7 +6341,7 @@ impl Channel {
             }
         }
     }
-    pub fn get_3_d_cone_orientation(&self) -> Result<Vector, Error> {
+    pub fn get_3d_cone_orientation(&self) -> Result<Vector, Error> {
         unsafe {
             let mut orientation = ffi::FMOD_VECTOR::default();
             match ffi::FMOD_Channel_Get3DConeOrientation(self.pointer, &mut orientation) {
@@ -6264,7 +6350,7 @@ impl Channel {
             }
         }
     }
-    pub fn set_3_d_custom_rolloff(&self, points: Vector, numpoints: i32) -> Result<(), Error> {
+    pub fn set_3d_custom_rolloff(&self, points: Vector, numpoints: i32) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Channel_Set3DCustomRolloff(self.pointer, &mut points.into(), numpoints)
             {
@@ -6273,7 +6359,7 @@ impl Channel {
             }
         }
     }
-    pub fn get_3_d_custom_rolloff(&self) -> Result<(Vec<Vector>, i32), Error> {
+    pub fn get_3d_custom_rolloff(&self) -> Result<(Vec<Vector>, i32), Error> {
         unsafe {
             let mut points = null_mut();
             let mut numpoints = i32::default();
@@ -6283,7 +6369,7 @@ impl Channel {
             }
         }
     }
-    pub fn set_3_d_occlusion(
+    pub fn set_3d_occlusion(
         &self,
         directocclusion: f32,
         reverbocclusion: f32,
@@ -6295,7 +6381,7 @@ impl Channel {
             }
         }
     }
-    pub fn get_3_d_occlusion(&self) -> Result<(f32, f32), Error> {
+    pub fn get_3d_occlusion(&self) -> Result<(f32, f32), Error> {
         unsafe {
             let mut directocclusion = f32::default();
             let mut reverbocclusion = f32::default();
@@ -6309,7 +6395,7 @@ impl Channel {
             }
         }
     }
-    pub fn set_3_d_spread(&self, angle: f32) -> Result<(), Error> {
+    pub fn set_3d_spread(&self, angle: f32) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Channel_Set3DSpread(self.pointer, angle) {
                 ffi::FMOD_OK => Ok(()),
@@ -6317,7 +6403,7 @@ impl Channel {
             }
         }
     }
-    pub fn get_3_d_spread(&self) -> Result<f32, Error> {
+    pub fn get_3d_spread(&self) -> Result<f32, Error> {
         unsafe {
             let mut angle = f32::default();
             match ffi::FMOD_Channel_Get3DSpread(self.pointer, &mut angle) {
@@ -6326,7 +6412,7 @@ impl Channel {
             }
         }
     }
-    pub fn set_3_d_level(&self, level: f32) -> Result<(), Error> {
+    pub fn set_3d_level(&self, level: f32) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Channel_Set3DLevel(self.pointer, level) {
                 ffi::FMOD_OK => Ok(()),
@@ -6334,7 +6420,7 @@ impl Channel {
             }
         }
     }
-    pub fn get_3_d_level(&self) -> Result<f32, Error> {
+    pub fn get_3d_level(&self) -> Result<f32, Error> {
         unsafe {
             let mut level = f32::default();
             match ffi::FMOD_Channel_Get3DLevel(self.pointer, &mut level) {
@@ -6343,7 +6429,7 @@ impl Channel {
             }
         }
     }
-    pub fn set_3_d_doppler_level(&self, level: f32) -> Result<(), Error> {
+    pub fn set_3d_doppler_level(&self, level: f32) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Channel_Set3DDopplerLevel(self.pointer, level) {
                 ffi::FMOD_OK => Ok(()),
@@ -6351,7 +6437,7 @@ impl Channel {
             }
         }
     }
-    pub fn get_3_d_doppler_level(&self) -> Result<f32, Error> {
+    pub fn get_3d_doppler_level(&self) -> Result<f32, Error> {
         unsafe {
             let mut level = f32::default();
             match ffi::FMOD_Channel_Get3DDopplerLevel(self.pointer, &mut level) {
@@ -6360,7 +6446,7 @@ impl Channel {
             }
         }
     }
-    pub fn set_3_d_distance_filter(
+    pub fn set_3d_distance_filter(
         &self,
         custom: bool,
         custom_level: f32,
@@ -6378,7 +6464,7 @@ impl Channel {
             }
         }
     }
-    pub fn get_3_d_distance_filter(&self) -> Result<(bool, f32, f32), Error> {
+    pub fn get_3d_distance_filter(&self) -> Result<(bool, f32, f32), Error> {
         unsafe {
             let mut custom = ffi::FMOD_BOOL::default();
             let mut custom_level = f32::default();
@@ -6996,11 +7082,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_3_d_attributes(
-        &self,
-        pos: Option<Vector>,
-        vel: Option<Vector>,
-    ) -> Result<(), Error> {
+    pub fn set_3d_attributes(&self, pos: Option<Vector>, vel: Option<Vector>) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_ChannelGroup_Set3DAttributes(
                 self.pointer,
@@ -7012,7 +7094,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn get_3_d_attributes(&self) -> Result<(Vector, Vector), Error> {
+    pub fn get_3d_attributes(&self) -> Result<(Vector, Vector), Error> {
         unsafe {
             let mut pos = ffi::FMOD_VECTOR::default();
             let mut vel = ffi::FMOD_VECTOR::default();
@@ -7022,11 +7104,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_3_d_min_max_distance(
-        &self,
-        mindistance: f32,
-        maxdistance: f32,
-    ) -> Result<(), Error> {
+    pub fn set_3d_min_max_distance(&self, mindistance: f32, maxdistance: f32) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_ChannelGroup_Set3DMinMaxDistance(self.pointer, mindistance, maxdistance)
             {
@@ -7035,7 +7113,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn get_3_d_min_max_distance(&self) -> Result<(f32, f32), Error> {
+    pub fn get_3d_min_max_distance(&self) -> Result<(f32, f32), Error> {
         unsafe {
             let mut mindistance = f32::default();
             let mut maxdistance = f32::default();
@@ -7049,7 +7127,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_3_d_cone_settings(
+    pub fn set_3d_cone_settings(
         &self,
         insideconeangle: f32,
         outsideconeangle: f32,
@@ -7067,7 +7145,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn get_3_d_cone_settings(&self) -> Result<(f32, f32, f32), Error> {
+    pub fn get_3d_cone_settings(&self) -> Result<(f32, f32, f32), Error> {
         unsafe {
             let mut insideconeangle = f32::default();
             let mut outsideconeangle = f32::default();
@@ -7083,7 +7161,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_3_d_cone_orientation(&self, orientation: Vector) -> Result<(), Error> {
+    pub fn set_3d_cone_orientation(&self, orientation: Vector) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_ChannelGroup_Set3DConeOrientation(self.pointer, &mut orientation.into())
             {
@@ -7092,7 +7170,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn get_3_d_cone_orientation(&self) -> Result<Vector, Error> {
+    pub fn get_3d_cone_orientation(&self) -> Result<Vector, Error> {
         unsafe {
             let mut orientation = ffi::FMOD_VECTOR::default();
             match ffi::FMOD_ChannelGroup_Get3DConeOrientation(self.pointer, &mut orientation) {
@@ -7101,7 +7179,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_3_d_custom_rolloff(&self, points: Vector, numpoints: i32) -> Result<(), Error> {
+    pub fn set_3d_custom_rolloff(&self, points: Vector, numpoints: i32) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_ChannelGroup_Set3DCustomRolloff(
                 self.pointer,
@@ -7113,7 +7191,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn get_3_d_custom_rolloff(&self) -> Result<(Vec<Vector>, i32), Error> {
+    pub fn get_3d_custom_rolloff(&self) -> Result<(Vec<Vector>, i32), Error> {
         unsafe {
             let mut points = null_mut();
             let mut numpoints = i32::default();
@@ -7127,7 +7205,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_3_d_occlusion(
+    pub fn set_3d_occlusion(
         &self,
         directocclusion: f32,
         reverbocclusion: f32,
@@ -7143,7 +7221,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn get_3_d_occlusion(&self) -> Result<(f32, f32), Error> {
+    pub fn get_3d_occlusion(&self) -> Result<(f32, f32), Error> {
         unsafe {
             let mut directocclusion = f32::default();
             let mut reverbocclusion = f32::default();
@@ -7157,7 +7235,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_3_d_spread(&self, angle: f32) -> Result<(), Error> {
+    pub fn set_3d_spread(&self, angle: f32) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_ChannelGroup_Set3DSpread(self.pointer, angle) {
                 ffi::FMOD_OK => Ok(()),
@@ -7165,7 +7243,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn get_3_d_spread(&self) -> Result<f32, Error> {
+    pub fn get_3d_spread(&self) -> Result<f32, Error> {
         unsafe {
             let mut angle = f32::default();
             match ffi::FMOD_ChannelGroup_Get3DSpread(self.pointer, &mut angle) {
@@ -7174,7 +7252,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_3_d_level(&self, level: f32) -> Result<(), Error> {
+    pub fn set_3d_level(&self, level: f32) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_ChannelGroup_Set3DLevel(self.pointer, level) {
                 ffi::FMOD_OK => Ok(()),
@@ -7182,7 +7260,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn get_3_d_level(&self) -> Result<f32, Error> {
+    pub fn get_3d_level(&self) -> Result<f32, Error> {
         unsafe {
             let mut level = f32::default();
             match ffi::FMOD_ChannelGroup_Get3DLevel(self.pointer, &mut level) {
@@ -7191,7 +7269,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_3_d_doppler_level(&self, level: f32) -> Result<(), Error> {
+    pub fn set_3d_doppler_level(&self, level: f32) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_ChannelGroup_Set3DDopplerLevel(self.pointer, level) {
                 ffi::FMOD_OK => Ok(()),
@@ -7199,7 +7277,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn get_3_d_doppler_level(&self) -> Result<f32, Error> {
+    pub fn get_3d_doppler_level(&self) -> Result<f32, Error> {
         unsafe {
             let mut level = f32::default();
             match ffi::FMOD_ChannelGroup_Get3DDopplerLevel(self.pointer, &mut level) {
@@ -7208,7 +7286,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_3_d_distance_filter(
+    pub fn set_3d_distance_filter(
         &self,
         custom: bool,
         custom_level: f32,
@@ -7226,7 +7304,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn get_3_d_distance_filter(&self) -> Result<(bool, f32, f32), Error> {
+    pub fn get_3d_distance_filter(&self) -> Result<(bool, f32, f32), Error> {
         unsafe {
             let mut custom = ffi::FMOD_BOOL::default();
             let mut custom_level = f32::default();
@@ -8264,7 +8342,7 @@ impl Reverb3d {
             }
         }
     }
-    pub fn set_3_d_attributes(
+    pub fn set_3d_attributes(
         &self,
         position: Option<Vector>,
         mindistance: f32,
@@ -8284,7 +8362,7 @@ impl Reverb3d {
             }
         }
     }
-    pub fn get_3_d_attributes(&self) -> Result<(Vector, f32, f32), Error> {
+    pub fn get_3d_attributes(&self) -> Result<(Vector, f32, f32), Error> {
         unsafe {
             let mut position = ffi::FMOD_VECTOR::default();
             let mut mindistance = f32::default();
@@ -8440,7 +8518,7 @@ impl Sound {
             }
         }
     }
-    pub fn set_3_d_min_max_distance(&self, min: f32, max: f32) -> Result<(), Error> {
+    pub fn set_3d_min_max_distance(&self, min: f32, max: f32) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Sound_Set3DMinMaxDistance(self.pointer, min, max) {
                 ffi::FMOD_OK => Ok(()),
@@ -8448,7 +8526,7 @@ impl Sound {
             }
         }
     }
-    pub fn get_3_d_min_max_distance(&self) -> Result<(f32, f32), Error> {
+    pub fn get_3d_min_max_distance(&self) -> Result<(f32, f32), Error> {
         unsafe {
             let mut min = f32::default();
             let mut max = f32::default();
@@ -8458,7 +8536,7 @@ impl Sound {
             }
         }
     }
-    pub fn set_3_d_cone_settings(
+    pub fn set_3d_cone_settings(
         &self,
         insideconeangle: f32,
         outsideconeangle: f32,
@@ -8476,7 +8554,7 @@ impl Sound {
             }
         }
     }
-    pub fn get_3_d_cone_settings(&self) -> Result<(f32, f32, f32), Error> {
+    pub fn get_3d_cone_settings(&self) -> Result<(f32, f32, f32), Error> {
         unsafe {
             let mut insideconeangle = f32::default();
             let mut outsideconeangle = f32::default();
@@ -8492,7 +8570,7 @@ impl Sound {
             }
         }
     }
-    pub fn set_3_d_custom_rolloff(&self, points: Vector, numpoints: i32) -> Result<(), Error> {
+    pub fn set_3d_custom_rolloff(&self, points: Vector, numpoints: i32) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Sound_Set3DCustomRolloff(self.pointer, &mut points.into(), numpoints) {
                 ffi::FMOD_OK => Ok(()),
@@ -8500,7 +8578,7 @@ impl Sound {
             }
         }
     }
-    pub fn get_3_d_custom_rolloff(&self) -> Result<(Vec<Vector>, i32), Error> {
+    pub fn get_3d_custom_rolloff(&self) -> Result<(Vec<Vector>, i32), Error> {
         unsafe {
             let mut points = null_mut();
             let mut numpoints = i32::default();
@@ -9982,7 +10060,7 @@ impl EventDescription {
             }
         }
     }
-    pub fn is_3_d(&self) -> Result<bool, Error> {
+    pub fn is_3d(&self) -> Result<bool, Error> {
         unsafe {
             let mut is_3_d = ffi::FMOD_BOOL::default();
             match ffi::FMOD_Studio_EventDescription_Is3D(self.pointer, &mut is_3_d) {
@@ -10213,7 +10291,7 @@ impl EventInstance {
             }
         }
     }
-    pub fn get_3_d_attributes(&self) -> Result<Attributes3d, Error> {
+    pub fn get_3d_attributes(&self) -> Result<Attributes3d, Error> {
         unsafe {
             let mut attributes = ffi::FMOD_3D_ATTRIBUTES::default();
             match ffi::FMOD_Studio_EventInstance_Get3DAttributes(self.pointer, &mut attributes) {
@@ -10225,7 +10303,7 @@ impl EventInstance {
             }
         }
     }
-    pub fn set_3_d_attributes(&self, attributes: Attributes3d) -> Result<(), Error> {
+    pub fn set_3d_attributes(&self, attributes: Attributes3d) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Studio_EventInstance_Set3DAttributes(
                 self.pointer,
@@ -11996,7 +12074,7 @@ impl System {
             }
         }
     }
-    pub fn set_3_d_settings(
+    pub fn set_3d_settings(
         &self,
         dopplerscale: f32,
         distancefactor: f32,
@@ -12014,7 +12092,7 @@ impl System {
             }
         }
     }
-    pub fn get_3_d_settings(&self) -> Result<(f32, f32, f32), Error> {
+    pub fn get_3d_settings(&self) -> Result<(f32, f32, f32), Error> {
         unsafe {
             let mut dopplerscale = f32::default();
             let mut distancefactor = f32::default();
@@ -12030,7 +12108,7 @@ impl System {
             }
         }
     }
-    pub fn set_3_d_num_listeners(&self) -> Result<i32, Error> {
+    pub fn set_3d_num_listeners(&self) -> Result<i32, Error> {
         unsafe {
             let mut numlisteners = i32::default();
             match ffi::FMOD_System_Set3DNumListeners(self.pointer, numlisteners) {
@@ -12039,7 +12117,7 @@ impl System {
             }
         }
     }
-    pub fn get_3_d_num_listeners(&self) -> Result<i32, Error> {
+    pub fn get_3d_num_listeners(&self) -> Result<i32, Error> {
         unsafe {
             let mut numlisteners = i32::default();
             match ffi::FMOD_System_Get3DNumListeners(self.pointer, &mut numlisteners) {
@@ -12048,7 +12126,7 @@ impl System {
             }
         }
     }
-    pub fn set_3_d_listener_attributes(
+    pub fn set_3d_listener_attributes(
         &self,
         listener: i32,
         pos: Option<Vector>,
@@ -12072,7 +12150,7 @@ impl System {
             }
         }
     }
-    pub fn get_3_d_listener_attributes(
+    pub fn get_3d_listener_attributes(
         &self,
         listener: i32,
     ) -> Result<(Vector, Vector, Vector, Vector), Error> {
@@ -12099,7 +12177,7 @@ impl System {
             }
         }
     }
-    pub fn set_3_d_rolloff_callback(
+    pub fn set_3d_rolloff_callback(
         &self,
         callback: ffi::FMOD_3D_ROLLOFF_CALLBACK,
     ) -> Result<(), Error> {
@@ -12302,7 +12380,7 @@ impl System {
             }
         }
     }
-    pub fn create_reverb_3_d(&self) -> Result<Reverb3d, Error> {
+    pub fn create_reverb_3d(&self) -> Result<Reverb3d, Error> {
         unsafe {
             let mut reverb = null_mut();
             match ffi::FMOD_System_CreateReverb3D(self.pointer, &mut reverb) {
