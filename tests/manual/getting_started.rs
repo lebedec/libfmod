@@ -1,13 +1,7 @@
-use std::{env, fs};
-use std::ffi::{c_void, CString};
-use std::os::raw::c_char;
-use std::path::Path;
-use std::ptr::null_mut;
-use std::thread::sleep;
-use std::time::Duration;
-use libfmod::{AdvancedSettings, ChannelOrder, CreateSoundexInfo, DspResampler, Error, ffi, Guid, OpenState, SoundFormat, SoundType, Studio, StudioAdvancedSettings, System};
-use libfmod::ffi::{FMOD_CREATESTREAM, FMOD_DEFAULT, FMOD_INIT_NORMAL, FMOD_NONBLOCKING, FMOD_RESULT, FMOD_STUDIO_INIT_NORMAL, FMOD_SYSTEM_CALLBACK_PREUPDATE, FMOD_SYSTEM_CALLBACK_THREADCREATED};
+use std::ffi::c_void;
 
+use libfmod::{AdvancedSettings, DspResampler, Error, ffi, OpenState, Studio, StudioAdvancedSettings, System};
+use libfmod::ffi::{FMOD_DEFAULT, FMOD_INIT_NORMAL, FMOD_NONBLOCKING, FMOD_RESULT, FMOD_STUDIO_INIT_NORMAL, FMOD_SYSTEM_CALLBACK_PREUPDATE};
 
 #[test]
 fn test_core_system_initialization() -> Result<(), Error> {
@@ -39,7 +33,7 @@ fn test_core_system_advanced_settings() -> Result<(), Error> {
         resampler_method: DspResampler::Spline,
         random_seed: 0,
         max_convolution_threads: 3,
-        max_opus_codecs: 32
+        max_opus_codecs: 32,
     };
     system.set_advanced_settings(settings)?;
     let settings = system.get_advanced_settings()?;
@@ -63,11 +57,11 @@ fn test_studio_system_advanced_settings() -> Result<(), Error> {
         studioupdateperiod: 20,
         idlesampledatapoolsize: 256,
         streamingscheduledelay: 10,
-        encryptionkey: "secret".to_string()
+        encryptionkey: "secret".to_string(),
     };
     studio.set_advanced_settings(settings)?;
-    // let settings = studio.get_advanced_settings()?; // TODO: debug
-    // println!("Settings: {:?}", settings);
+    let settings = studio.get_advanced_settings()?;
+    println!("Settings: {:?}", settings);
     studio.release()
 }
 
@@ -75,7 +69,6 @@ fn test_studio_system_advanced_settings() -> Result<(), Error> {
 fn test_playing_sound() -> Result<(), Error> {
     let system = System::create()?;
     system.init(512, FMOD_INIT_NORMAL, None)?;
-    // println!("{:?} e{}", env::current_dir().unwrap(), Path::new("./data/heartbeat.ogg").exists());
     let sound = system.create_sound("./data/heartbeat.ogg", FMOD_DEFAULT, None)?;
     let channel = system.play_sound(sound, None, false)?;
     while channel.is_playing()? {
@@ -170,7 +163,7 @@ fn test_system_pre_update_callback() -> Result<(), Error> {
         type_: ffi::FMOD_SYSTEM_CALLBACK_TYPE,
         _commanddata1: *mut c_void,
         _commanddata2: *mut c_void,
-        _userdata: *mut c_void
+        _userdata: *mut c_void,
     ) -> FMOD_RESULT {
         println!("system {} callback {} {}", system as usize, type_, type_ == FMOD_SYSTEM_CALLBACK_PREUPDATE);
         ffi::FMOD_OK

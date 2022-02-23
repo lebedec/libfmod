@@ -1,7 +1,5 @@
-use std::env;
-use std::path::Path;
 use libfmod::{Error, ReverbProperties, System, Vector};
-use libfmod::ffi::{FMOD_DEFAULT, FMOD_INIT_NORMAL};
+use libfmod::ffi::FMOD_INIT_NORMAL;
 
 #[test]
 fn test_3d_reverb() -> Result<(), Error> {
@@ -20,7 +18,7 @@ fn test_3d_reverb() -> Result<(), Error> {
     let listener = Vector {
         x: 0.0,
         y: 0.0,
-        z: -1.0
+        z: -1.0,
     };
     system.set_3d_listener_attributes(0, Some(listener), None, None, None)?;
     system.release()
