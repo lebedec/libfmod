@@ -89,6 +89,16 @@ pub fn attr3d_array8(
     values.try_into().expect("slice with incorrect length")
 }
 
+pub fn vec_as_mut_ptr<T, O, F>(values: Vec<T>, map: F) -> *mut O
+    where
+        F: FnMut(T) -> O,
+{
+    let mut values = values.into_iter().map(map).collect::<Vec<O>>();
+    let pointer = values.as_mut_ptr();
+    std::mem::forget(values);
+    pointer
+}
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LoadingState {
     Unloading,
@@ -3788,7 +3798,7 @@ impl ParameterDescription {
 pub struct UserProperty {
     pub name: String,
     pub type_: UserPropertyType,
-    pub __union: ffi::FMOD_STUDIO_USER_PROPERTY__union,
+    pub union: ffi::FMOD_STUDIO_USER_PROPERTY_UNION,
 }
 
 impl UserProperty {
@@ -3797,7 +3807,7 @@ impl UserProperty {
             Ok(UserProperty {
                 name: to_string!(value.name)?,
                 type_: UserPropertyType::from(value.type_)?,
-                __union: value.__union,
+                union: value.union,
             })
         }
     }
@@ -3805,7 +3815,7 @@ impl UserProperty {
         ffi::FMOD_STUDIO_USER_PROPERTY {
             name: self.name.as_ptr().cast(),
             type_: self.type_.into(),
-            __union: self.__union,
+            union: self.union,
         }
     }
 }
@@ -5331,7 +5341,7 @@ pub struct DspParameterDesc {
     pub name: [i8; 16 as usize],
     pub label: [i8; 16 as usize],
     pub description: String,
-    pub __union: ffi::FMOD_DSP_PARAMETER_DESC__union,
+    pub union: ffi::FMOD_DSP_PARAMETER_DESC_UNION,
 }
 
 impl DspParameterDesc {
@@ -5342,7 +5352,7 @@ impl DspParameterDesc {
                 name: value.name,
                 label: value.label,
                 description: to_string!(value.description)?,
-                __union: value.__union,
+                union: value.union,
             })
         }
     }
@@ -5352,7 +5362,7 @@ impl DspParameterDesc {
             name: self.name,
             label: self.label,
             description: self.description.as_ptr().cast(),
-            __union: self.__union,
+            union: self.union,
         }
     }
 }
@@ -5528,8 +5538,7 @@ pub struct DspDescription {
     pub read: ffi::FMOD_DSP_READ_CALLBACK,
     pub process: ffi::FMOD_DSP_PROCESS_CALLBACK,
     pub setposition: ffi::FMOD_DSP_SETPOSITION_CALLBACK,
-    pub numparameters: i32,
-    pub paramdesc: Vec<ffi::FMOD_DSP_PARAMETER_DESC>,
+    pub paramdesc: Vec<DspParameterDesc>,
     pub setparameterfloat: ffi::FMOD_DSP_SETPARAM_FLOAT_CALLBACK,
     pub setparameterint: ffi::FMOD_DSP_SETPARAM_INT_CALLBACK,
     pub setparameterbool: ffi::FMOD_DSP_SETPARAM_BOOL_CALLBACK,
@@ -5560,8 +5569,11 @@ impl DspDescription {
                 read: value.read,
                 process: value.process,
                 setposition: value.setposition,
-                numparameters: value.numparameters,
-                paramdesc: vec![],
+                paramdesc: to_vec!(
+                    *value.paramdesc,
+                    value.numparameters,
+                    DspParameterDesc::from
+                )?,
                 setparameterfloat: value.setparameterfloat,
                 setparameterint: value.setparameterint,
                 setparameterbool: value.setparameterbool,
@@ -5591,8 +5603,8 @@ impl DspDescription {
             read: self.read,
             process: self.process,
             setposition: self.setposition,
-            numparameters: self.numparameters,
-            paramdesc: null_mut(),
+            numparameters: self.paramdesc.len() as i32,
+            paramdesc: &mut vec_as_mut_ptr(self.paramdesc, |param| param.into()),
             setparameterfloat: self.setparameterfloat,
             setparameterint: self.setparameterint,
             setparameterbool: self.setparameterbool,
@@ -6113,12 +6125,11 @@ impl Channel {
             }
         }
     }
-    pub fn get_mix_matrix(&self) -> Result<(f32, i32, i32, i32), Error> {
+    pub fn get_mix_matrix(&self, inchannel_hop: i32) -> Result<(f32, i32, i32), Error> {
         unsafe {
             let mut matrix = f32::default();
             let mut outchannels = i32::default();
             let mut inchannels = i32::default();
-            let mut inchannel_hop = i32::default();
             match ffi::FMOD_Channel_GetMixMatrix(
                 self.pointer,
                 &mut matrix,
@@ -6126,7 +6137,7 @@ impl Channel {
                 &mut inchannels,
                 inchannel_hop,
             ) {
-                ffi::FMOD_OK => Ok((matrix, outchannels, inchannels, inchannel_hop)),
+                ffi::FMOD_OK => Ok((matrix, outchannels, inchannels)),
                 error => Err(err_fmod!("FMOD_Channel_GetMixMatrix", error)),
             }
         }
@@ -6361,21 +6372,25 @@ impl Channel {
             }
         }
     }
-    pub fn set_3d_custom_rolloff(&self, points: Vector, numpoints: i32) -> Result<(), Error> {
+    pub fn set_3d_custom_rolloff(&self, points: Vec<Vector>) -> Result<(), Error> {
         unsafe {
-            match ffi::FMOD_Channel_Set3DCustomRolloff(self.pointer, &mut points.into(), numpoints)
-            {
+            let numpoints = points.len() as i32;
+            match ffi::FMOD_Channel_Set3DCustomRolloff(
+                self.pointer,
+                vec_as_mut_ptr(points, |point| point.into()),
+                numpoints,
+            ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Channel_Set3DCustomRolloff", error)),
             }
         }
     }
-    pub fn get_3d_custom_rolloff(&self) -> Result<(Vec<Vector>, i32), Error> {
+    pub fn get_3d_custom_rolloff(&self) -> Result<Vec<Vector>, Error> {
         unsafe {
             let mut points = null_mut();
             let mut numpoints = i32::default();
             match ffi::FMOD_Channel_Get3DCustomRolloff(self.pointer, &mut points, &mut numpoints) {
-                ffi::FMOD_OK => Ok((to_vec!(points, 1, Vector::from)?, numpoints)),
+                ffi::FMOD_OK => Ok(to_vec!(points, numpoints, Vector::from)?),
                 error => Err(err_fmod!("FMOD_Channel_Get3DCustomRolloff", error)),
             }
         }
@@ -6935,12 +6950,11 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn get_mix_matrix(&self) -> Result<(f32, i32, i32, i32), Error> {
+    pub fn get_mix_matrix(&self, inchannel_hop: i32) -> Result<(f32, i32, i32), Error> {
         unsafe {
             let mut matrix = f32::default();
             let mut outchannels = i32::default();
             let mut inchannels = i32::default();
-            let mut inchannel_hop = i32::default();
             match ffi::FMOD_ChannelGroup_GetMixMatrix(
                 self.pointer,
                 &mut matrix,
@@ -6948,7 +6962,7 @@ impl ChannelGroup {
                 &mut inchannels,
                 inchannel_hop,
             ) {
-                ffi::FMOD_OK => Ok((matrix, outchannels, inchannels, inchannel_hop)),
+                ffi::FMOD_OK => Ok((matrix, outchannels, inchannels)),
                 error => Err(err_fmod!("FMOD_ChannelGroup_GetMixMatrix", error)),
             }
         }
@@ -7190,11 +7204,12 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_3d_custom_rolloff(&self, points: Vector, numpoints: i32) -> Result<(), Error> {
+    pub fn set_3d_custom_rolloff(&self, points: Vec<Vector>) -> Result<(), Error> {
         unsafe {
+            let numpoints = points.len() as i32;
             match ffi::FMOD_ChannelGroup_Set3DCustomRolloff(
                 self.pointer,
-                &mut points.into(),
+                vec_as_mut_ptr(points, |point| point.into()),
                 numpoints,
             ) {
                 ffi::FMOD_OK => Ok(()),
@@ -7202,7 +7217,7 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn get_3d_custom_rolloff(&self) -> Result<(Vec<Vector>, i32), Error> {
+    pub fn get_3d_custom_rolloff(&self) -> Result<Vec<Vector>, Error> {
         unsafe {
             let mut points = null_mut();
             let mut numpoints = i32::default();
@@ -7211,7 +7226,7 @@ impl ChannelGroup {
                 &mut points,
                 &mut numpoints,
             ) {
-                ffi::FMOD_OK => Ok((to_vec!(points, 1, Vector::from)?, numpoints)),
+                ffi::FMOD_OK => Ok(to_vec!(points, numpoints, Vector::from)?),
                 error => Err(err_fmod!("FMOD_ChannelGroup_Get3DCustomRolloff", error)),
             }
         }
@@ -7810,11 +7825,11 @@ impl Dsp {
             }
         }
     }
-    pub fn get_parameter_info(&self, index: i32) -> Result<Vec<DspParameterDesc>, Error> {
+    pub fn get_parameter_info(&self, index: i32) -> Result<DspParameterDesc, Error> {
         unsafe {
             let mut desc = null_mut();
             match ffi::FMOD_DSP_GetParameterInfo(self.pointer, index, &mut desc) {
-                ffi::FMOD_OK => Ok(to_vec!(desc, 1, DspParameterDesc::from)?),
+                ffi::FMOD_OK => Ok(DspParameterDesc::from(*desc)?),
                 error => Err(err_fmod!("FMOD_DSP_GetParameterInfo", error)),
             }
         }
@@ -8288,7 +8303,7 @@ impl Geometry {
     }
     pub fn save(&self) -> Result<(*mut c_void, i32), Error> {
         unsafe {
-            let mut data = null_mut();
+            let data = null_mut();
             let mut datasize = i32::default();
             match ffi::FMOD_Geometry_Save(self.pointer, data, &mut datasize) {
                 ffi::FMOD_OK => Ok((data, datasize)),
@@ -8581,20 +8596,25 @@ impl Sound {
             }
         }
     }
-    pub fn set_3d_custom_rolloff(&self, points: Vector, numpoints: i32) -> Result<(), Error> {
+    pub fn set_3d_custom_rolloff(&self, points: Vec<Vector>) -> Result<(), Error> {
         unsafe {
-            match ffi::FMOD_Sound_Set3DCustomRolloff(self.pointer, &mut points.into(), numpoints) {
+            let numpoints = points.len() as i32;
+            match ffi::FMOD_Sound_Set3DCustomRolloff(
+                self.pointer,
+                vec_as_mut_ptr(points, |point| point.into()),
+                numpoints,
+            ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Sound_Set3DCustomRolloff", error)),
             }
         }
     }
-    pub fn get_3d_custom_rolloff(&self) -> Result<(Vec<Vector>, i32), Error> {
+    pub fn get_3d_custom_rolloff(&self) -> Result<Vec<Vector>, Error> {
         unsafe {
             let mut points = null_mut();
             let mut numpoints = i32::default();
             match ffi::FMOD_Sound_Get3DCustomRolloff(self.pointer, &mut points, &mut numpoints) {
-                ffi::FMOD_OK => Ok((to_vec!(points, 1, Vector::from)?, numpoints)),
+                ffi::FMOD_OK => Ok(to_vec!(points, numpoints, Vector::from)?),
                 error => Err(err_fmod!("FMOD_Sound_Get3DCustomRolloff", error)),
             }
         }
@@ -11955,11 +11975,11 @@ impl System {
             }
         }
     }
-    pub fn get_dsp_info_by_plugin(&self, handle: u32) -> Result<Vec<DspDescription>, Error> {
+    pub fn get_dsp_info_by_plugin(&self, handle: u32) -> Result<DspDescription, Error> {
         unsafe {
             let mut description = null();
             match ffi::FMOD_System_GetDSPInfoByPlugin(self.pointer, handle, &mut description) {
-                ffi::FMOD_OK => Ok(to_vec!(description, 1, DspDescription::from)?),
+                ffi::FMOD_OK => Ok(DspDescription::from(*description)?),
                 error => Err(err_fmod!("FMOD_System_GetDSPInfoByPlugin", error)),
             }
         }
@@ -12468,11 +12488,11 @@ impl System {
             }
         }
     }
-    pub fn get_dsp_info_by_type(&self, type_: DspType) -> Result<Vec<DspDescription>, Error> {
+    pub fn get_dsp_info_by_type(&self, type_: DspType) -> Result<DspDescription, Error> {
         unsafe {
             let mut description = null();
             match ffi::FMOD_System_GetDSPInfoByType(self.pointer, type_.into(), &mut description) {
-                ffi::FMOD_OK => Ok(to_vec!(description, 1, DspDescription::from)?),
+                ffi::FMOD_OK => Ok(DspDescription::from(*description)?),
                 error => Err(err_fmod!("FMOD_System_GetDSPInfoByType", error)),
             }
         }

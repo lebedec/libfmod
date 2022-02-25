@@ -13,13 +13,12 @@ https://www.fmod.com/download
 #### Installation
 
 A crate uses FMOD development libraries version number to simplify version match.
-The concept of "pre-releases" with a dash in the version used to specify 
-backwards compatible changes and bug fixes in libFMOD code. 
-Be aware that Cargo will avoid automatically using pre-releases unless explicitly asked.
+Backwards compatible changes and bug fixes in libFMOD encoded in patch part.
+For example for FMOD Engine 2.02.03 you should use:
 
 ```toml
 [dependencies]
-libfmod = "2.2.3-r.1"
+libfmod = "2.2.301"
 ```
 
 #### Getting Started

@@ -130,7 +130,7 @@ fn test_extended_sound_creating() -> Result<(), Error> {
 }*/
 
 #[test]
-fn test_playing_steams() -> Result<(), Error> {
+fn test_playing_streams() -> Result<(), Error> {
     let system = System::create()?;
     system.init(512, FMOD_INIT_NORMAL, None)?;
     let sound = system.create_stream("./data/heartbeat.ogg", FMOD_DEFAULT, None)?;

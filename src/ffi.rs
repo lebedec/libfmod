@@ -1479,12 +1479,12 @@ impl Default for FMOD_STUDIO_PARAMETER_DESCRIPTION {
 pub struct FMOD_STUDIO_USER_PROPERTY {
     pub name: *const c_char,
     pub type_: FMOD_STUDIO_USER_PROPERTY_TYPE,
-    pub __union: FMOD_STUDIO_USER_PROPERTY__union,
+    pub union: FMOD_STUDIO_USER_PROPERTY_UNION,
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub union FMOD_STUDIO_USER_PROPERTY__union {
+pub union FMOD_STUDIO_USER_PROPERTY_UNION {
     pub intvalue: c_int,
     pub boolvalue: FMOD_BOOL,
     pub floatvalue: c_float,
@@ -2456,12 +2456,12 @@ pub struct FMOD_DSP_PARAMETER_DESC {
     pub name: [c_char; 16 as usize],
     pub label: [c_char; 16 as usize],
     pub description: *const c_char,
-    pub __union: FMOD_DSP_PARAMETER_DESC__union,
+    pub union: FMOD_DSP_PARAMETER_DESC_UNION,
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub union FMOD_DSP_PARAMETER_DESC__union {
+pub union FMOD_DSP_PARAMETER_DESC_UNION {
     pub floatdesc: FMOD_DSP_PARAMETER_DESC_FLOAT,
     pub intdesc: FMOD_DSP_PARAMETER_DESC_INT,
     pub booldesc: FMOD_DSP_PARAMETER_DESC_BOOL,
