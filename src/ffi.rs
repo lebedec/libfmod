@@ -1482,6 +1482,16 @@ pub struct FMOD_STUDIO_USER_PROPERTY {
     pub union: FMOD_STUDIO_USER_PROPERTY_UNION,
 }
 
+impl Default for FMOD_STUDIO_USER_PROPERTY {
+    fn default() -> Self {
+        Self {
+            name: null_mut(),
+            type_: Default::default(),
+            union: FMOD_STUDIO_USER_PROPERTY_UNION { intvalue: 0 },
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union FMOD_STUDIO_USER_PROPERTY_UNION {
@@ -1489,12 +1499,6 @@ pub union FMOD_STUDIO_USER_PROPERTY_UNION {
     pub boolvalue: FMOD_BOOL,
     pub floatvalue: c_float,
     pub stringvalue: *const c_char,
-}
-
-impl Default for FMOD_STUDIO_USER_PROPERTY {
-    fn default() -> Self {
-        unimplemented!()
-    }
 }
 
 #[repr(C)]
@@ -2459,6 +2463,20 @@ pub struct FMOD_DSP_PARAMETER_DESC {
     pub union: FMOD_DSP_PARAMETER_DESC_UNION,
 }
 
+impl Default for FMOD_DSP_PARAMETER_DESC {
+    fn default() -> Self {
+        Self {
+            type_: Default::default(),
+            name: Default::default(),
+            label: Default::default(),
+            description: null_mut(),
+            union: FMOD_DSP_PARAMETER_DESC_UNION {
+                floatdesc: Default::default(),
+            },
+        }
+    }
+}
+
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union FMOD_DSP_PARAMETER_DESC_UNION {
@@ -2466,12 +2484,6 @@ pub union FMOD_DSP_PARAMETER_DESC_UNION {
     pub intdesc: FMOD_DSP_PARAMETER_DESC_INT,
     pub booldesc: FMOD_DSP_PARAMETER_DESC_BOOL,
     pub datadesc: FMOD_DSP_PARAMETER_DESC_DATA,
-}
-
-impl Default for FMOD_DSP_PARAMETER_DESC {
-    fn default() -> Self {
-        unimplemented!()
-    }
 }
 
 #[repr(C)]
@@ -2566,7 +2578,11 @@ pub struct FMOD_DSP_PARAMETER_FFT {
 
 impl Default for FMOD_DSP_PARAMETER_FFT {
     fn default() -> Self {
-        unimplemented!()
+        Self {
+            length: Default::default(),
+            numchannels: Default::default(),
+            spectrum: [null_mut(); 32],
+        }
     }
 }
 
@@ -2773,7 +2789,16 @@ pub struct FMOD_DSP_LOUDNESS_METER_INFO_TYPE {
 
 impl Default for FMOD_DSP_LOUDNESS_METER_INFO_TYPE {
     fn default() -> Self {
-        unimplemented!()
+        Self {
+            momentaryloudness: Default::default(),
+            shorttermloudness: Default::default(),
+            integratedloudness: Default::default(),
+            loudness10thpercentile: Default::default(),
+            loudness95thpercentile: Default::default(),
+            loudnesshistogram: [0.0; FMOD_DSP_LOUDNESS_METER_HISTOGRAM_SAMPLES as usize],
+            maxtruepeak: Default::default(),
+            maxmomentaryloudness: Default::default(),
+        }
     }
 }
 
