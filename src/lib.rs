@@ -3701,8 +3701,9 @@ pub struct BankInfo {
     pub seekcallback: ffi::FMOD_FILE_SEEK_CALLBACK,
 }
 
-impl BankInfo {
-    pub fn from(value: ffi::FMOD_STUDIO_BANK_INFO) -> Result<BankInfo, Error> {
+impl TryFrom<ffi::FMOD_STUDIO_BANK_INFO> for BankInfo {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_STUDIO_BANK_INFO) -> Result<Self, Self::Error> {
         unsafe {
             Ok(BankInfo {
                 size: value.size,
@@ -3715,7 +3716,10 @@ impl BankInfo {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_BANK_INFO {
+}
+
+impl Into<ffi::FMOD_STUDIO_BANK_INFO> for BankInfo {
+    fn into(self) -> ffi::FMOD_STUDIO_BANK_INFO {
         ffi::FMOD_STUDIO_BANK_INFO {
             size: self.size,
             userdata: self.userdata,
@@ -3734,8 +3738,9 @@ pub struct ParameterId {
     pub data_2: u32,
 }
 
-impl ParameterId {
-    pub fn from(value: ffi::FMOD_STUDIO_PARAMETER_ID) -> Result<ParameterId, Error> {
+impl TryFrom<ffi::FMOD_STUDIO_PARAMETER_ID> for ParameterId {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_STUDIO_PARAMETER_ID) -> Result<Self, Self::Error> {
         unsafe {
             Ok(ParameterId {
                 data_1: value.data1,
@@ -3743,7 +3748,10 @@ impl ParameterId {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_PARAMETER_ID {
+}
+
+impl Into<ffi::FMOD_STUDIO_PARAMETER_ID> for ParameterId {
+    fn into(self) -> ffi::FMOD_STUDIO_PARAMETER_ID {
         ffi::FMOD_STUDIO_PARAMETER_ID {
             data1: self.data_1,
             data2: self.data_2,
@@ -3763,24 +3771,26 @@ pub struct ParameterDescription {
     pub guid: Guid,
 }
 
-impl ParameterDescription {
-    pub fn from(
-        value: ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION,
-    ) -> Result<ParameterDescription, Error> {
+impl TryFrom<ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION> for ParameterDescription {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION) -> Result<Self, Self::Error> {
         unsafe {
             Ok(ParameterDescription {
                 name: to_string!(value.name)?,
-                id: ParameterId::from(value.id)?,
+                id: ParameterId::try_from(value.id)?,
                 minimum: value.minimum,
                 maximum: value.maximum,
                 defaultvalue: value.defaultvalue,
                 type_: ParameterType::from(value.type_)?,
                 flags: value.flags,
-                guid: Guid::from(value.guid)?,
+                guid: Guid::try_from(value.guid)?,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION {
+}
+
+impl Into<ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION> for ParameterDescription {
+    fn into(self) -> ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION {
         ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION {
             name: self.name.as_ptr().cast(),
             id: self.id.into(),
@@ -3801,8 +3811,9 @@ pub struct UserProperty {
     pub union: ffi::FMOD_STUDIO_USER_PROPERTY_UNION,
 }
 
-impl UserProperty {
-    pub fn from(value: ffi::FMOD_STUDIO_USER_PROPERTY) -> Result<UserProperty, Error> {
+impl TryFrom<ffi::FMOD_STUDIO_USER_PROPERTY> for UserProperty {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_STUDIO_USER_PROPERTY) -> Result<Self, Self::Error> {
         unsafe {
             Ok(UserProperty {
                 name: to_string!(value.name)?,
@@ -3811,7 +3822,10 @@ impl UserProperty {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_USER_PROPERTY {
+}
+
+impl Into<ffi::FMOD_STUDIO_USER_PROPERTY> for UserProperty {
+    fn into(self) -> ffi::FMOD_STUDIO_USER_PROPERTY {
         ffi::FMOD_STUDIO_USER_PROPERTY {
             name: self.name.as_ptr().cast(),
             type_: self.type_.into(),
@@ -3827,10 +3841,9 @@ pub struct ProgrammerSoundProperties {
     pub subsound_index: i32,
 }
 
-impl ProgrammerSoundProperties {
-    pub fn from(
-        value: ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES,
-    ) -> Result<ProgrammerSoundProperties, Error> {
+impl TryFrom<ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES> for ProgrammerSoundProperties {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES) -> Result<Self, Self::Error> {
         unsafe {
             Ok(ProgrammerSoundProperties {
                 name: to_string!(value.name)?,
@@ -3839,7 +3852,10 @@ impl ProgrammerSoundProperties {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES {
+}
+
+impl Into<ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES> for ProgrammerSoundProperties {
+    fn into(self) -> ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES {
         ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES {
             name: self.name.as_ptr().cast(),
             sound: self.sound.as_mut_ptr(),
@@ -3854,10 +3870,9 @@ pub struct PluginInstanceProperties {
     pub dsp: Dsp,
 }
 
-impl PluginInstanceProperties {
-    pub fn from(
-        value: ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES,
-    ) -> Result<PluginInstanceProperties, Error> {
+impl TryFrom<ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES> for PluginInstanceProperties {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES) -> Result<Self, Self::Error> {
         unsafe {
             Ok(PluginInstanceProperties {
                 name: to_string!(value.name)?,
@@ -3865,7 +3880,10 @@ impl PluginInstanceProperties {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES {
+}
+
+impl Into<ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES> for PluginInstanceProperties {
+    fn into(self) -> ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES {
         ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES {
             name: self.name.as_ptr().cast(),
             dsp: self.dsp.as_mut_ptr(),
@@ -3879,10 +3897,9 @@ pub struct TimelineMarkerProperties {
     pub position: i32,
 }
 
-impl TimelineMarkerProperties {
-    pub fn from(
-        value: ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES,
-    ) -> Result<TimelineMarkerProperties, Error> {
+impl TryFrom<ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES> for TimelineMarkerProperties {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES) -> Result<Self, Self::Error> {
         unsafe {
             Ok(TimelineMarkerProperties {
                 name: to_string!(value.name)?,
@@ -3890,7 +3907,10 @@ impl TimelineMarkerProperties {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES {
+}
+
+impl Into<ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES> for TimelineMarkerProperties {
+    fn into(self) -> ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES {
         ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES {
             name: self.name.as_ptr().cast(),
             position: self.position,
@@ -3908,10 +3928,9 @@ pub struct TimelineBeatProperties {
     pub timesignaturelower: i32,
 }
 
-impl TimelineBeatProperties {
-    pub fn from(
-        value: ffi::FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES,
-    ) -> Result<TimelineBeatProperties, Error> {
+impl TryFrom<ffi::FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES> for TimelineBeatProperties {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES) -> Result<Self, Self::Error> {
         unsafe {
             Ok(TimelineBeatProperties {
                 bar: value.bar,
@@ -3923,7 +3942,10 @@ impl TimelineBeatProperties {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES {
+}
+
+impl Into<ffi::FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES> for TimelineBeatProperties {
+    fn into(self) -> ffi::FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES {
         ffi::FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES {
             bar: self.bar,
             beat: self.beat,
@@ -3941,18 +3963,22 @@ pub struct TimelineNestedBeatProperties {
     pub properties: TimelineBeatProperties,
 }
 
-impl TimelineNestedBeatProperties {
-    pub fn from(
+impl TryFrom<ffi::FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES> for TimelineNestedBeatProperties {
+    type Error = Error;
+    fn try_from(
         value: ffi::FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES,
-    ) -> Result<TimelineNestedBeatProperties, Error> {
+    ) -> Result<Self, Self::Error> {
         unsafe {
             Ok(TimelineNestedBeatProperties {
-                eventid: Guid::from(value.eventid)?,
-                properties: TimelineBeatProperties::from(value.properties)?,
+                eventid: Guid::try_from(value.eventid)?,
+                properties: TimelineBeatProperties::try_from(value.properties)?,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES {
+}
+
+impl Into<ffi::FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES> for TimelineNestedBeatProperties {
+    fn into(self) -> ffi::FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES {
         ffi::FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES {
             eventid: self.eventid.into(),
             properties: self.properties.into(),
@@ -3970,8 +3996,9 @@ pub struct StudioAdvancedSettings {
     pub encryptionkey: String,
 }
 
-impl StudioAdvancedSettings {
-    pub fn from(value: ffi::FMOD_STUDIO_ADVANCEDSETTINGS) -> Result<StudioAdvancedSettings, Error> {
+impl TryFrom<ffi::FMOD_STUDIO_ADVANCEDSETTINGS> for StudioAdvancedSettings {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_STUDIO_ADVANCEDSETTINGS) -> Result<Self, Self::Error> {
         unsafe {
             Ok(StudioAdvancedSettings {
                 commandqueuesize: value.commandqueuesize,
@@ -3983,7 +4010,10 @@ impl StudioAdvancedSettings {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_ADVANCEDSETTINGS {
+}
+
+impl Into<ffi::FMOD_STUDIO_ADVANCEDSETTINGS> for StudioAdvancedSettings {
+    fn into(self) -> ffi::FMOD_STUDIO_ADVANCEDSETTINGS {
         ffi::FMOD_STUDIO_ADVANCEDSETTINGS {
             cbsize: size_of::<ffi::FMOD_STUDIO_ADVANCEDSETTINGS>() as i32,
             commandqueuesize: self.commandqueuesize,
@@ -4001,15 +4031,19 @@ pub struct StudioCpuUsage {
     pub update: f32,
 }
 
-impl StudioCpuUsage {
-    pub fn from(value: ffi::FMOD_STUDIO_CPU_USAGE) -> Result<StudioCpuUsage, Error> {
+impl TryFrom<ffi::FMOD_STUDIO_CPU_USAGE> for StudioCpuUsage {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_STUDIO_CPU_USAGE) -> Result<Self, Self::Error> {
         unsafe {
             Ok(StudioCpuUsage {
                 update: value.update,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_CPU_USAGE {
+}
+
+impl Into<ffi::FMOD_STUDIO_CPU_USAGE> for StudioCpuUsage {
+    fn into(self) -> ffi::FMOD_STUDIO_CPU_USAGE {
         ffi::FMOD_STUDIO_CPU_USAGE {
             update: self.update,
         }
@@ -4025,8 +4059,9 @@ pub struct BufferInfo {
     pub stalltime: f32,
 }
 
-impl BufferInfo {
-    pub fn from(value: ffi::FMOD_STUDIO_BUFFER_INFO) -> Result<BufferInfo, Error> {
+impl TryFrom<ffi::FMOD_STUDIO_BUFFER_INFO> for BufferInfo {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_STUDIO_BUFFER_INFO) -> Result<Self, Self::Error> {
         unsafe {
             Ok(BufferInfo {
                 currentusage: value.currentusage,
@@ -4037,7 +4072,10 @@ impl BufferInfo {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_BUFFER_INFO {
+}
+
+impl Into<ffi::FMOD_STUDIO_BUFFER_INFO> for BufferInfo {
+    fn into(self) -> ffi::FMOD_STUDIO_BUFFER_INFO {
         ffi::FMOD_STUDIO_BUFFER_INFO {
             currentusage: self.currentusage,
             peakusage: self.peakusage,
@@ -4054,16 +4092,20 @@ pub struct BufferUsage {
     pub studiohandle: BufferInfo,
 }
 
-impl BufferUsage {
-    pub fn from(value: ffi::FMOD_STUDIO_BUFFER_USAGE) -> Result<BufferUsage, Error> {
+impl TryFrom<ffi::FMOD_STUDIO_BUFFER_USAGE> for BufferUsage {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_STUDIO_BUFFER_USAGE) -> Result<Self, Self::Error> {
         unsafe {
             Ok(BufferUsage {
-                studiocommandqueue: BufferInfo::from(value.studiocommandqueue)?,
-                studiohandle: BufferInfo::from(value.studiohandle)?,
+                studiocommandqueue: BufferInfo::try_from(value.studiocommandqueue)?,
+                studiohandle: BufferInfo::try_from(value.studiohandle)?,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_BUFFER_USAGE {
+}
+
+impl Into<ffi::FMOD_STUDIO_BUFFER_USAGE> for BufferUsage {
+    fn into(self) -> ffi::FMOD_STUDIO_BUFFER_USAGE {
         ffi::FMOD_STUDIO_BUFFER_USAGE {
             studiocommandqueue: self.studiocommandqueue.into(),
             studiohandle: self.studiohandle.into(),
@@ -4079,18 +4121,22 @@ pub struct SoundInfo {
     pub subsoundindex: i32,
 }
 
-impl SoundInfo {
-    pub fn from(value: ffi::FMOD_STUDIO_SOUND_INFO) -> Result<SoundInfo, Error> {
+impl TryFrom<ffi::FMOD_STUDIO_SOUND_INFO> for SoundInfo {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_STUDIO_SOUND_INFO) -> Result<Self, Self::Error> {
         unsafe {
             Ok(SoundInfo {
                 name_or_data: to_string!(value.name_or_data)?,
                 mode: value.mode,
-                exinfo: CreateSoundexInfo::from(value.exinfo)?,
+                exinfo: CreateSoundexInfo::try_from(value.exinfo)?,
                 subsoundindex: value.subsoundindex,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_SOUND_INFO {
+}
+
+impl Into<ffi::FMOD_STUDIO_SOUND_INFO> for SoundInfo {
+    fn into(self) -> ffi::FMOD_STUDIO_SOUND_INFO {
         ffi::FMOD_STUDIO_SOUND_INFO {
             name_or_data: self.name_or_data.as_ptr().cast(),
             mode: self.mode,
@@ -4112,8 +4158,9 @@ pub struct CommandInfo {
     pub outputhandle: u32,
 }
 
-impl CommandInfo {
-    pub fn from(value: ffi::FMOD_STUDIO_COMMAND_INFO) -> Result<CommandInfo, Error> {
+impl TryFrom<ffi::FMOD_STUDIO_COMMAND_INFO> for CommandInfo {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_STUDIO_COMMAND_INFO) -> Result<Self, Self::Error> {
         unsafe {
             Ok(CommandInfo {
                 commandname: to_string!(value.commandname)?,
@@ -4127,7 +4174,10 @@ impl CommandInfo {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_COMMAND_INFO {
+}
+
+impl Into<ffi::FMOD_STUDIO_COMMAND_INFO> for CommandInfo {
+    fn into(self) -> ffi::FMOD_STUDIO_COMMAND_INFO {
         ffi::FMOD_STUDIO_COMMAND_INFO {
             commandname: self.commandname.as_ptr().cast(),
             parentcommandindex: self.parentcommandindex,
@@ -4148,8 +4198,9 @@ pub struct MemoryUsage {
     pub sampledata: i32,
 }
 
-impl MemoryUsage {
-    pub fn from(value: ffi::FMOD_STUDIO_MEMORY_USAGE) -> Result<MemoryUsage, Error> {
+impl TryFrom<ffi::FMOD_STUDIO_MEMORY_USAGE> for MemoryUsage {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_STUDIO_MEMORY_USAGE) -> Result<Self, Self::Error> {
         unsafe {
             Ok(MemoryUsage {
                 exclusive: value.exclusive,
@@ -4158,7 +4209,10 @@ impl MemoryUsage {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_STUDIO_MEMORY_USAGE {
+}
+
+impl Into<ffi::FMOD_STUDIO_MEMORY_USAGE> for MemoryUsage {
+    fn into(self) -> ffi::FMOD_STUDIO_MEMORY_USAGE {
         ffi::FMOD_STUDIO_MEMORY_USAGE {
             exclusive: self.exclusive,
             inclusive: self.inclusive,
@@ -4179,8 +4233,9 @@ pub struct AsyncReadInfo {
     pub done: ffi::FMOD_FILE_ASYNCDONE_FUNC,
 }
 
-impl AsyncReadInfo {
-    pub fn from(value: ffi::FMOD_ASYNCREADINFO) -> Result<AsyncReadInfo, Error> {
+impl TryFrom<ffi::FMOD_ASYNCREADINFO> for AsyncReadInfo {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_ASYNCREADINFO) -> Result<Self, Self::Error> {
         unsafe {
             Ok(AsyncReadInfo {
                 handle: value.handle,
@@ -4194,7 +4249,10 @@ impl AsyncReadInfo {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_ASYNCREADINFO {
+}
+
+impl Into<ffi::FMOD_ASYNCREADINFO> for AsyncReadInfo {
+    fn into(self) -> ffi::FMOD_ASYNCREADINFO {
         ffi::FMOD_ASYNCREADINFO {
             handle: self.handle,
             offset: self.offset,
@@ -4215,8 +4273,9 @@ pub struct Vector {
     pub z: f32,
 }
 
-impl Vector {
-    pub fn from(value: ffi::FMOD_VECTOR) -> Result<Vector, Error> {
+impl TryFrom<ffi::FMOD_VECTOR> for Vector {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_VECTOR) -> Result<Self, Self::Error> {
         unsafe {
             Ok(Vector {
                 x: value.x,
@@ -4225,7 +4284,10 @@ impl Vector {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_VECTOR {
+}
+
+impl Into<ffi::FMOD_VECTOR> for Vector {
+    fn into(self) -> ffi::FMOD_VECTOR {
         ffi::FMOD_VECTOR {
             x: self.x,
             y: self.y,
@@ -4242,18 +4304,22 @@ pub struct Attributes3d {
     pub up: Vector,
 }
 
-impl Attributes3d {
-    pub fn from(value: ffi::FMOD_3D_ATTRIBUTES) -> Result<Attributes3d, Error> {
+impl TryFrom<ffi::FMOD_3D_ATTRIBUTES> for Attributes3d {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_3D_ATTRIBUTES) -> Result<Self, Self::Error> {
         unsafe {
             Ok(Attributes3d {
-                position: Vector::from(value.position)?,
-                velocity: Vector::from(value.velocity)?,
-                forward: Vector::from(value.forward)?,
-                up: Vector::from(value.up)?,
+                position: Vector::try_from(value.position)?,
+                velocity: Vector::try_from(value.velocity)?,
+                forward: Vector::try_from(value.forward)?,
+                up: Vector::try_from(value.up)?,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_3D_ATTRIBUTES {
+}
+
+impl Into<ffi::FMOD_3D_ATTRIBUTES> for Attributes3d {
+    fn into(self) -> ffi::FMOD_3D_ATTRIBUTES {
         ffi::FMOD_3D_ATTRIBUTES {
             position: self.position.into(),
             velocity: self.velocity.into(),
@@ -4271,8 +4337,9 @@ pub struct Guid {
     pub data_4: [u8; 8 as usize],
 }
 
-impl Guid {
-    pub fn from(value: ffi::FMOD_GUID) -> Result<Guid, Error> {
+impl TryFrom<ffi::FMOD_GUID> for Guid {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_GUID) -> Result<Self, Self::Error> {
         unsafe {
             Ok(Guid {
                 data_1: value.Data1,
@@ -4282,7 +4349,10 @@ impl Guid {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_GUID {
+}
+
+impl Into<ffi::FMOD_GUID> for Guid {
+    fn into(self) -> ffi::FMOD_GUID {
         ffi::FMOD_GUID {
             Data1: self.data_1,
             Data2: self.data_2,
@@ -4298,8 +4368,9 @@ pub struct PluginList {
     pub description: *mut c_void,
 }
 
-impl PluginList {
-    pub fn from(value: ffi::FMOD_PLUGINLIST) -> Result<PluginList, Error> {
+impl TryFrom<ffi::FMOD_PLUGINLIST> for PluginList {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_PLUGINLIST) -> Result<Self, Self::Error> {
         unsafe {
             Ok(PluginList {
                 type_: PluginType::from(value.type_)?,
@@ -4307,7 +4378,10 @@ impl PluginList {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_PLUGINLIST {
+}
+
+impl Into<ffi::FMOD_PLUGINLIST> for PluginList {
+    fn into(self) -> ffi::FMOD_PLUGINLIST {
         ffi::FMOD_PLUGINLIST {
             type_: self.type_.into(),
             description: self.description,
@@ -4340,8 +4414,9 @@ pub struct AdvancedSettings {
     pub max_opus_codecs: i32,
 }
 
-impl AdvancedSettings {
-    pub fn from(value: ffi::FMOD_ADVANCEDSETTINGS) -> Result<AdvancedSettings, Error> {
+impl TryFrom<ffi::FMOD_ADVANCEDSETTINGS> for AdvancedSettings {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_ADVANCEDSETTINGS) -> Result<Self, Self::Error> {
         unsafe {
             Ok(AdvancedSettings {
                 max_mpeg_codecs: value.maxMPEGCodecs,
@@ -4376,7 +4451,10 @@ impl AdvancedSettings {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_ADVANCEDSETTINGS {
+}
+
+impl Into<ffi::FMOD_ADVANCEDSETTINGS> for AdvancedSettings {
+    fn into(self) -> ffi::FMOD_ADVANCEDSETTINGS {
         ffi::FMOD_ADVANCEDSETTINGS {
             cbSize: size_of::<ffi::FMOD_ADVANCEDSETTINGS>() as i32,
             maxMPEGCodecs: self.max_mpeg_codecs,
@@ -4425,8 +4503,9 @@ pub struct Tag {
     pub updated: ffi::FMOD_BOOL,
 }
 
-impl Tag {
-    pub fn from(value: ffi::FMOD_TAG) -> Result<Tag, Error> {
+impl TryFrom<ffi::FMOD_TAG> for Tag {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_TAG) -> Result<Self, Self::Error> {
         unsafe {
             Ok(Tag {
                 type_: TagType::from(value.type_)?,
@@ -4438,7 +4517,10 @@ impl Tag {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_TAG {
+}
+
+impl Into<ffi::FMOD_TAG> for Tag {
+    fn into(self) -> ffi::FMOD_TAG {
         ffi::FMOD_TAG {
             type_: self.type_.into(),
             datatype: self.datatype.into(),
@@ -4489,8 +4571,9 @@ pub struct CreateSoundexInfo {
     pub fsbguid: Guid,
 }
 
-impl CreateSoundexInfo {
-    pub fn from(value: ffi::FMOD_CREATESOUNDEXINFO) -> Result<CreateSoundexInfo, Error> {
+impl TryFrom<ffi::FMOD_CREATESOUNDEXINFO> for CreateSoundexInfo {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_CREATESOUNDEXINFO) -> Result<Self, Self::Error> {
         unsafe {
             Ok(CreateSoundexInfo {
                 length: value.length,
@@ -4527,11 +4610,14 @@ impl CreateSoundexInfo {
                 audioqueuepolicy: value.audioqueuepolicy,
                 minmidigranularity: value.minmidigranularity,
                 nonblockthreadid: value.nonblockthreadid,
-                fsbguid: Guid::from(*value.fsbguid)?,
+                fsbguid: Guid::try_from(*value.fsbguid)?,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_CREATESOUNDEXINFO {
+}
+
+impl Into<ffi::FMOD_CREATESOUNDEXINFO> for CreateSoundexInfo {
+    fn into(self) -> ffi::FMOD_CREATESOUNDEXINFO {
         ffi::FMOD_CREATESOUNDEXINFO {
             cbsize: size_of::<ffi::FMOD_CREATESOUNDEXINFO>() as i32,
             length: self.length,
@@ -4590,7 +4676,107 @@ pub struct ReverbProperties {
 }
 
 impl ReverbProperties {
-    pub fn from(value: ffi::FMOD_REVERB_PROPERTIES) -> Result<ReverbProperties, Error> {
+    #[inline]
+    pub fn off() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_OFF).unwrap()
+    }
+    #[inline]
+    pub fn generic() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_GENERIC).unwrap()
+    }
+    #[inline]
+    pub fn paddedcell() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_PADDEDCELL).unwrap()
+    }
+    #[inline]
+    pub fn room() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_ROOM).unwrap()
+    }
+    #[inline]
+    pub fn bathroom() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_BATHROOM).unwrap()
+    }
+    #[inline]
+    pub fn livingroom() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_LIVINGROOM).unwrap()
+    }
+    #[inline]
+    pub fn stoneroom() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_STONEROOM).unwrap()
+    }
+    #[inline]
+    pub fn auditorium() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_AUDITORIUM).unwrap()
+    }
+    #[inline]
+    pub fn concerthall() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_CONCERTHALL).unwrap()
+    }
+    #[inline]
+    pub fn cave() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_CAVE).unwrap()
+    }
+    #[inline]
+    pub fn arena() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_ARENA).unwrap()
+    }
+    #[inline]
+    pub fn hangar() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_HANGAR).unwrap()
+    }
+    #[inline]
+    pub fn carpettedhallway() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_CARPETTEDHALLWAY).unwrap()
+    }
+    #[inline]
+    pub fn hallway() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_HALLWAY).unwrap()
+    }
+    #[inline]
+    pub fn stonecorridor() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_STONECORRIDOR).unwrap()
+    }
+    #[inline]
+    pub fn alley() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_ALLEY).unwrap()
+    }
+    #[inline]
+    pub fn forest() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_FOREST).unwrap()
+    }
+    #[inline]
+    pub fn city() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_CITY).unwrap()
+    }
+    #[inline]
+    pub fn mountains() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_MOUNTAINS).unwrap()
+    }
+    #[inline]
+    pub fn quarry() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_QUARRY).unwrap()
+    }
+    #[inline]
+    pub fn plain() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_PLAIN).unwrap()
+    }
+    #[inline]
+    pub fn parkinglot() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_PARKINGLOT).unwrap()
+    }
+    #[inline]
+    pub fn sewerpipe() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_SEWERPIPE).unwrap()
+    }
+    #[inline]
+    pub fn underwater() -> Self {
+        Self::try_from(ffi::FMOD_PRESET_UNDERWATER).unwrap()
+    }
+}
+
+impl TryFrom<ffi::FMOD_REVERB_PROPERTIES> for ReverbProperties {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_REVERB_PROPERTIES) -> Result<Self, Self::Error> {
         unsafe {
             Ok(ReverbProperties {
                 decay_time: value.DecayTime,
@@ -4608,7 +4794,10 @@ impl ReverbProperties {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_REVERB_PROPERTIES {
+}
+
+impl Into<ffi::FMOD_REVERB_PROPERTIES> for ReverbProperties {
+    fn into(self) -> ffi::FMOD_REVERB_PROPERTIES {
         ffi::FMOD_REVERB_PROPERTIES {
             DecayTime: self.decay_time,
             EarlyDelay: self.early_delay,
@@ -4624,102 +4813,6 @@ impl ReverbProperties {
             WetLevel: self.wet_level,
         }
     }
-    #[inline]
-    pub fn off() -> Self {
-        Self::from(ffi::FMOD_PRESET_OFF).unwrap()
-    }
-    #[inline]
-    pub fn generic() -> Self {
-        Self::from(ffi::FMOD_PRESET_GENERIC).unwrap()
-    }
-    #[inline]
-    pub fn paddedcell() -> Self {
-        Self::from(ffi::FMOD_PRESET_PADDEDCELL).unwrap()
-    }
-    #[inline]
-    pub fn room() -> Self {
-        Self::from(ffi::FMOD_PRESET_ROOM).unwrap()
-    }
-    #[inline]
-    pub fn bathroom() -> Self {
-        Self::from(ffi::FMOD_PRESET_BATHROOM).unwrap()
-    }
-    #[inline]
-    pub fn livingroom() -> Self {
-        Self::from(ffi::FMOD_PRESET_LIVINGROOM).unwrap()
-    }
-    #[inline]
-    pub fn stoneroom() -> Self {
-        Self::from(ffi::FMOD_PRESET_STONEROOM).unwrap()
-    }
-    #[inline]
-    pub fn auditorium() -> Self {
-        Self::from(ffi::FMOD_PRESET_AUDITORIUM).unwrap()
-    }
-    #[inline]
-    pub fn concerthall() -> Self {
-        Self::from(ffi::FMOD_PRESET_CONCERTHALL).unwrap()
-    }
-    #[inline]
-    pub fn cave() -> Self {
-        Self::from(ffi::FMOD_PRESET_CAVE).unwrap()
-    }
-    #[inline]
-    pub fn arena() -> Self {
-        Self::from(ffi::FMOD_PRESET_ARENA).unwrap()
-    }
-    #[inline]
-    pub fn hangar() -> Self {
-        Self::from(ffi::FMOD_PRESET_HANGAR).unwrap()
-    }
-    #[inline]
-    pub fn carpettedhallway() -> Self {
-        Self::from(ffi::FMOD_PRESET_CARPETTEDHALLWAY).unwrap()
-    }
-    #[inline]
-    pub fn hallway() -> Self {
-        Self::from(ffi::FMOD_PRESET_HALLWAY).unwrap()
-    }
-    #[inline]
-    pub fn stonecorridor() -> Self {
-        Self::from(ffi::FMOD_PRESET_STONECORRIDOR).unwrap()
-    }
-    #[inline]
-    pub fn alley() -> Self {
-        Self::from(ffi::FMOD_PRESET_ALLEY).unwrap()
-    }
-    #[inline]
-    pub fn forest() -> Self {
-        Self::from(ffi::FMOD_PRESET_FOREST).unwrap()
-    }
-    #[inline]
-    pub fn city() -> Self {
-        Self::from(ffi::FMOD_PRESET_CITY).unwrap()
-    }
-    #[inline]
-    pub fn mountains() -> Self {
-        Self::from(ffi::FMOD_PRESET_MOUNTAINS).unwrap()
-    }
-    #[inline]
-    pub fn quarry() -> Self {
-        Self::from(ffi::FMOD_PRESET_QUARRY).unwrap()
-    }
-    #[inline]
-    pub fn plain() -> Self {
-        Self::from(ffi::FMOD_PRESET_PLAIN).unwrap()
-    }
-    #[inline]
-    pub fn parkinglot() -> Self {
-        Self::from(ffi::FMOD_PRESET_PARKINGLOT).unwrap()
-    }
-    #[inline]
-    pub fn sewerpipe() -> Self {
-        Self::from(ffi::FMOD_PRESET_SEWERPIPE).unwrap()
-    }
-    #[inline]
-    pub fn underwater() -> Self {
-        Self::from(ffi::FMOD_PRESET_UNDERWATER).unwrap()
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -4731,8 +4824,9 @@ pub struct ErrorCallbackInfo {
     pub functionparams: String,
 }
 
-impl ErrorCallbackInfo {
-    pub fn from(value: ffi::FMOD_ERRORCALLBACK_INFO) -> Result<ErrorCallbackInfo, Error> {
+impl TryFrom<ffi::FMOD_ERRORCALLBACK_INFO> for ErrorCallbackInfo {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_ERRORCALLBACK_INFO) -> Result<Self, Self::Error> {
         unsafe {
             Ok(ErrorCallbackInfo {
                 result: FmodResult::from(value.result)?,
@@ -4743,7 +4837,10 @@ impl ErrorCallbackInfo {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_ERRORCALLBACK_INFO {
+}
+
+impl Into<ffi::FMOD_ERRORCALLBACK_INFO> for ErrorCallbackInfo {
+    fn into(self) -> ffi::FMOD_ERRORCALLBACK_INFO {
         ffi::FMOD_ERRORCALLBACK_INFO {
             result: self.result.into(),
             instancetype: self.instancetype.into(),
@@ -4764,8 +4861,9 @@ pub struct CpuUsage {
     pub convolution_2: f32,
 }
 
-impl CpuUsage {
-    pub fn from(value: ffi::FMOD_CPU_USAGE) -> Result<CpuUsage, Error> {
+impl TryFrom<ffi::FMOD_CPU_USAGE> for CpuUsage {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_CPU_USAGE) -> Result<Self, Self::Error> {
         unsafe {
             Ok(CpuUsage {
                 dsp: value.dsp,
@@ -4777,7 +4875,10 @@ impl CpuUsage {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_CPU_USAGE {
+}
+
+impl Into<ffi::FMOD_CPU_USAGE> for CpuUsage {
+    fn into(self) -> ffi::FMOD_CPU_USAGE {
         ffi::FMOD_CPU_USAGE {
             dsp: self.dsp,
             stream: self.stream,
@@ -4806,8 +4907,9 @@ pub struct CodecDescription {
     pub getwaveformat: ffi::FMOD_CODEC_GETWAVEFORMAT_CALLBACK,
 }
 
-impl CodecDescription {
-    pub fn from(value: ffi::FMOD_CODEC_DESCRIPTION) -> Result<CodecDescription, Error> {
+impl TryFrom<ffi::FMOD_CODEC_DESCRIPTION> for CodecDescription {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_CODEC_DESCRIPTION) -> Result<Self, Self::Error> {
         unsafe {
             Ok(CodecDescription {
                 apiversion: value.apiversion,
@@ -4826,7 +4928,10 @@ impl CodecDescription {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_CODEC_DESCRIPTION {
+}
+
+impl Into<ffi::FMOD_CODEC_DESCRIPTION> for CodecDescription {
+    fn into(self) -> ffi::FMOD_CODEC_DESCRIPTION {
         ffi::FMOD_CODEC_DESCRIPTION {
             apiversion: self.apiversion,
             name: self.name.as_ptr().cast(),
@@ -4862,8 +4967,9 @@ pub struct CodecWaveformat {
     pub peakvolume: f32,
 }
 
-impl CodecWaveformat {
-    pub fn from(value: ffi::FMOD_CODEC_WAVEFORMAT) -> Result<CodecWaveformat, Error> {
+impl TryFrom<ffi::FMOD_CODEC_WAVEFORMAT> for CodecWaveformat {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_CODEC_WAVEFORMAT) -> Result<Self, Self::Error> {
         unsafe {
             Ok(CodecWaveformat {
                 name: to_string!(value.name)?,
@@ -4882,7 +4988,10 @@ impl CodecWaveformat {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_CODEC_WAVEFORMAT {
+}
+
+impl Into<ffi::FMOD_CODEC_WAVEFORMAT> for CodecWaveformat {
+    fn into(self) -> ffi::FMOD_CODEC_WAVEFORMAT {
         ffi::FMOD_CODEC_WAVEFORMAT {
             name: self.name.as_ptr().cast(),
             format: self.format.into(),
@@ -4913,8 +5022,9 @@ pub struct CodecStateFunctions {
     pub size: ffi::FMOD_CODEC_FILE_SIZE_FUNC,
 }
 
-impl CodecStateFunctions {
-    pub fn from(value: ffi::FMOD_CODEC_STATE_FUNCTIONS) -> Result<CodecStateFunctions, Error> {
+impl TryFrom<ffi::FMOD_CODEC_STATE_FUNCTIONS> for CodecStateFunctions {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_CODEC_STATE_FUNCTIONS) -> Result<Self, Self::Error> {
         unsafe {
             Ok(CodecStateFunctions {
                 metadata: value.metadata,
@@ -4928,7 +5038,10 @@ impl CodecStateFunctions {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_CODEC_STATE_FUNCTIONS {
+}
+
+impl Into<ffi::FMOD_CODEC_STATE_FUNCTIONS> for CodecStateFunctions {
+    fn into(self) -> ffi::FMOD_CODEC_STATE_FUNCTIONS {
         ffi::FMOD_CODEC_STATE_FUNCTIONS {
             metadata: self.metadata,
             alloc: self.alloc,
@@ -4950,18 +5063,22 @@ pub struct CodecState {
     pub numsubsounds: i32,
 }
 
-impl CodecState {
-    pub fn from(value: ffi::FMOD_CODEC_STATE) -> Result<CodecState, Error> {
+impl TryFrom<ffi::FMOD_CODEC_STATE> for CodecState {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_CODEC_STATE) -> Result<Self, Self::Error> {
         unsafe {
             Ok(CodecState {
                 plugindata: value.plugindata,
-                waveformat: CodecWaveformat::from(*value.waveformat)?,
-                functions: CodecStateFunctions::from(*value.functions)?,
+                waveformat: CodecWaveformat::try_from(*value.waveformat)?,
+                functions: CodecStateFunctions::try_from(*value.functions)?,
                 numsubsounds: value.numsubsounds,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_CODEC_STATE {
+}
+
+impl Into<ffi::FMOD_CODEC_STATE> for CodecState {
+    fn into(self) -> ffi::FMOD_CODEC_STATE {
         ffi::FMOD_CODEC_STATE {
             plugindata: self.plugindata,
             waveformat: &mut self.waveformat.into(),
@@ -4995,8 +5112,9 @@ pub struct OutputDescription {
     pub devicelistchanged: ffi::FMOD_OUTPUT_DEVICELISTCHANGED_CALLBACK,
 }
 
-impl OutputDescription {
-    pub fn from(value: ffi::FMOD_OUTPUT_DESCRIPTION) -> Result<OutputDescription, Error> {
+impl TryFrom<ffi::FMOD_OUTPUT_DESCRIPTION> for OutputDescription {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_OUTPUT_DESCRIPTION) -> Result<Self, Self::Error> {
         unsafe {
             Ok(OutputDescription {
                 apiversion: value.apiversion,
@@ -5022,7 +5140,10 @@ impl OutputDescription {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_OUTPUT_DESCRIPTION {
+}
+
+impl Into<ffi::FMOD_OUTPUT_DESCRIPTION> for OutputDescription {
+    fn into(self) -> ffi::FMOD_OUTPUT_DESCRIPTION {
         ffi::FMOD_OUTPUT_DESCRIPTION {
             apiversion: self.apiversion,
             name: self.name.as_ptr().cast(),
@@ -5059,8 +5180,9 @@ pub struct OutputState {
     pub requestreset: ffi::FMOD_OUTPUT_REQUESTRESET_FUNC,
 }
 
-impl OutputState {
-    pub fn from(value: ffi::FMOD_OUTPUT_STATE) -> Result<OutputState, Error> {
+impl TryFrom<ffi::FMOD_OUTPUT_STATE> for OutputState {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_OUTPUT_STATE) -> Result<Self, Self::Error> {
         unsafe {
             Ok(OutputState {
                 plugindata: value.plugindata,
@@ -5073,7 +5195,10 @@ impl OutputState {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_OUTPUT_STATE {
+}
+
+impl Into<ffi::FMOD_OUTPUT_STATE> for OutputState {
+    fn into(self) -> ffi::FMOD_OUTPUT_STATE {
         ffi::FMOD_OUTPUT_STATE {
             plugindata: self.plugindata,
             readfrommixer: self.readfrommixer,
@@ -5096,20 +5221,24 @@ pub struct OutputObject3Dinfo {
     pub priority: f32,
 }
 
-impl OutputObject3Dinfo {
-    pub fn from(value: ffi::FMOD_OUTPUT_OBJECT3DINFO) -> Result<OutputObject3Dinfo, Error> {
+impl TryFrom<ffi::FMOD_OUTPUT_OBJECT3DINFO> for OutputObject3Dinfo {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_OUTPUT_OBJECT3DINFO) -> Result<Self, Self::Error> {
         unsafe {
             Ok(OutputObject3Dinfo {
                 buffer: to_vec!(value.buffer, value.bufferlength),
                 bufferlength: value.bufferlength,
-                position: Vector::from(value.position)?,
+                position: Vector::try_from(value.position)?,
                 gain: value.gain,
                 spread: value.spread,
                 priority: value.priority,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_OUTPUT_OBJECT3DINFO {
+}
+
+impl Into<ffi::FMOD_OUTPUT_OBJECT3DINFO> for OutputObject3Dinfo {
+    fn into(self) -> ffi::FMOD_OUTPUT_OBJECT3DINFO {
         ffi::FMOD_OUTPUT_OBJECT3DINFO {
             buffer: self.buffer.as_ptr() as *mut _,
             bufferlength: self.bufferlength,
@@ -5130,8 +5259,9 @@ pub struct DspBufferArray {
     pub speakermode: SpeakerMode,
 }
 
-impl DspBufferArray {
-    pub fn from(value: ffi::FMOD_DSP_BUFFER_ARRAY) -> Result<DspBufferArray, Error> {
+impl TryFrom<ffi::FMOD_DSP_BUFFER_ARRAY> for DspBufferArray {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_BUFFER_ARRAY) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspBufferArray {
                 numbuffers: value.numbuffers,
@@ -5142,7 +5272,10 @@ impl DspBufferArray {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_BUFFER_ARRAY {
+}
+
+impl Into<ffi::FMOD_DSP_BUFFER_ARRAY> for DspBufferArray {
+    fn into(self) -> ffi::FMOD_DSP_BUFFER_ARRAY {
         ffi::FMOD_DSP_BUFFER_ARRAY {
             numbuffers: self.numbuffers,
             buffernumchannels: self.buffernumchannels.as_ptr() as *mut _,
@@ -5159,8 +5292,9 @@ pub struct Complex {
     pub imag: f32,
 }
 
-impl Complex {
-    pub fn from(value: ffi::FMOD_COMPLEX) -> Result<Complex, Error> {
+impl TryFrom<ffi::FMOD_COMPLEX> for Complex {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_COMPLEX) -> Result<Self, Self::Error> {
         unsafe {
             Ok(Complex {
                 real: value.real,
@@ -5168,7 +5302,10 @@ impl Complex {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_COMPLEX {
+}
+
+impl Into<ffi::FMOD_COMPLEX> for Complex {
+    fn into(self) -> ffi::FMOD_COMPLEX {
         ffi::FMOD_COMPLEX {
             real: self.real,
             imag: self.imag,
@@ -5183,10 +5320,13 @@ pub struct DspParameterFloatMappingPiecewiseLinear {
     pub pointpositions: Vec<f32>,
 }
 
-impl DspParameterFloatMappingPiecewiseLinear {
-    pub fn from(
+impl TryFrom<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR>
+for DspParameterFloatMappingPiecewiseLinear
+{
+    type Error = Error;
+    fn try_from(
         value: ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR,
-    ) -> Result<DspParameterFloatMappingPiecewiseLinear, Error> {
+    ) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspParameterFloatMappingPiecewiseLinear {
                 numpoints: value.numpoints,
@@ -5195,7 +5335,12 @@ impl DspParameterFloatMappingPiecewiseLinear {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
+}
+
+impl Into<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR>
+for DspParameterFloatMappingPiecewiseLinear
+{
+    fn into(self) -> ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
         ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
             numpoints: self.numpoints,
             pointparamvalues: self.pointparamvalues.as_ptr() as *mut _,
@@ -5210,20 +5355,22 @@ pub struct DspParameterFloatMapping {
     pub piecewiselinearmapping: DspParameterFloatMappingPiecewiseLinear,
 }
 
-impl DspParameterFloatMapping {
-    pub fn from(
-        value: ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING,
-    ) -> Result<DspParameterFloatMapping, Error> {
+impl TryFrom<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING> for DspParameterFloatMapping {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspParameterFloatMapping {
                 type_: DspParameterFloatMappingType::from(value.type_)?,
-                piecewiselinearmapping: DspParameterFloatMappingPiecewiseLinear::from(
+                piecewiselinearmapping: DspParameterFloatMappingPiecewiseLinear::try_from(
                     value.piecewiselinearmapping,
                 )?,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING {
+}
+
+impl Into<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING> for DspParameterFloatMapping {
+    fn into(self) -> ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING {
         ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING {
             type_: self.type_.into(),
             piecewiselinearmapping: self.piecewiselinearmapping.into(),
@@ -5239,18 +5386,22 @@ pub struct DspParameterDescFloat {
     pub mapping: DspParameterFloatMapping,
 }
 
-impl DspParameterDescFloat {
-    pub fn from(value: ffi::FMOD_DSP_PARAMETER_DESC_FLOAT) -> Result<DspParameterDescFloat, Error> {
+impl TryFrom<ffi::FMOD_DSP_PARAMETER_DESC_FLOAT> for DspParameterDescFloat {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_PARAMETER_DESC_FLOAT) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspParameterDescFloat {
                 min: value.min,
                 max: value.max,
                 defaultval: value.defaultval,
-                mapping: DspParameterFloatMapping::from(value.mapping)?,
+                mapping: DspParameterFloatMapping::try_from(value.mapping)?,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_DESC_FLOAT {
+}
+
+impl Into<ffi::FMOD_DSP_PARAMETER_DESC_FLOAT> for DspParameterDescFloat {
+    fn into(self) -> ffi::FMOD_DSP_PARAMETER_DESC_FLOAT {
         ffi::FMOD_DSP_PARAMETER_DESC_FLOAT {
             min: self.min,
             max: self.max,
@@ -5269,8 +5420,9 @@ pub struct DspParameterDescInt {
     pub valuenames: Vec<String>,
 }
 
-impl DspParameterDescInt {
-    pub fn from(value: ffi::FMOD_DSP_PARAMETER_DESC_INT) -> Result<DspParameterDescInt, Error> {
+impl TryFrom<ffi::FMOD_DSP_PARAMETER_DESC_INT> for DspParameterDescInt {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_PARAMETER_DESC_INT) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspParameterDescInt {
                 min: value.min,
@@ -5281,7 +5433,10 @@ impl DspParameterDescInt {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_DESC_INT {
+}
+
+impl Into<ffi::FMOD_DSP_PARAMETER_DESC_INT> for DspParameterDescInt {
+    fn into(self) -> ffi::FMOD_DSP_PARAMETER_DESC_INT {
         ffi::FMOD_DSP_PARAMETER_DESC_INT {
             min: self.min,
             max: self.max,
@@ -5298,8 +5453,9 @@ pub struct DspParameterDescBool {
     pub valuenames: Vec<String>,
 }
 
-impl DspParameterDescBool {
-    pub fn from(value: ffi::FMOD_DSP_PARAMETER_DESC_BOOL) -> Result<DspParameterDescBool, Error> {
+impl TryFrom<ffi::FMOD_DSP_PARAMETER_DESC_BOOL> for DspParameterDescBool {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_PARAMETER_DESC_BOOL) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspParameterDescBool {
                 defaultval: value.defaultval,
@@ -5307,7 +5463,10 @@ impl DspParameterDescBool {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_DESC_BOOL {
+}
+
+impl Into<ffi::FMOD_DSP_PARAMETER_DESC_BOOL> for DspParameterDescBool {
+    fn into(self) -> ffi::FMOD_DSP_PARAMETER_DESC_BOOL {
         ffi::FMOD_DSP_PARAMETER_DESC_BOOL {
             defaultval: self.defaultval,
             valuenames: self.valuenames.as_ptr() as *mut _,
@@ -5320,15 +5479,19 @@ pub struct DspParameterDescData {
     pub datatype: i32,
 }
 
-impl DspParameterDescData {
-    pub fn from(value: ffi::FMOD_DSP_PARAMETER_DESC_DATA) -> Result<DspParameterDescData, Error> {
+impl TryFrom<ffi::FMOD_DSP_PARAMETER_DESC_DATA> for DspParameterDescData {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_PARAMETER_DESC_DATA) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspParameterDescData {
                 datatype: value.datatype,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_DESC_DATA {
+}
+
+impl Into<ffi::FMOD_DSP_PARAMETER_DESC_DATA> for DspParameterDescData {
+    fn into(self) -> ffi::FMOD_DSP_PARAMETER_DESC_DATA {
         ffi::FMOD_DSP_PARAMETER_DESC_DATA {
             datatype: self.datatype,
         }
@@ -5344,8 +5507,9 @@ pub struct DspParameterDesc {
     pub union: ffi::FMOD_DSP_PARAMETER_DESC_UNION,
 }
 
-impl DspParameterDesc {
-    pub fn from(value: ffi::FMOD_DSP_PARAMETER_DESC) -> Result<DspParameterDesc, Error> {
+impl TryFrom<ffi::FMOD_DSP_PARAMETER_DESC> for DspParameterDesc {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_PARAMETER_DESC) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspParameterDesc {
                 type_: DspParameterType::from(value.type_)?,
@@ -5356,7 +5520,10 @@ impl DspParameterDesc {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_DESC {
+}
+
+impl Into<ffi::FMOD_DSP_PARAMETER_DESC> for DspParameterDesc {
+    fn into(self) -> ffi::FMOD_DSP_PARAMETER_DESC {
         ffi::FMOD_DSP_PARAMETER_DESC {
             type_: self.type_.into(),
             name: self.name,
@@ -5373,10 +5540,9 @@ pub struct DspParameterOverallgain {
     pub linear_gain_additive: f32,
 }
 
-impl DspParameterOverallgain {
-    pub fn from(
-        value: ffi::FMOD_DSP_PARAMETER_OVERALLGAIN,
-    ) -> Result<DspParameterOverallgain, Error> {
+impl TryFrom<ffi::FMOD_DSP_PARAMETER_OVERALLGAIN> for DspParameterOverallgain {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_PARAMETER_OVERALLGAIN) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspParameterOverallgain {
                 linear_gain: value.linear_gain,
@@ -5384,7 +5550,10 @@ impl DspParameterOverallgain {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_OVERALLGAIN {
+}
+
+impl Into<ffi::FMOD_DSP_PARAMETER_OVERALLGAIN> for DspParameterOverallgain {
+    fn into(self) -> ffi::FMOD_DSP_PARAMETER_OVERALLGAIN {
         ffi::FMOD_DSP_PARAMETER_OVERALLGAIN {
             linear_gain: self.linear_gain,
             linear_gain_additive: self.linear_gain_additive,
@@ -5398,18 +5567,20 @@ pub struct DspParameterAttributes3d {
     pub absolute: Attributes3d,
 }
 
-impl DspParameterAttributes3d {
-    pub fn from(
-        value: ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES,
-    ) -> Result<DspParameterAttributes3d, Error> {
+impl TryFrom<ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES> for DspParameterAttributes3d {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspParameterAttributes3d {
-                relative: Attributes3d::from(value.relative)?,
-                absolute: Attributes3d::from(value.absolute)?,
+                relative: Attributes3d::try_from(value.relative)?,
+                absolute: Attributes3d::try_from(value.absolute)?,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES {
+}
+
+impl Into<ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES> for DspParameterAttributes3d {
+    fn into(self) -> ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES {
         ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES {
             relative: self.relative.into(),
             absolute: self.absolute.into(),
@@ -5425,26 +5596,28 @@ pub struct DspParameterAttributes3dMulti {
     pub absolute: Attributes3d,
 }
 
-impl DspParameterAttributes3dMulti {
-    pub fn from(
-        value: ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI,
-    ) -> Result<DspParameterAttributes3dMulti, Error> {
+impl TryFrom<ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI> for DspParameterAttributes3dMulti {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspParameterAttributes3dMulti {
                 numlisteners: value.numlisteners,
                 relative: attr3d_array8(
                     value
                         .relative
-                        .map(Attributes3d::from)
+                        .map(Attributes3d::try_from)
                         .into_iter()
                         .collect::<Result<Vec<Attributes3d>, Error>>()?,
                 ),
                 weight: value.weight,
-                absolute: Attributes3d::from(value.absolute)?,
+                absolute: Attributes3d::try_from(value.absolute)?,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI {
+}
+
+impl Into<ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI> for DspParameterAttributes3dMulti {
+    fn into(self) -> ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI {
         ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI {
             numlisteners: self.numlisteners,
             relative: self.relative.map(Attributes3d::into),
@@ -5460,10 +5633,9 @@ pub struct DspParameterAttenuationRange {
     pub max: f32,
 }
 
-impl DspParameterAttenuationRange {
-    pub fn from(
-        value: ffi::FMOD_DSP_PARAMETER_ATTENUATION_RANGE,
-    ) -> Result<DspParameterAttenuationRange, Error> {
+impl TryFrom<ffi::FMOD_DSP_PARAMETER_ATTENUATION_RANGE> for DspParameterAttenuationRange {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_PARAMETER_ATTENUATION_RANGE) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspParameterAttenuationRange {
                 min: value.min,
@@ -5471,7 +5643,10 @@ impl DspParameterAttenuationRange {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_ATTENUATION_RANGE {
+}
+
+impl Into<ffi::FMOD_DSP_PARAMETER_ATTENUATION_RANGE> for DspParameterAttenuationRange {
+    fn into(self) -> ffi::FMOD_DSP_PARAMETER_ATTENUATION_RANGE {
         ffi::FMOD_DSP_PARAMETER_ATTENUATION_RANGE {
             min: self.min,
             max: self.max,
@@ -5484,15 +5659,19 @@ pub struct DspParameterSidechain {
     pub sidechainenable: ffi::FMOD_BOOL,
 }
 
-impl DspParameterSidechain {
-    pub fn from(value: ffi::FMOD_DSP_PARAMETER_SIDECHAIN) -> Result<DspParameterSidechain, Error> {
+impl TryFrom<ffi::FMOD_DSP_PARAMETER_SIDECHAIN> for DspParameterSidechain {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_PARAMETER_SIDECHAIN) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspParameterSidechain {
                 sidechainenable: value.sidechainenable,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_SIDECHAIN {
+}
+
+impl Into<ffi::FMOD_DSP_PARAMETER_SIDECHAIN> for DspParameterSidechain {
+    fn into(self) -> ffi::FMOD_DSP_PARAMETER_SIDECHAIN {
         ffi::FMOD_DSP_PARAMETER_SIDECHAIN {
             sidechainenable: self.sidechainenable,
         }
@@ -5506,8 +5685,9 @@ pub struct DspParameterFft {
     pub spectrum: [Vec<f32>; 32 as usize],
 }
 
-impl DspParameterFft {
-    pub fn from(value: ffi::FMOD_DSP_PARAMETER_FFT) -> Result<DspParameterFft, Error> {
+impl TryFrom<ffi::FMOD_DSP_PARAMETER_FFT> for DspParameterFft {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_PARAMETER_FFT) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspParameterFft {
                 length: value.length,
@@ -5516,7 +5696,10 @@ impl DspParameterFft {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_PARAMETER_FFT {
+}
+
+impl Into<ffi::FMOD_DSP_PARAMETER_FFT> for DspParameterFft {
+    fn into(self) -> ffi::FMOD_DSP_PARAMETER_FFT {
         ffi::FMOD_DSP_PARAMETER_FFT {
             length: self.length,
             numchannels: self.numchannels,
@@ -5554,8 +5737,9 @@ pub struct DspDescription {
     pub sys_mix: ffi::FMOD_DSP_SYSTEM_MIX_CALLBACK,
 }
 
-impl DspDescription {
-    pub fn from(value: ffi::FMOD_DSP_DESCRIPTION) -> Result<DspDescription, Error> {
+impl TryFrom<ffi::FMOD_DSP_DESCRIPTION> for DspDescription {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_DESCRIPTION) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspDescription {
                 pluginsdkversion: value.pluginsdkversion,
@@ -5572,7 +5756,7 @@ impl DspDescription {
                 paramdesc: to_vec!(
                     *value.paramdesc,
                     value.numparameters,
-                    DspParameterDesc::from
+                    DspParameterDesc::try_from
                 )?,
                 setparameterfloat: value.setparameterfloat,
                 setparameterint: value.setparameterint,
@@ -5590,7 +5774,10 @@ impl DspDescription {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_DESCRIPTION {
+}
+
+impl Into<ffi::FMOD_DSP_DESCRIPTION> for DspDescription {
+    fn into(self) -> ffi::FMOD_DSP_DESCRIPTION {
         ffi::FMOD_DSP_DESCRIPTION {
             pluginsdkversion: self.pluginsdkversion,
             name: self.name,
@@ -5628,8 +5815,9 @@ pub struct DspStateDftFunctions {
     pub inversefftreal: ffi::FMOD_DSP_DFT_IFFTREAL_FUNC,
 }
 
-impl DspStateDftFunctions {
-    pub fn from(value: ffi::FMOD_DSP_STATE_DFT_FUNCTIONS) -> Result<DspStateDftFunctions, Error> {
+impl TryFrom<ffi::FMOD_DSP_STATE_DFT_FUNCTIONS> for DspStateDftFunctions {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_STATE_DFT_FUNCTIONS) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspStateDftFunctions {
                 fftreal: value.fftreal,
@@ -5637,7 +5825,10 @@ impl DspStateDftFunctions {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_STATE_DFT_FUNCTIONS {
+}
+
+impl Into<ffi::FMOD_DSP_STATE_DFT_FUNCTIONS> for DspStateDftFunctions {
+    fn into(self) -> ffi::FMOD_DSP_STATE_DFT_FUNCTIONS {
         ffi::FMOD_DSP_STATE_DFT_FUNCTIONS {
             fftreal: self.fftreal,
             inversefftreal: self.inversefftreal,
@@ -5655,8 +5846,9 @@ pub struct DspStatePanFunctions {
     pub getrolloffgain: ffi::FMOD_DSP_PAN_GETROLLOFFGAIN_FUNC,
 }
 
-impl DspStatePanFunctions {
-    pub fn from(value: ffi::FMOD_DSP_STATE_PAN_FUNCTIONS) -> Result<DspStatePanFunctions, Error> {
+impl TryFrom<ffi::FMOD_DSP_STATE_PAN_FUNCTIONS> for DspStatePanFunctions {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_STATE_PAN_FUNCTIONS) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspStatePanFunctions {
                 summonomatrix: value.summonomatrix,
@@ -5668,7 +5860,10 @@ impl DspStatePanFunctions {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_STATE_PAN_FUNCTIONS {
+}
+
+impl Into<ffi::FMOD_DSP_STATE_PAN_FUNCTIONS> for DspStatePanFunctions {
+    fn into(self) -> ffi::FMOD_DSP_STATE_PAN_FUNCTIONS {
         ffi::FMOD_DSP_STATE_PAN_FUNCTIONS {
             summonomatrix: self.summonomatrix,
             sumstereomatrix: self.sumstereomatrix,
@@ -5696,8 +5891,9 @@ pub struct DspStateFunctions {
     pub getuserdata: ffi::FMOD_DSP_GETUSERDATA_FUNC,
 }
 
-impl DspStateFunctions {
-    pub fn from(value: ffi::FMOD_DSP_STATE_FUNCTIONS) -> Result<DspStateFunctions, Error> {
+impl TryFrom<ffi::FMOD_DSP_STATE_FUNCTIONS> for DspStateFunctions {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_STATE_FUNCTIONS) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspStateFunctions {
                 alloc: value.alloc,
@@ -5705,8 +5901,8 @@ impl DspStateFunctions {
                 free: value.free,
                 getsamplerate: value.getsamplerate,
                 getblocksize: value.getblocksize,
-                dft: DspStateDftFunctions::from(*value.dft)?,
-                pan: DspStatePanFunctions::from(*value.pan)?,
+                dft: DspStateDftFunctions::try_from(*value.dft)?,
+                pan: DspStatePanFunctions::try_from(*value.pan)?,
                 getspeakermode: value.getspeakermode,
                 getclock: value.getclock,
                 getlistenerattributes: value.getlistenerattributes,
@@ -5715,7 +5911,10 @@ impl DspStateFunctions {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_STATE_FUNCTIONS {
+}
+
+impl Into<ffi::FMOD_DSP_STATE_FUNCTIONS> for DspStateFunctions {
+    fn into(self) -> ffi::FMOD_DSP_STATE_FUNCTIONS {
         ffi::FMOD_DSP_STATE_FUNCTIONS {
             alloc: self.alloc,
             realloc: self.realloc,
@@ -5745,8 +5944,9 @@ pub struct DspState {
     pub systemobject: i32,
 }
 
-impl DspState {
-    pub fn from(value: ffi::FMOD_DSP_STATE) -> Result<DspState, Error> {
+impl TryFrom<ffi::FMOD_DSP_STATE> for DspState {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_STATE) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspState {
                 instance: value.instance,
@@ -5755,12 +5955,15 @@ impl DspState {
                 source_speakermode: SpeakerMode::from(value.source_speakermode)?,
                 sidechaindata: to_vec!(value.sidechaindata, value.sidechainchannels),
                 sidechainchannels: value.sidechainchannels,
-                functions: DspStateFunctions::from(*value.functions)?,
+                functions: DspStateFunctions::try_from(*value.functions)?,
                 systemobject: value.systemobject,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_STATE {
+}
+
+impl Into<ffi::FMOD_DSP_STATE> for DspState {
+    fn into(self) -> ffi::FMOD_DSP_STATE {
         ffi::FMOD_DSP_STATE {
             instance: self.instance,
             plugindata: self.plugindata,
@@ -5782,8 +5985,9 @@ pub struct DspMeteringInfo {
     pub numchannels: i16,
 }
 
-impl DspMeteringInfo {
-    pub fn from(value: ffi::FMOD_DSP_METERING_INFO) -> Result<DspMeteringInfo, Error> {
+impl TryFrom<ffi::FMOD_DSP_METERING_INFO> for DspMeteringInfo {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_METERING_INFO) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspMeteringInfo {
                 numsamples: value.numsamples,
@@ -5793,7 +5997,10 @@ impl DspMeteringInfo {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_METERING_INFO {
+}
+
+impl Into<ffi::FMOD_DSP_METERING_INFO> for DspMeteringInfo {
+    fn into(self) -> ffi::FMOD_DSP_METERING_INFO {
         ffi::FMOD_DSP_METERING_INFO {
             numsamples: self.numsamples,
             peaklevel: self.peaklevel,
@@ -5815,10 +6022,9 @@ pub struct DspLoudnessMeterInfoType {
     pub maxmomentaryloudness: f32,
 }
 
-impl DspLoudnessMeterInfoType {
-    pub fn from(
-        value: ffi::FMOD_DSP_LOUDNESS_METER_INFO_TYPE,
-    ) -> Result<DspLoudnessMeterInfoType, Error> {
+impl TryFrom<ffi::FMOD_DSP_LOUDNESS_METER_INFO_TYPE> for DspLoudnessMeterInfoType {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_LOUDNESS_METER_INFO_TYPE) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspLoudnessMeterInfoType {
                 momentaryloudness: value.momentaryloudness,
@@ -5832,7 +6038,10 @@ impl DspLoudnessMeterInfoType {
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_LOUDNESS_METER_INFO_TYPE {
+}
+
+impl Into<ffi::FMOD_DSP_LOUDNESS_METER_INFO_TYPE> for DspLoudnessMeterInfoType {
+    fn into(self) -> ffi::FMOD_DSP_LOUDNESS_METER_INFO_TYPE {
         ffi::FMOD_DSP_LOUDNESS_METER_INFO_TYPE {
             momentaryloudness: self.momentaryloudness,
             shorttermloudness: self.shorttermloudness,
@@ -5851,17 +6060,19 @@ pub struct DspLoudnessMeterWeightingType {
     pub channelweight: [f32; 32 as usize],
 }
 
-impl DspLoudnessMeterWeightingType {
-    pub fn from(
-        value: ffi::FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE,
-    ) -> Result<DspLoudnessMeterWeightingType, Error> {
+impl TryFrom<ffi::FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE> for DspLoudnessMeterWeightingType {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE) -> Result<Self, Self::Error> {
         unsafe {
             Ok(DspLoudnessMeterWeightingType {
                 channelweight: value.channelweight,
             })
         }
     }
-    pub fn into(self) -> ffi::FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE {
+}
+
+impl Into<ffi::FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE> for DspLoudnessMeterWeightingType {
+    fn into(self) -> ffi::FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE {
         ffi::FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE {
             channelweight: self.channelweight,
         }
@@ -6294,7 +6505,7 @@ impl Channel {
             let mut pos = ffi::FMOD_VECTOR::default();
             let mut vel = ffi::FMOD_VECTOR::default();
             match ffi::FMOD_Channel_Get3DAttributes(self.pointer, &mut pos, &mut vel) {
-                ffi::FMOD_OK => Ok((Vector::from(pos)?, Vector::from(vel)?)),
+                ffi::FMOD_OK => Ok((Vector::try_from(pos)?, Vector::try_from(vel)?)),
                 error => Err(err_fmod!("FMOD_Channel_Get3DAttributes", error)),
             }
         }
@@ -6367,7 +6578,7 @@ impl Channel {
         unsafe {
             let mut orientation = ffi::FMOD_VECTOR::default();
             match ffi::FMOD_Channel_Get3DConeOrientation(self.pointer, &mut orientation) {
-                ffi::FMOD_OK => Ok(Vector::from(orientation)?),
+                ffi::FMOD_OK => Ok(Vector::try_from(orientation)?),
                 error => Err(err_fmod!("FMOD_Channel_Get3DConeOrientation", error)),
             }
         }
@@ -6390,7 +6601,7 @@ impl Channel {
             let mut points = null_mut();
             let mut numpoints = i32::default();
             match ffi::FMOD_Channel_Get3DCustomRolloff(self.pointer, &mut points, &mut numpoints) {
-                ffi::FMOD_OK => Ok(to_vec!(points, numpoints, Vector::from)?),
+                ffi::FMOD_OK => Ok(to_vec!(points, numpoints, Vector::try_from)?),
                 error => Err(err_fmod!("FMOD_Channel_Get3DCustomRolloff", error)),
             }
         }
@@ -7124,7 +7335,7 @@ impl ChannelGroup {
             let mut pos = ffi::FMOD_VECTOR::default();
             let mut vel = ffi::FMOD_VECTOR::default();
             match ffi::FMOD_ChannelGroup_Get3DAttributes(self.pointer, &mut pos, &mut vel) {
-                ffi::FMOD_OK => Ok((Vector::from(pos)?, Vector::from(vel)?)),
+                ffi::FMOD_OK => Ok((Vector::try_from(pos)?, Vector::try_from(vel)?)),
                 error => Err(err_fmod!("FMOD_ChannelGroup_Get3DAttributes", error)),
             }
         }
@@ -7199,7 +7410,7 @@ impl ChannelGroup {
         unsafe {
             let mut orientation = ffi::FMOD_VECTOR::default();
             match ffi::FMOD_ChannelGroup_Get3DConeOrientation(self.pointer, &mut orientation) {
-                ffi::FMOD_OK => Ok(Vector::from(orientation)?),
+                ffi::FMOD_OK => Ok(Vector::try_from(orientation)?),
                 error => Err(err_fmod!("FMOD_ChannelGroup_Get3DConeOrientation", error)),
             }
         }
@@ -7226,7 +7437,7 @@ impl ChannelGroup {
                 &mut points,
                 &mut numpoints,
             ) {
-                ffi::FMOD_OK => Ok(to_vec!(points, numpoints, Vector::from)?),
+                ffi::FMOD_OK => Ok(to_vec!(points, numpoints, Vector::try_from)?),
                 error => Err(err_fmod!("FMOD_ChannelGroup_Get3DCustomRolloff", error)),
             }
         }
@@ -7829,7 +8040,7 @@ impl Dsp {
         unsafe {
             let mut desc = null_mut();
             match ffi::FMOD_DSP_GetParameterInfo(self.pointer, index, &mut desc) {
-                ffi::FMOD_OK => Ok(DspParameterDesc::from(*desc)?),
+                ffi::FMOD_OK => Ok(DspParameterDesc::try_from(*desc)?),
                 error => Err(err_fmod!("FMOD_DSP_GetParameterInfo", error)),
             }
         }
@@ -7950,8 +8161,8 @@ impl Dsp {
             let mut output_info = ffi::FMOD_DSP_METERING_INFO::default();
             match ffi::FMOD_DSP_GetMeteringInfo(self.pointer, &mut input_info, &mut output_info) {
                 ffi::FMOD_OK => Ok((
-                    DspMeteringInfo::from(input_info)?,
-                    DspMeteringInfo::from(output_info)?,
+                    DspMeteringInfo::try_from(input_info)?,
+                    DspMeteringInfo::try_from(output_info)?,
                 )),
                 error => Err(err_fmod!("FMOD_DSP_GetMeteringInfo", error)),
             }
@@ -8184,7 +8395,7 @@ impl Geometry {
             let mut vertex = ffi::FMOD_VECTOR::default();
             match ffi::FMOD_Geometry_GetPolygonVertex(self.pointer, index, vertexindex, &mut vertex)
             {
-                ffi::FMOD_OK => Ok(Vector::from(vertex)?),
+                ffi::FMOD_OK => Ok(Vector::try_from(vertex)?),
                 error => Err(err_fmod!("FMOD_Geometry_GetPolygonVertex", error)),
             }
         }
@@ -8262,7 +8473,7 @@ impl Geometry {
             let mut forward = ffi::FMOD_VECTOR::default();
             let mut up = ffi::FMOD_VECTOR::default();
             match ffi::FMOD_Geometry_GetRotation(self.pointer, &mut forward, &mut up) {
-                ffi::FMOD_OK => Ok((Vector::from(forward)?, Vector::from(up)?)),
+                ffi::FMOD_OK => Ok((Vector::try_from(forward)?, Vector::try_from(up)?)),
                 error => Err(err_fmod!("FMOD_Geometry_GetRotation", error)),
             }
         }
@@ -8279,7 +8490,7 @@ impl Geometry {
         unsafe {
             let mut position = ffi::FMOD_VECTOR::default();
             match ffi::FMOD_Geometry_GetPosition(self.pointer, &mut position) {
-                ffi::FMOD_OK => Ok(Vector::from(position)?),
+                ffi::FMOD_OK => Ok(Vector::try_from(position)?),
                 error => Err(err_fmod!("FMOD_Geometry_GetPosition", error)),
             }
         }
@@ -8296,7 +8507,7 @@ impl Geometry {
         unsafe {
             let mut scale = ffi::FMOD_VECTOR::default();
             match ffi::FMOD_Geometry_GetScale(self.pointer, &mut scale) {
-                ffi::FMOD_OK => Ok(Vector::from(scale)?),
+                ffi::FMOD_OK => Ok(Vector::try_from(scale)?),
                 error => Err(err_fmod!("FMOD_Geometry_GetScale", error)),
             }
         }
@@ -8399,7 +8610,7 @@ impl Reverb3d {
                 &mut mindistance,
                 &mut maxdistance,
             ) {
-                ffi::FMOD_OK => Ok((Vector::from(position)?, mindistance, maxdistance)),
+                ffi::FMOD_OK => Ok((Vector::try_from(position)?, mindistance, maxdistance)),
                 error => Err(err_fmod!("FMOD_Reverb3D_Get3DAttributes", error)),
             }
         }
@@ -8416,7 +8627,7 @@ impl Reverb3d {
         unsafe {
             let mut properties = ffi::FMOD_REVERB_PROPERTIES::default();
             match ffi::FMOD_Reverb3D_GetProperties(self.pointer, &mut properties) {
-                ffi::FMOD_OK => Ok(ReverbProperties::from(properties)?),
+                ffi::FMOD_OK => Ok(ReverbProperties::try_from(properties)?),
                 error => Err(err_fmod!("FMOD_Reverb3D_GetProperties", error)),
             }
         }
@@ -8614,7 +8825,7 @@ impl Sound {
             let mut points = null_mut();
             let mut numpoints = i32::default();
             match ffi::FMOD_Sound_Get3DCustomRolloff(self.pointer, &mut points, &mut numpoints) {
-                ffi::FMOD_OK => Ok(to_vec!(points, numpoints, Vector::from)?),
+                ffi::FMOD_OK => Ok(to_vec!(points, numpoints, Vector::try_from)?),
                 error => Err(err_fmod!("FMOD_Sound_Get3DCustomRolloff", error)),
             }
         }
@@ -8708,7 +8919,7 @@ impl Sound {
                 index.unwrap_or(0),
                 &mut tag,
             ) {
-                ffi::FMOD_OK => Ok(Tag::from(tag)?),
+                ffi::FMOD_OK => Ok(Tag::try_from(tag)?),
                 error => Err(err_fmod!("FMOD_Sound_GetTag", error)),
             }
         }
@@ -9170,7 +9381,7 @@ impl Bank {
         unsafe {
             let mut id = ffi::FMOD_GUID::default();
             match ffi::FMOD_Studio_Bank_GetID(self.pointer, &mut id) {
-                ffi::FMOD_OK => Ok(Guid::from(id)?),
+                ffi::FMOD_OK => Ok(Guid::try_from(id)?),
                 error => Err(err_fmod!("FMOD_Studio_Bank_GetID", error)),
             }
         }
@@ -9255,7 +9466,7 @@ impl Bank {
                 &mut retrieved,
             ) {
                 ffi::FMOD_OK => Ok((
-                    Guid::from(id)?,
+                    Guid::try_from(id)?,
                     CString::from_raw(path)
                         .into_string()
                         .map_err(Error::String)?,
@@ -9368,7 +9579,7 @@ impl Bus {
         unsafe {
             let mut id = ffi::FMOD_GUID::default();
             match ffi::FMOD_Studio_Bus_GetID(self.pointer, &mut id) {
-                ffi::FMOD_OK => Ok(Guid::from(id)?),
+                ffi::FMOD_OK => Ok(Guid::try_from(id)?),
                 error => Err(err_fmod!("FMOD_Studio_Bus_GetID", error)),
             }
         }
@@ -9504,7 +9715,7 @@ impl Bus {
         unsafe {
             let mut memoryusage = ffi::FMOD_STUDIO_MEMORY_USAGE::default();
             match ffi::FMOD_Studio_Bus_GetMemoryUsage(self.pointer, &mut memoryusage) {
-                ffi::FMOD_OK => Ok(MemoryUsage::from(memoryusage)?),
+                ffi::FMOD_OK => Ok(MemoryUsage::try_from(memoryusage)?),
                 error => Err(err_fmod!("FMOD_Studio_Bus_GetMemoryUsage", error)),
             }
         }
@@ -9571,7 +9782,7 @@ impl CommandReplay {
                 commandindex,
                 &mut info,
             ) {
-                ffi::FMOD_OK => Ok(CommandInfo::from(info)?),
+                ffi::FMOD_OK => Ok(CommandInfo::try_from(info)?),
                 error => Err(err_fmod!("FMOD_Studio_CommandReplay_GetCommandInfo", error)),
             }
         }
@@ -9795,7 +10006,7 @@ impl EventDescription {
         unsafe {
             let mut id = ffi::FMOD_GUID::default();
             match ffi::FMOD_Studio_EventDescription_GetID(self.pointer, &mut id) {
-                ffi::FMOD_OK => Ok(Guid::from(id)?),
+                ffi::FMOD_OK => Ok(Guid::try_from(id)?),
                 error => Err(err_fmod!("FMOD_Studio_EventDescription_GetID", error)),
             }
         }
@@ -9846,7 +10057,7 @@ impl EventDescription {
                 index,
                 &mut parameter,
             ) {
-                ffi::FMOD_OK => Ok(ParameterDescription::from(parameter)?),
+                ffi::FMOD_OK => Ok(ParameterDescription::try_from(parameter)?),
                 error => Err(err_fmod!(
                     "FMOD_Studio_EventDescription_GetParameterDescriptionByIndex",
                     error
@@ -9865,7 +10076,7 @@ impl EventDescription {
                 CString::new(name)?.as_ptr(),
                 &mut parameter,
             ) {
-                ffi::FMOD_OK => Ok(ParameterDescription::from(parameter)?),
+                ffi::FMOD_OK => Ok(ParameterDescription::try_from(parameter)?),
                 error => Err(err_fmod!(
                     "FMOD_Studio_EventDescription_GetParameterDescriptionByName",
                     error
@@ -9884,7 +10095,7 @@ impl EventDescription {
                 id.into(),
                 &mut parameter,
             ) {
-                ffi::FMOD_OK => Ok(ParameterDescription::from(parameter)?),
+                ffi::FMOD_OK => Ok(ParameterDescription::try_from(parameter)?),
                 error => Err(err_fmod!(
                     "FMOD_Studio_EventDescription_GetParameterDescriptionByID",
                     error
@@ -10002,7 +10213,7 @@ impl EventDescription {
                 index,
                 &mut property,
             ) {
-                ffi::FMOD_OK => Ok(UserProperty::from(property)?),
+                ffi::FMOD_OK => Ok(UserProperty::try_from(property)?),
                 error => Err(err_fmod!(
                     "FMOD_Studio_EventDescription_GetUserPropertyByIndex",
                     error
@@ -10018,7 +10229,7 @@ impl EventDescription {
                 CString::new(name)?.as_ptr(),
                 &mut property,
             ) {
-                ffi::FMOD_OK => Ok(UserProperty::from(property)?),
+                ffi::FMOD_OK => Ok(UserProperty::try_from(property)?),
                 error => Err(err_fmod!(
                     "FMOD_Studio_EventDescription_GetUserProperty",
                     error
@@ -10326,7 +10537,7 @@ impl EventInstance {
         unsafe {
             let mut attributes = ffi::FMOD_3D_ATTRIBUTES::default();
             match ffi::FMOD_Studio_EventInstance_Get3DAttributes(self.pointer, &mut attributes) {
-                ffi::FMOD_OK => Ok(Attributes3d::from(attributes)?),
+                ffi::FMOD_OK => Ok(Attributes3d::try_from(attributes)?),
                 error => Err(err_fmod!(
                     "FMOD_Studio_EventInstance_Get3DAttributes",
                     error
@@ -10715,7 +10926,7 @@ impl EventInstance {
         unsafe {
             let mut memoryusage = ffi::FMOD_STUDIO_MEMORY_USAGE::default();
             match ffi::FMOD_Studio_EventInstance_GetMemoryUsage(self.pointer, &mut memoryusage) {
-                ffi::FMOD_OK => Ok(MemoryUsage::from(memoryusage)?),
+                ffi::FMOD_OK => Ok(MemoryUsage::try_from(memoryusage)?),
                 error => Err(err_fmod!("FMOD_Studio_EventInstance_GetMemoryUsage", error)),
             }
         }
@@ -10765,7 +10976,7 @@ impl Studio {
         unsafe {
             let mut settings = ffi::FMOD_STUDIO_ADVANCEDSETTINGS::default();
             match ffi::FMOD_Studio_System_GetAdvancedSettings(self.pointer, &mut settings) {
-                ffi::FMOD_OK => Ok(StudioAdvancedSettings::from(settings)?),
+                ffi::FMOD_OK => Ok(StudioAdvancedSettings::try_from(settings)?),
                 error => Err(err_fmod!("FMOD_Studio_System_GetAdvancedSettings", error)),
             }
         }
@@ -10911,7 +11122,7 @@ impl Studio {
                 CString::new(key)?.as_ptr(),
                 &mut info,
             ) {
-                ffi::FMOD_OK => Ok(SoundInfo::from(info)?),
+                ffi::FMOD_OK => Ok(SoundInfo::try_from(info)?),
                 error => Err(err_fmod!("FMOD_Studio_System_GetSoundInfo", error)),
             }
         }
@@ -10927,7 +11138,7 @@ impl Studio {
                 CString::new(name)?.as_ptr(),
                 &mut parameter,
             ) {
-                ffi::FMOD_OK => Ok(ParameterDescription::from(parameter)?),
+                ffi::FMOD_OK => Ok(ParameterDescription::try_from(parameter)?),
                 error => Err(err_fmod!(
                     "FMOD_Studio_System_GetParameterDescriptionByName",
                     error
@@ -10946,7 +11157,7 @@ impl Studio {
                 id.into(),
                 &mut parameter,
             ) {
-                ffi::FMOD_OK => Ok(ParameterDescription::from(parameter)?),
+                ffi::FMOD_OK => Ok(ParameterDescription::try_from(parameter)?),
                 error => Err(err_fmod!(
                     "FMOD_Studio_System_GetParameterDescriptionByID",
                     error
@@ -11147,7 +11358,7 @@ impl Studio {
                 CString::new(path)?.as_ptr(),
                 &mut id,
             ) {
-                ffi::FMOD_OK => Ok(Guid::from(id)?),
+                ffi::FMOD_OK => Ok(Guid::try_from(id)?),
                 error => Err(err_fmod!("FMOD_Studio_System_LookupID", error)),
             }
         }
@@ -11201,8 +11412,8 @@ impl Studio {
                 &mut attenuationposition,
             ) {
                 ffi::FMOD_OK => Ok((
-                    Attributes3d::from(attributes)?,
-                    Vector::from(attenuationposition)?,
+                    Attributes3d::try_from(attributes)?,
+                    Vector::try_from(attenuationposition)?,
                 )),
                 error => Err(err_fmod!("FMOD_Studio_System_GetListenerAttributes", error)),
             }
@@ -11437,7 +11648,7 @@ impl Studio {
                 capacity,
                 &mut count,
             ) {
-                ffi::FMOD_OK => Ok((ParameterDescription::from(array)?, count)),
+                ffi::FMOD_OK => Ok((ParameterDescription::try_from(array)?, count)),
                 error => Err(err_fmod!(
                     "FMOD_Studio_System_GetParameterDescriptionList",
                     error
@@ -11450,7 +11661,10 @@ impl Studio {
             let mut usage = ffi::FMOD_STUDIO_CPU_USAGE::default();
             let mut usage_core = ffi::FMOD_CPU_USAGE::default();
             match ffi::FMOD_Studio_System_GetCPUUsage(self.pointer, &mut usage, &mut usage_core) {
-                ffi::FMOD_OK => Ok((StudioCpuUsage::from(usage)?, CpuUsage::from(usage_core)?)),
+                ffi::FMOD_OK => Ok((
+                    StudioCpuUsage::try_from(usage)?,
+                    CpuUsage::try_from(usage_core)?,
+                )),
                 error => Err(err_fmod!("FMOD_Studio_System_GetCPUUsage", error)),
             }
         }
@@ -11459,7 +11673,7 @@ impl Studio {
         unsafe {
             let mut usage = ffi::FMOD_STUDIO_BUFFER_USAGE::default();
             match ffi::FMOD_Studio_System_GetBufferUsage(self.pointer, &mut usage) {
-                ffi::FMOD_OK => Ok(BufferUsage::from(usage)?),
+                ffi::FMOD_OK => Ok(BufferUsage::try_from(usage)?),
                 error => Err(err_fmod!("FMOD_Studio_System_GetBufferUsage", error)),
             }
         }
@@ -11505,7 +11719,7 @@ impl Studio {
         unsafe {
             let mut memoryusage = ffi::FMOD_STUDIO_MEMORY_USAGE::default();
             match ffi::FMOD_Studio_System_GetMemoryUsage(self.pointer, &mut memoryusage) {
-                ffi::FMOD_OK => Ok(MemoryUsage::from(memoryusage)?),
+                ffi::FMOD_OK => Ok(MemoryUsage::try_from(memoryusage)?),
                 error => Err(err_fmod!("FMOD_Studio_System_GetMemoryUsage", error)),
             }
         }
@@ -11538,7 +11752,7 @@ impl Vca {
         unsafe {
             let mut id = ffi::FMOD_GUID::default();
             match ffi::FMOD_Studio_VCA_GetID(self.pointer, &mut id) {
-                ffi::FMOD_OK => Ok(Guid::from(id)?),
+                ffi::FMOD_OK => Ok(Guid::try_from(id)?),
                 error => Err(err_fmod!("FMOD_Studio_VCA_GetID", error)),
             }
         }
@@ -11676,7 +11890,7 @@ impl System {
                     CString::from_raw(name)
                         .into_string()
                         .map_err(Error::String)?,
-                    Guid::from(guid)?,
+                    Guid::try_from(guid)?,
                     systemrate,
                     SpeakerMode::from(speakermode)?,
                     speakermodechannels,
@@ -11833,7 +12047,7 @@ impl System {
         unsafe {
             let mut settings = ffi::FMOD_ADVANCEDSETTINGS::default();
             match ffi::FMOD_System_GetAdvancedSettings(self.pointer, &mut settings) {
-                ffi::FMOD_OK => Ok(AdvancedSettings::from(settings)?),
+                ffi::FMOD_OK => Ok(AdvancedSettings::try_from(settings)?),
                 error => Err(err_fmod!("FMOD_System_GetAdvancedSettings", error)),
             }
         }
@@ -11979,7 +12193,7 @@ impl System {
         unsafe {
             let mut description = null();
             match ffi::FMOD_System_GetDSPInfoByPlugin(self.pointer, handle, &mut description) {
-                ffi::FMOD_OK => Ok(DspDescription::from(*description)?),
+                ffi::FMOD_OK => Ok(DspDescription::try_from(*description)?),
                 error => Err(err_fmod!("FMOD_System_GetDSPInfoByPlugin", error)),
             }
         }
@@ -12214,10 +12428,10 @@ impl System {
                 &mut up,
             ) {
                 ffi::FMOD_OK => Ok((
-                    Vector::from(pos)?,
-                    Vector::from(vel)?,
-                    Vector::from(forward)?,
-                    Vector::from(up)?,
+                    Vector::try_from(pos)?,
+                    Vector::try_from(vel)?,
+                    Vector::try_from(forward)?,
+                    Vector::try_from(up)?,
                 )),
                 error => Err(err_fmod!("FMOD_System_Get3DListenerAttributes", error)),
             }
@@ -12316,7 +12530,7 @@ impl System {
         unsafe {
             let mut usage = ffi::FMOD_CPU_USAGE::default();
             match ffi::FMOD_System_GetCPUUsage(self.pointer, &mut usage) {
-                ffi::FMOD_OK => Ok(CpuUsage::from(usage)?),
+                ffi::FMOD_OK => Ok(CpuUsage::try_from(usage)?),
                 error => Err(err_fmod!("FMOD_System_GetCPUUsage", error)),
             }
         }
@@ -12492,7 +12706,7 @@ impl System {
         unsafe {
             let mut description = null();
             match ffi::FMOD_System_GetDSPInfoByType(self.pointer, type_.into(), &mut description) {
-                ffi::FMOD_OK => Ok(DspDescription::from(*description)?),
+                ffi::FMOD_OK => Ok(DspDescription::try_from(*description)?),
                 error => Err(err_fmod!("FMOD_System_GetDSPInfoByType", error)),
             }
         }
@@ -12562,7 +12776,7 @@ impl System {
         unsafe {
             let mut prop = ffi::FMOD_REVERB_PROPERTIES::default();
             match ffi::FMOD_System_GetReverbProperties(self.pointer, instance, &mut prop) {
-                ffi::FMOD_OK => Ok(ReverbProperties::from(prop)?),
+                ffi::FMOD_OK => Ok(ReverbProperties::try_from(prop)?),
                 error => Err(err_fmod!("FMOD_System_GetReverbProperties", error)),
             }
         }
@@ -12624,7 +12838,7 @@ impl System {
                     CString::from_raw(name)
                         .into_string()
                         .map_err(Error::String)?,
-                    Guid::from(guid)?,
+                    Guid::try_from(guid)?,
                     systemrate,
                     SpeakerMode::from(speakermode)?,
                     speakermodechannels,

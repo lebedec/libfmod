@@ -18,7 +18,7 @@ For example for FMOD Engine 2.02.03 you should use:
 
 ```toml
 [dependencies]
-libfmod = "2.2.301"
+libfmod = "2.2.303"
 ```
 
 #### Getting Started

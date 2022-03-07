@@ -15,12 +15,14 @@ fn test_simple_events() -> Result<(), Error> {
     let strings = studio.load_bank_file("./data/Master.strings.bank", FMOD_STUDIO_LOAD_BANK_NORMAL)?;
     let sfx = studio.load_bank_file("./data/SFX.bank", FMOD_STUDIO_LOAD_BANK_NORMAL)?;
 
-    let ambience_description = studio.get_event("event:/Ambience/Country")?;
-    let ambience = ambience_description.create_instance()?;
-    let cancellation_description = studio.get_event("event:/UI/Cancel")?;
-    let cancellation = cancellation_description.create_instance()?;
-    let explosion_description = studio.get_event("event:/Weapons/Explosion")?;
-    explosion_description.load_sample_data()?;
+    let ambience_event = studio.get_event("event:/Ambience/Country")?;
+    let ambience = ambience_event.create_instance()?;
+
+    let cancellation_event = studio.get_event("event:/UI/Cancel")?;
+    let cancellation = cancellation_event.create_instance()?;
+
+    let explosion_event = studio.get_event("event:/Weapons/Explosion")?;
+    explosion_event.load_sample_data()?;
 
     for step in 0..5 {
         match step {
@@ -28,7 +30,7 @@ fn test_simple_events() -> Result<(), Error> {
                 ambience.start()?;
             }
             2 => {
-                let explosion = explosion_description.create_instance()?;
+                let explosion = explosion_event.create_instance()?;
                 explosion.start()?;
                 explosion.release()?;
             }
