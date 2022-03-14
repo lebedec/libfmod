@@ -4,12 +4,6 @@ A library wrapper for integrating FMOD Engine in Rust applications.
 FFI wrapped in Rust code to make them safe, more idiomatic 
 and abstract away uncomfortable manual C interface using.
 
-#### FMOD Development Libraries
-
-FMOD development libraries can't be integrated and distributed as part of this crate. 
-You should download and install it considering your current licensing option from:
-https://www.fmod.com/download
-
 #### Installation
 
 A crate uses FMOD development libraries version number to simplify version match.
@@ -20,6 +14,27 @@ For example for FMOD Engine 2.02.03 you should use:
 [dependencies]
 libfmod = "2.2.303"
 ```
+
+#### FMOD Development Libraries
+
+FMOD development libraries can't be integrated and distributed as part of this crate. 
+You should download and install it considering your current licensing option from:
+https://www.fmod.com/download
+
+**Windows**
+
+You should manually provide FMOD development libraries for MSVC linker. 
+For the first time you can just put following files to `.\target\debug\deps`
+from default FMOD Engine installation folder `C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\`:
+
+```bash
+api\core\lib\x64\fmod.dll
+api\core\lib\x64\fmod_vc.lib
+api\studio\lib\x64\fmodstudio.dll
+api\studio\lib\x64\fmodstudio_vc.lib
+```
+
+And then rename `fmod_vc.lib` and `fmodstudio_vc.lib` to `fmod.lib` and `fmodstudio.lib` accordingly.
 
 #### Getting Started
 
