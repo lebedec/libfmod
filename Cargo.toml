@@ -1,11 +1,11 @@
 [package]
 name = "libfmod"
-version = "2.2.303"
+version = "2.2.304"
 edition = "2021"
-license-file = "LICENSE"
+license = "MIT"
 description = "A library wrapper for integrating FMOD Engine in Rust applications."
 readme = "README.md"
-homepage = "https://github.com/lebedev-games/libfmod"
-repository = "https://github.com/lebedev-games/libfmod"
+homepage = "https://github.com/lebedec/libfmod"
+repository = "https://github.com/lebedec/libfmod"
 
 [dependencies]
