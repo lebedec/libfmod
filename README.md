@@ -8,11 +8,11 @@ and abstract away uncomfortable manual C interface using.
 
 A crate uses FMOD development libraries version number to simplify version match.
 Backwards compatible changes and bug fixes in libFMOD encoded in patch part.
-For example for FMOD Engine 2.02.03 you should use:
+For example for FMOD Engine 2.02.06 you should use:
 
 ```toml
 [dependencies]
-libfmod = "2.2.304"
+libfmod = "2.2.601"
 ```
 
 #### FMOD Development Libraries

@@ -783,6 +783,7 @@ pub enum OutputType {
     NnAudio,
     Winsonic,
     AAudio,
+    Audioworklet,
     Max,
 }
 
@@ -808,6 +809,7 @@ impl From<OutputType> for ffi::FMOD_OUTPUTTYPE {
             OutputType::NnAudio => ffi::FMOD_OUTPUTTYPE_NNAUDIO,
             OutputType::Winsonic => ffi::FMOD_OUTPUTTYPE_WINSONIC,
             OutputType::AAudio => ffi::FMOD_OUTPUTTYPE_AAUDIO,
+            OutputType::Audioworklet => ffi::FMOD_OUTPUTTYPE_AUDIOWORKLET,
             OutputType::Max => ffi::FMOD_OUTPUTTYPE_MAX,
         }
     }
@@ -835,6 +837,7 @@ impl OutputType {
             ffi::FMOD_OUTPUTTYPE_NNAUDIO => Ok(OutputType::NnAudio),
             ffi::FMOD_OUTPUTTYPE_WINSONIC => Ok(OutputType::Winsonic),
             ffi::FMOD_OUTPUTTYPE_AAUDIO => Ok(OutputType::AAudio),
+            ffi::FMOD_OUTPUTTYPE_AUDIOWORKLET => Ok(OutputType::Audioworklet),
             ffi::FMOD_OUTPUTTYPE_MAX => Ok(OutputType::Max),
             _ => Err(err_enum!("FMOD_OUTPUTTYPE", value)),
         }

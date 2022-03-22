@@ -10,6 +10,12 @@ use std::ptr::null_mut;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
+pub struct FMOD_STUDIO_SYSTEM {
+    _unused: [u8; 0],
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 pub struct FMOD_STUDIO_EVENTDESCRIPTION {
     _unused: [u8; 0],
 }
@@ -116,17 +122,11 @@ pub struct FMOD_SYNCPOINT {
     _unused: [u8; 0],
 }
 
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct FMOD_STUDIO_SYSTEM {
-    _unused: [u8; 0],
-}
-
 pub type FMOD_BOOL = c_int;
 pub type FMOD_PORT_INDEX = c_ulonglong;
 
 pub const FMOD_STUDIO_LOAD_MEMORY_ALIGNMENT: c_uint = 32;
-pub const FMOD_VERSION: c_uint = 0x00020203;
+pub const FMOD_VERSION: c_uint = 0x00020206;
 pub const FMOD_MAX_CHANNEL_WIDTH: c_uint = 32;
 pub const FMOD_MAX_SYSTEMS: c_uint = 8;
 pub const FMOD_MAX_LISTENERS: c_uint = 8;
@@ -347,7 +347,8 @@ pub const FMOD_OUTPUTTYPE_WEBAUDIO: FMOD_OUTPUTTYPE = 15;
 pub const FMOD_OUTPUTTYPE_NNAUDIO: FMOD_OUTPUTTYPE = 16;
 pub const FMOD_OUTPUTTYPE_WINSONIC: FMOD_OUTPUTTYPE = 17;
 pub const FMOD_OUTPUTTYPE_AAUDIO: FMOD_OUTPUTTYPE = 18;
-pub const FMOD_OUTPUTTYPE_MAX: FMOD_OUTPUTTYPE = 19;
+pub const FMOD_OUTPUTTYPE_AUDIOWORKLET: FMOD_OUTPUTTYPE = 19;
+pub const FMOD_OUTPUTTYPE_MAX: FMOD_OUTPUTTYPE = 20;
 pub const FMOD_OUTPUTTYPE_FORCEINT: FMOD_OUTPUTTYPE = 65536;
 
 pub type FMOD_DEBUG_MODE = c_int;
@@ -1340,6 +1341,7 @@ pub const FMOD_THREAD_PRIORITY_CONVOLUTION2: FMOD_THREAD_PRIORITY = FMOD_THREAD_
 
 pub type FMOD_THREAD_STACK_SIZE = c_uint;
 
+pub const FMOD_THREAD_STACK_SIZE_DEFAULT: FMOD_THREAD_STACK_SIZE = 0;
 pub const FMOD_THREAD_STACK_SIZE_MIXER: FMOD_THREAD_STACK_SIZE = (80 * 1024);
 pub const FMOD_THREAD_STACK_SIZE_FEEDER: FMOD_THREAD_STACK_SIZE = (16 * 1024);
 pub const FMOD_THREAD_STACK_SIZE_STREAM: FMOD_THREAD_STACK_SIZE = (96 * 1024);
