@@ -1,6 +1,8 @@
-use libfmod::{DspConnectionType, DspType, Error, System};
+use libfmod::{DspConnectionType, DspFft, DspParameterFft, DspType, Error, System};
+use libfmod::ffi;
 use libfmod::ffi::{FMOD_CHANNELCONTROL_DSP_HEAD, FMOD_CHANNELCONTROL_DSP_TAIL, FMOD_DEFAULT, FMOD_INIT_NORMAL};
 
+/// This unit produces an echo on the sound and fades out at the desired rate.
 #[test]
 fn test_dsp_effect_to_channel() -> Result<(), Error> {
     let system = System::create()?;
@@ -13,6 +15,27 @@ fn test_dsp_effect_to_channel() -> Result<(), Error> {
     while channel.is_playing()? {
         // do something else
     }
+    system.release()
+}
+
+/// This dsp simply analyzes the signal and provides spectrum information back.
+#[test]
+fn test_fft_dsp() -> Result<(), Error> {
+    let system = System::create()?;
+    system.init(512, FMOD_INIT_NORMAL, None)?;
+
+    let sound = system.create_sound("./data/beep.wav", FMOD_DEFAULT, None)?;
+    let channel = system.play_sound(sound, None, false)?;
+    let dsp = system.create_dsp_by_type(DspType::Fft)?;
+    channel.add_dsp(0, dsp)?;
+    while channel.is_playing()? {}
+    let fft = DspParameterFft::try_from(dsp)?;
+
+    assert_eq!(fft.spectrum.len(), 2);
+    assert_eq!(fft.length, 2048);
+    assert_eq!(fft.spectrum[0].len(), 2048);
+    assert_eq!(fft.spectrum[1].len(), 2048);
+
     system.release()
 }
 

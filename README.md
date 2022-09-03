@@ -12,7 +12,7 @@ For example for FMOD Engine 2.02.06 you should use:
 
 ```toml
 [dependencies]
-libfmod = "2.2.601"
+libfmod = "2.2.602"
 ```
 
 #### FMOD Development Libraries

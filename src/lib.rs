@@ -20,6 +20,7 @@ pub enum Error {
     },
     String(IntoStringError),
     StringNul(NulError),
+    NotDspFft,
 }
 
 impl From<NulError> for Error {
@@ -5684,8 +5685,7 @@ impl Into<ffi::FMOD_DSP_PARAMETER_SIDECHAIN> for DspParameterSidechain {
 #[derive(Debug, Clone)]
 pub struct DspParameterFft {
     pub length: i32,
-    pub numchannels: i32,
-    pub spectrum: [Vec<f32>; 32 as usize],
+    pub spectrum: Vec<Vec<f32>>,
 }
 
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_FFT> for DspParameterFft {
@@ -5694,9 +5694,24 @@ impl TryFrom<ffi::FMOD_DSP_PARAMETER_FFT> for DspParameterFft {
         unsafe {
             Ok(DspParameterFft {
                 length: value.length,
-                numchannels: value.numchannels,
-                spectrum: value.spectrum.map(|ptr| to_vec!(ptr, value.numchannels)),
+                spectrum: to_vec!(value.spectrum.as_ptr(), value.numchannels, |ptr| Ok(
+                    to_vec!(ptr, value.length)
+                ))?,
             })
+        }
+    }
+}
+
+impl TryFrom<Dsp> for DspParameterFft {
+    type Error = Error;
+    fn try_from(dsp: Dsp) -> Result<Self, Self::Error> {
+        match dsp.get_type() {
+            Ok(DspType::Fft) => {
+                let (ptr, _, _) = dsp.get_parameter_data(ffi::FMOD_DSP_FFT_SPECTRUMDATA, 0)?;
+                let fft = unsafe { *(ptr as *const ffi::FMOD_DSP_PARAMETER_FFT) };
+                DspParameterFft::try_from(fft)
+            }
+            _ => Err(Error::NotDspFft),
         }
     }
 }
@@ -5705,8 +5720,8 @@ impl Into<ffi::FMOD_DSP_PARAMETER_FFT> for DspParameterFft {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_FFT {
         ffi::FMOD_DSP_PARAMETER_FFT {
             length: self.length,
-            numchannels: self.numchannels,
-            spectrum: self.spectrum.map(|val| val.as_ptr() as *mut _),
+            numchannels: self.spectrum.len() as i32,
+            spectrum: [null_mut(); 32],
         }
     }
 }
