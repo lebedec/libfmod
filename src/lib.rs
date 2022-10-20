@@ -264,7 +264,7 @@ impl UserPropertyType {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum EventProperty {
-    Channelpriority,
+    ChannelPriority,
     ScheduleDelay,
     ScheduleLookahead,
     MinimumDistance,
@@ -276,7 +276,7 @@ pub enum EventProperty {
 impl From<EventProperty> for ffi::FMOD_STUDIO_EVENT_PROPERTY {
     fn from(value: EventProperty) -> ffi::FMOD_STUDIO_EVENT_PROPERTY {
         match value {
-            EventProperty::Channelpriority => ffi::FMOD_STUDIO_EVENT_PROPERTY_CHANNELPRIORITY,
+            EventProperty::ChannelPriority => ffi::FMOD_STUDIO_EVENT_PROPERTY_CHANNELPRIORITY,
             EventProperty::ScheduleDelay => ffi::FMOD_STUDIO_EVENT_PROPERTY_SCHEDULE_DELAY,
             EventProperty::ScheduleLookahead => ffi::FMOD_STUDIO_EVENT_PROPERTY_SCHEDULE_LOOKAHEAD,
             EventProperty::MinimumDistance => ffi::FMOD_STUDIO_EVENT_PROPERTY_MINIMUM_DISTANCE,
@@ -290,7 +290,7 @@ impl From<EventProperty> for ffi::FMOD_STUDIO_EVENT_PROPERTY {
 impl EventProperty {
     pub fn from(value: ffi::FMOD_STUDIO_EVENT_PROPERTY) -> Result<EventProperty, Error> {
         match value {
-            ffi::FMOD_STUDIO_EVENT_PROPERTY_CHANNELPRIORITY => Ok(EventProperty::Channelpriority),
+            ffi::FMOD_STUDIO_EVENT_PROPERTY_CHANNELPRIORITY => Ok(EventProperty::ChannelPriority),
             ffi::FMOD_STUDIO_EVENT_PROPERTY_SCHEDULE_DELAY => Ok(EventProperty::ScheduleDelay),
             ffi::FMOD_STUDIO_EVENT_PROPERTY_SCHEDULE_LOOKAHEAD => {
                 Ok(EventProperty::ScheduleLookahead)
@@ -307,20 +307,20 @@ impl EventProperty {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PlaybackState {
     Playing,
-    Ustaining,
-    Opped,
-    Rting,
-    Opping,
+    Sustaining,
+    Stopped,
+    Starting,
+    Stopping,
 }
 
 impl From<PlaybackState> for ffi::FMOD_STUDIO_PLAYBACK_STATE {
     fn from(value: PlaybackState) -> ffi::FMOD_STUDIO_PLAYBACK_STATE {
         match value {
             PlaybackState::Playing => ffi::FMOD_STUDIO_PLAYBACK_PLAYING,
-            PlaybackState::Ustaining => ffi::FMOD_STUDIO_PLAYBACK_SUSTAINING,
-            PlaybackState::Opped => ffi::FMOD_STUDIO_PLAYBACK_STOPPED,
-            PlaybackState::Rting => ffi::FMOD_STUDIO_PLAYBACK_STARTING,
-            PlaybackState::Opping => ffi::FMOD_STUDIO_PLAYBACK_STOPPING,
+            PlaybackState::Sustaining => ffi::FMOD_STUDIO_PLAYBACK_SUSTAINING,
+            PlaybackState::Stopped => ffi::FMOD_STUDIO_PLAYBACK_STOPPED,
+            PlaybackState::Starting => ffi::FMOD_STUDIO_PLAYBACK_STARTING,
+            PlaybackState::Stopping => ffi::FMOD_STUDIO_PLAYBACK_STOPPING,
         }
     }
 }
@@ -329,10 +329,10 @@ impl PlaybackState {
     pub fn from(value: ffi::FMOD_STUDIO_PLAYBACK_STATE) -> Result<PlaybackState, Error> {
         match value {
             ffi::FMOD_STUDIO_PLAYBACK_PLAYING => Ok(PlaybackState::Playing),
-            ffi::FMOD_STUDIO_PLAYBACK_SUSTAINING => Ok(PlaybackState::Ustaining),
-            ffi::FMOD_STUDIO_PLAYBACK_STOPPED => Ok(PlaybackState::Opped),
-            ffi::FMOD_STUDIO_PLAYBACK_STARTING => Ok(PlaybackState::Rting),
-            ffi::FMOD_STUDIO_PLAYBACK_STOPPING => Ok(PlaybackState::Opping),
+            ffi::FMOD_STUDIO_PLAYBACK_SUSTAINING => Ok(PlaybackState::Sustaining),
+            ffi::FMOD_STUDIO_PLAYBACK_STOPPED => Ok(PlaybackState::Stopped),
+            ffi::FMOD_STUDIO_PLAYBACK_STARTING => Ok(PlaybackState::Starting),
+            ffi::FMOD_STUDIO_PLAYBACK_STOPPING => Ok(PlaybackState::Stopping),
             _ => Err(err_enum!("FMOD_STUDIO_PLAYBACK_STATE", value)),
         }
     }
@@ -784,7 +784,7 @@ pub enum OutputType {
     NnAudio,
     Winsonic,
     AAudio,
-    Audioworklet,
+    AudioWorklet,
     Max,
 }
 
@@ -810,7 +810,7 @@ impl From<OutputType> for ffi::FMOD_OUTPUTTYPE {
             OutputType::NnAudio => ffi::FMOD_OUTPUTTYPE_NNAUDIO,
             OutputType::Winsonic => ffi::FMOD_OUTPUTTYPE_WINSONIC,
             OutputType::AAudio => ffi::FMOD_OUTPUTTYPE_AAUDIO,
-            OutputType::Audioworklet => ffi::FMOD_OUTPUTTYPE_AUDIOWORKLET,
+            OutputType::AudioWorklet => ffi::FMOD_OUTPUTTYPE_AUDIOWORKLET,
             OutputType::Max => ffi::FMOD_OUTPUTTYPE_MAX,
         }
     }
@@ -838,7 +838,7 @@ impl OutputType {
             ffi::FMOD_OUTPUTTYPE_NNAUDIO => Ok(OutputType::NnAudio),
             ffi::FMOD_OUTPUTTYPE_WINSONIC => Ok(OutputType::Winsonic),
             ffi::FMOD_OUTPUTTYPE_AAUDIO => Ok(OutputType::AAudio),
-            ffi::FMOD_OUTPUTTYPE_AUDIOWORKLET => Ok(OutputType::Audioworklet),
+            ffi::FMOD_OUTPUTTYPE_AUDIOWORKLET => Ok(OutputType::AudioWorklet),
             ffi::FMOD_OUTPUTTYPE_MAX => Ok(OutputType::Max),
             _ => Err(err_enum!("FMOD_OUTPUTTYPE", value)),
         }
@@ -881,9 +881,9 @@ pub enum SpeakerMode {
     Stereo,
     Quad,
     Surround,
-    _5Point1,
-    _7Point1,
-    _7Point1Point4,
+    Mode5Point1,
+    Mode7Point1,
+    Mode7Point1Point4,
     Max,
 }
 
@@ -896,9 +896,9 @@ impl From<SpeakerMode> for ffi::FMOD_SPEAKERMODE {
             SpeakerMode::Stereo => ffi::FMOD_SPEAKERMODE_STEREO,
             SpeakerMode::Quad => ffi::FMOD_SPEAKERMODE_QUAD,
             SpeakerMode::Surround => ffi::FMOD_SPEAKERMODE_SURROUND,
-            SpeakerMode::_5Point1 => ffi::FMOD_SPEAKERMODE_5POINT1,
-            SpeakerMode::_7Point1 => ffi::FMOD_SPEAKERMODE_7POINT1,
-            SpeakerMode::_7Point1Point4 => ffi::FMOD_SPEAKERMODE_7POINT1POINT4,
+            SpeakerMode::Mode5Point1 => ffi::FMOD_SPEAKERMODE_5POINT1,
+            SpeakerMode::Mode7Point1 => ffi::FMOD_SPEAKERMODE_7POINT1,
+            SpeakerMode::Mode7Point1Point4 => ffi::FMOD_SPEAKERMODE_7POINT1POINT4,
             SpeakerMode::Max => ffi::FMOD_SPEAKERMODE_MAX,
         }
     }
@@ -913,9 +913,9 @@ impl SpeakerMode {
             ffi::FMOD_SPEAKERMODE_STEREO => Ok(SpeakerMode::Stereo),
             ffi::FMOD_SPEAKERMODE_QUAD => Ok(SpeakerMode::Quad),
             ffi::FMOD_SPEAKERMODE_SURROUND => Ok(SpeakerMode::Surround),
-            ffi::FMOD_SPEAKERMODE_5POINT1 => Ok(SpeakerMode::_5Point1),
-            ffi::FMOD_SPEAKERMODE_7POINT1 => Ok(SpeakerMode::_7Point1),
-            ffi::FMOD_SPEAKERMODE_7POINT1POINT4 => Ok(SpeakerMode::_7Point1Point4),
+            ffi::FMOD_SPEAKERMODE_5POINT1 => Ok(SpeakerMode::Mode5Point1),
+            ffi::FMOD_SPEAKERMODE_7POINT1 => Ok(SpeakerMode::Mode7Point1),
+            ffi::FMOD_SPEAKERMODE_7POINT1POINT4 => Ok(SpeakerMode::Mode7Point1Point4),
             ffi::FMOD_SPEAKERMODE_MAX => Ok(SpeakerMode::Max),
             _ => Err(err_enum!("FMOD_SPEAKERMODE", value)),
         }
@@ -1805,10 +1805,10 @@ impl DspParameterFloatMappingType {
 pub enum DspParameterDataType {
     User,
     OverallGain,
-    _3Dattributes,
+    Attributes3D,
     Sidechain,
     Fft,
-    _3DattributesMulti,
+    AttributesMulti3D,
     AttenuationRange,
 }
 
@@ -1817,10 +1817,10 @@ impl From<DspParameterDataType> for ffi::FMOD_DSP_PARAMETER_DATA_TYPE {
         match value {
             DspParameterDataType::User => ffi::FMOD_DSP_PARAMETER_DATA_TYPE_USER,
             DspParameterDataType::OverallGain => ffi::FMOD_DSP_PARAMETER_DATA_TYPE_OVERALLGAIN,
-            DspParameterDataType::_3Dattributes => ffi::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES,
+            DspParameterDataType::Attributes3D => ffi::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES,
             DspParameterDataType::Sidechain => ffi::FMOD_DSP_PARAMETER_DATA_TYPE_SIDECHAIN,
             DspParameterDataType::Fft => ffi::FMOD_DSP_PARAMETER_DATA_TYPE_FFT,
-            DspParameterDataType::_3DattributesMulti => {
+            DspParameterDataType::AttributesMulti3D => {
                 ffi::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI
             }
             DspParameterDataType::AttenuationRange => {
@@ -1836,12 +1836,12 @@ impl DspParameterDataType {
             ffi::FMOD_DSP_PARAMETER_DATA_TYPE_USER => Ok(DspParameterDataType::User),
             ffi::FMOD_DSP_PARAMETER_DATA_TYPE_OVERALLGAIN => Ok(DspParameterDataType::OverallGain),
             ffi::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES => {
-                Ok(DspParameterDataType::_3Dattributes)
+                Ok(DspParameterDataType::Attributes3D)
             }
             ffi::FMOD_DSP_PARAMETER_DATA_TYPE_SIDECHAIN => Ok(DspParameterDataType::Sidechain),
             ffi::FMOD_DSP_PARAMETER_DATA_TYPE_FFT => Ok(DspParameterDataType::Fft),
             ffi::FMOD_DSP_PARAMETER_DATA_TYPE_3DATTRIBUTES_MULTI => {
-                Ok(DspParameterDataType::_3DattributesMulti)
+                Ok(DspParameterDataType::AttributesMulti3D)
             }
             ffi::FMOD_DSP_PARAMETER_DATA_TYPE_ATTENUATION_RANGE => {
                 Ok(DspParameterDataType::AttenuationRange)
@@ -2954,27 +2954,27 @@ impl DspPan3DExtentModeType {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspPan {
     Mode,
-    _2DStereoPosition,
-    _2DDirection,
-    _2DExtent,
-    _2DRotation,
-    _2DLfeLevel,
-    _2DStereoMode,
-    _2DStereoSeparation,
-    _2DStereoAxis,
+    StereoPosition2D,
+    Direction2D,
+    Extent2D,
+    Rotation2D,
+    LfeLevel2D,
+    StereoMode2D,
+    StereoSeparation2D,
+    StereoAxis2D,
     EnabledSpeakers,
-    _3DPosition,
-    _3DRolloff,
-    _3DMinDistance,
-    _3DMaxDistance,
-    _3DExtentMode,
-    _3DSoundSize,
-    _3DMinExtent,
-    _3DPanBlend,
+    Position3D,
+    Rolloff3D,
+    MinDistance3D,
+    MaxDistance3D,
+    ExtentMode3D,
+    SoundSize3D,
+    MinExtent3D,
+    PanBlend3D,
     LfeUpmixEnabled,
     OverallGain,
     SurroundSpeakerMode,
-    _2DHeightBlend,
+    HeightBlend2D,
     AttenuationRange,
     OverrideRange,
 }
@@ -2983,27 +2983,27 @@ impl From<DspPan> for ffi::FMOD_DSP_PAN {
     fn from(value: DspPan) -> ffi::FMOD_DSP_PAN {
         match value {
             DspPan::Mode => ffi::FMOD_DSP_PAN_MODE,
-            DspPan::_2DStereoPosition => ffi::FMOD_DSP_PAN_2D_STEREO_POSITION,
-            DspPan::_2DDirection => ffi::FMOD_DSP_PAN_2D_DIRECTION,
-            DspPan::_2DExtent => ffi::FMOD_DSP_PAN_2D_EXTENT,
-            DspPan::_2DRotation => ffi::FMOD_DSP_PAN_2D_ROTATION,
-            DspPan::_2DLfeLevel => ffi::FMOD_DSP_PAN_2D_LFE_LEVEL,
-            DspPan::_2DStereoMode => ffi::FMOD_DSP_PAN_2D_STEREO_MODE,
-            DspPan::_2DStereoSeparation => ffi::FMOD_DSP_PAN_2D_STEREO_SEPARATION,
-            DspPan::_2DStereoAxis => ffi::FMOD_DSP_PAN_2D_STEREO_AXIS,
+            DspPan::StereoPosition2D => ffi::FMOD_DSP_PAN_2D_STEREO_POSITION,
+            DspPan::Direction2D => ffi::FMOD_DSP_PAN_2D_DIRECTION,
+            DspPan::Extent2D => ffi::FMOD_DSP_PAN_2D_EXTENT,
+            DspPan::Rotation2D => ffi::FMOD_DSP_PAN_2D_ROTATION,
+            DspPan::LfeLevel2D => ffi::FMOD_DSP_PAN_2D_LFE_LEVEL,
+            DspPan::StereoMode2D => ffi::FMOD_DSP_PAN_2D_STEREO_MODE,
+            DspPan::StereoSeparation2D => ffi::FMOD_DSP_PAN_2D_STEREO_SEPARATION,
+            DspPan::StereoAxis2D => ffi::FMOD_DSP_PAN_2D_STEREO_AXIS,
             DspPan::EnabledSpeakers => ffi::FMOD_DSP_PAN_ENABLED_SPEAKERS,
-            DspPan::_3DPosition => ffi::FMOD_DSP_PAN_3D_POSITION,
-            DspPan::_3DRolloff => ffi::FMOD_DSP_PAN_3D_ROLLOFF,
-            DspPan::_3DMinDistance => ffi::FMOD_DSP_PAN_3D_MIN_DISTANCE,
-            DspPan::_3DMaxDistance => ffi::FMOD_DSP_PAN_3D_MAX_DISTANCE,
-            DspPan::_3DExtentMode => ffi::FMOD_DSP_PAN_3D_EXTENT_MODE,
-            DspPan::_3DSoundSize => ffi::FMOD_DSP_PAN_3D_SOUND_SIZE,
-            DspPan::_3DMinExtent => ffi::FMOD_DSP_PAN_3D_MIN_EXTENT,
-            DspPan::_3DPanBlend => ffi::FMOD_DSP_PAN_3D_PAN_BLEND,
+            DspPan::Position3D => ffi::FMOD_DSP_PAN_3D_POSITION,
+            DspPan::Rolloff3D => ffi::FMOD_DSP_PAN_3D_ROLLOFF,
+            DspPan::MinDistance3D => ffi::FMOD_DSP_PAN_3D_MIN_DISTANCE,
+            DspPan::MaxDistance3D => ffi::FMOD_DSP_PAN_3D_MAX_DISTANCE,
+            DspPan::ExtentMode3D => ffi::FMOD_DSP_PAN_3D_EXTENT_MODE,
+            DspPan::SoundSize3D => ffi::FMOD_DSP_PAN_3D_SOUND_SIZE,
+            DspPan::MinExtent3D => ffi::FMOD_DSP_PAN_3D_MIN_EXTENT,
+            DspPan::PanBlend3D => ffi::FMOD_DSP_PAN_3D_PAN_BLEND,
             DspPan::LfeUpmixEnabled => ffi::FMOD_DSP_PAN_LFE_UPMIX_ENABLED,
             DspPan::OverallGain => ffi::FMOD_DSP_PAN_OVERALL_GAIN,
             DspPan::SurroundSpeakerMode => ffi::FMOD_DSP_PAN_SURROUND_SPEAKER_MODE,
-            DspPan::_2DHeightBlend => ffi::FMOD_DSP_PAN_2D_HEIGHT_BLEND,
+            DspPan::HeightBlend2D => ffi::FMOD_DSP_PAN_2D_HEIGHT_BLEND,
             DspPan::AttenuationRange => ffi::FMOD_DSP_PAN_ATTENUATION_RANGE,
             DspPan::OverrideRange => ffi::FMOD_DSP_PAN_OVERRIDE_RANGE,
         }
@@ -3014,27 +3014,27 @@ impl DspPan {
     pub fn from(value: ffi::FMOD_DSP_PAN) -> Result<DspPan, Error> {
         match value {
             ffi::FMOD_DSP_PAN_MODE => Ok(DspPan::Mode),
-            ffi::FMOD_DSP_PAN_2D_STEREO_POSITION => Ok(DspPan::_2DStereoPosition),
-            ffi::FMOD_DSP_PAN_2D_DIRECTION => Ok(DspPan::_2DDirection),
-            ffi::FMOD_DSP_PAN_2D_EXTENT => Ok(DspPan::_2DExtent),
-            ffi::FMOD_DSP_PAN_2D_ROTATION => Ok(DspPan::_2DRotation),
-            ffi::FMOD_DSP_PAN_2D_LFE_LEVEL => Ok(DspPan::_2DLfeLevel),
-            ffi::FMOD_DSP_PAN_2D_STEREO_MODE => Ok(DspPan::_2DStereoMode),
-            ffi::FMOD_DSP_PAN_2D_STEREO_SEPARATION => Ok(DspPan::_2DStereoSeparation),
-            ffi::FMOD_DSP_PAN_2D_STEREO_AXIS => Ok(DspPan::_2DStereoAxis),
+            ffi::FMOD_DSP_PAN_2D_STEREO_POSITION => Ok(DspPan::StereoPosition2D),
+            ffi::FMOD_DSP_PAN_2D_DIRECTION => Ok(DspPan::Direction2D),
+            ffi::FMOD_DSP_PAN_2D_EXTENT => Ok(DspPan::Extent2D),
+            ffi::FMOD_DSP_PAN_2D_ROTATION => Ok(DspPan::Rotation2D),
+            ffi::FMOD_DSP_PAN_2D_LFE_LEVEL => Ok(DspPan::LfeLevel2D),
+            ffi::FMOD_DSP_PAN_2D_STEREO_MODE => Ok(DspPan::StereoMode2D),
+            ffi::FMOD_DSP_PAN_2D_STEREO_SEPARATION => Ok(DspPan::StereoSeparation2D),
+            ffi::FMOD_DSP_PAN_2D_STEREO_AXIS => Ok(DspPan::StereoAxis2D),
             ffi::FMOD_DSP_PAN_ENABLED_SPEAKERS => Ok(DspPan::EnabledSpeakers),
-            ffi::FMOD_DSP_PAN_3D_POSITION => Ok(DspPan::_3DPosition),
-            ffi::FMOD_DSP_PAN_3D_ROLLOFF => Ok(DspPan::_3DRolloff),
-            ffi::FMOD_DSP_PAN_3D_MIN_DISTANCE => Ok(DspPan::_3DMinDistance),
-            ffi::FMOD_DSP_PAN_3D_MAX_DISTANCE => Ok(DspPan::_3DMaxDistance),
-            ffi::FMOD_DSP_PAN_3D_EXTENT_MODE => Ok(DspPan::_3DExtentMode),
-            ffi::FMOD_DSP_PAN_3D_SOUND_SIZE => Ok(DspPan::_3DSoundSize),
-            ffi::FMOD_DSP_PAN_3D_MIN_EXTENT => Ok(DspPan::_3DMinExtent),
-            ffi::FMOD_DSP_PAN_3D_PAN_BLEND => Ok(DspPan::_3DPanBlend),
+            ffi::FMOD_DSP_PAN_3D_POSITION => Ok(DspPan::Position3D),
+            ffi::FMOD_DSP_PAN_3D_ROLLOFF => Ok(DspPan::Rolloff3D),
+            ffi::FMOD_DSP_PAN_3D_MIN_DISTANCE => Ok(DspPan::MinDistance3D),
+            ffi::FMOD_DSP_PAN_3D_MAX_DISTANCE => Ok(DspPan::MaxDistance3D),
+            ffi::FMOD_DSP_PAN_3D_EXTENT_MODE => Ok(DspPan::ExtentMode3D),
+            ffi::FMOD_DSP_PAN_3D_SOUND_SIZE => Ok(DspPan::SoundSize3D),
+            ffi::FMOD_DSP_PAN_3D_MIN_EXTENT => Ok(DspPan::MinExtent3D),
+            ffi::FMOD_DSP_PAN_3D_PAN_BLEND => Ok(DspPan::PanBlend3D),
             ffi::FMOD_DSP_PAN_LFE_UPMIX_ENABLED => Ok(DspPan::LfeUpmixEnabled),
             ffi::FMOD_DSP_PAN_OVERALL_GAIN => Ok(DspPan::OverallGain),
             ffi::FMOD_DSP_PAN_SURROUND_SPEAKER_MODE => Ok(DspPan::SurroundSpeakerMode),
-            ffi::FMOD_DSP_PAN_2D_HEIGHT_BLEND => Ok(DspPan::_2DHeightBlend),
+            ffi::FMOD_DSP_PAN_2D_HEIGHT_BLEND => Ok(DspPan::HeightBlend2D),
             ffi::FMOD_DSP_PAN_ATTENUATION_RANGE => Ok(DspPan::AttenuationRange),
             ffi::FMOD_DSP_PAN_OVERRIDE_RANGE => Ok(DspPan::OverrideRange),
             _ => Err(err_enum!("FMOD_DSP_PAN", value)),
@@ -3044,17 +3044,17 @@ impl DspPan {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspThreeEqCrossoverSlopeType {
-    _12Db,
-    _24Db,
-    _48Db,
+    Slope12Db,
+    Slope24Db,
+    Slope48Db,
 }
 
 impl From<DspThreeEqCrossoverSlopeType> for ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_TYPE {
     fn from(value: DspThreeEqCrossoverSlopeType) -> ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_TYPE {
         match value {
-            DspThreeEqCrossoverSlopeType::_12Db => ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_12DB,
-            DspThreeEqCrossoverSlopeType::_24Db => ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_24DB,
-            DspThreeEqCrossoverSlopeType::_48Db => ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_48DB,
+            DspThreeEqCrossoverSlopeType::Slope12Db => ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_12DB,
+            DspThreeEqCrossoverSlopeType::Slope24Db => ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_24DB,
+            DspThreeEqCrossoverSlopeType::Slope48Db => ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_48DB,
         }
     }
 }
@@ -3064,9 +3064,15 @@ impl DspThreeEqCrossoverSlopeType {
         value: ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_TYPE,
     ) -> Result<DspThreeEqCrossoverSlopeType, Error> {
         match value {
-            ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_12DB => Ok(DspThreeEqCrossoverSlopeType::_12Db),
-            ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_24DB => Ok(DspThreeEqCrossoverSlopeType::_24Db),
-            ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_48DB => Ok(DspThreeEqCrossoverSlopeType::_48Db),
+            ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_12DB => {
+                Ok(DspThreeEqCrossoverSlopeType::Slope12Db)
+            }
+            ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_24DB => {
+                Ok(DspThreeEqCrossoverSlopeType::Slope24Db)
+            }
+            ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_48DB => {
+                Ok(DspThreeEqCrossoverSlopeType::Slope48Db)
+            }
             _ => Err(err_enum!("FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_TYPE", value)),
         }
     }
@@ -3644,13 +3650,13 @@ impl DspTransceiver {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspObjectPan {
-    _3DPosition,
-    _3DRolloff,
-    _3DMinDistance,
-    _3DMaxDistance,
-    _3DExtentMode,
-    _3DSoundSize,
-    _3DMinExtent,
+    Position3D,
+    Rolloff3D,
+    MinDistance3D,
+    MaxDistance3D,
+    ExtentMode3D,
+    SoundSize3D,
+    MinExtent3D,
     OverallGain,
     OutputGain,
     AttenuationRange,
@@ -3660,13 +3666,13 @@ pub enum DspObjectPan {
 impl From<DspObjectPan> for ffi::FMOD_DSP_OBJECTPAN {
     fn from(value: DspObjectPan) -> ffi::FMOD_DSP_OBJECTPAN {
         match value {
-            DspObjectPan::_3DPosition => ffi::FMOD_DSP_OBJECTPAN_3D_POSITION,
-            DspObjectPan::_3DRolloff => ffi::FMOD_DSP_OBJECTPAN_3D_ROLLOFF,
-            DspObjectPan::_3DMinDistance => ffi::FMOD_DSP_OBJECTPAN_3D_MIN_DISTANCE,
-            DspObjectPan::_3DMaxDistance => ffi::FMOD_DSP_OBJECTPAN_3D_MAX_DISTANCE,
-            DspObjectPan::_3DExtentMode => ffi::FMOD_DSP_OBJECTPAN_3D_EXTENT_MODE,
-            DspObjectPan::_3DSoundSize => ffi::FMOD_DSP_OBJECTPAN_3D_SOUND_SIZE,
-            DspObjectPan::_3DMinExtent => ffi::FMOD_DSP_OBJECTPAN_3D_MIN_EXTENT,
+            DspObjectPan::Position3D => ffi::FMOD_DSP_OBJECTPAN_3D_POSITION,
+            DspObjectPan::Rolloff3D => ffi::FMOD_DSP_OBJECTPAN_3D_ROLLOFF,
+            DspObjectPan::MinDistance3D => ffi::FMOD_DSP_OBJECTPAN_3D_MIN_DISTANCE,
+            DspObjectPan::MaxDistance3D => ffi::FMOD_DSP_OBJECTPAN_3D_MAX_DISTANCE,
+            DspObjectPan::ExtentMode3D => ffi::FMOD_DSP_OBJECTPAN_3D_EXTENT_MODE,
+            DspObjectPan::SoundSize3D => ffi::FMOD_DSP_OBJECTPAN_3D_SOUND_SIZE,
+            DspObjectPan::MinExtent3D => ffi::FMOD_DSP_OBJECTPAN_3D_MIN_EXTENT,
             DspObjectPan::OverallGain => ffi::FMOD_DSP_OBJECTPAN_OVERALL_GAIN,
             DspObjectPan::OutputGain => ffi::FMOD_DSP_OBJECTPAN_OUTPUTGAIN,
             DspObjectPan::AttenuationRange => ffi::FMOD_DSP_OBJECTPAN_ATTENUATION_RANGE,
@@ -3678,13 +3684,13 @@ impl From<DspObjectPan> for ffi::FMOD_DSP_OBJECTPAN {
 impl DspObjectPan {
     pub fn from(value: ffi::FMOD_DSP_OBJECTPAN) -> Result<DspObjectPan, Error> {
         match value {
-            ffi::FMOD_DSP_OBJECTPAN_3D_POSITION => Ok(DspObjectPan::_3DPosition),
-            ffi::FMOD_DSP_OBJECTPAN_3D_ROLLOFF => Ok(DspObjectPan::_3DRolloff),
-            ffi::FMOD_DSP_OBJECTPAN_3D_MIN_DISTANCE => Ok(DspObjectPan::_3DMinDistance),
-            ffi::FMOD_DSP_OBJECTPAN_3D_MAX_DISTANCE => Ok(DspObjectPan::_3DMaxDistance),
-            ffi::FMOD_DSP_OBJECTPAN_3D_EXTENT_MODE => Ok(DspObjectPan::_3DExtentMode),
-            ffi::FMOD_DSP_OBJECTPAN_3D_SOUND_SIZE => Ok(DspObjectPan::_3DSoundSize),
-            ffi::FMOD_DSP_OBJECTPAN_3D_MIN_EXTENT => Ok(DspObjectPan::_3DMinExtent),
+            ffi::FMOD_DSP_OBJECTPAN_3D_POSITION => Ok(DspObjectPan::Position3D),
+            ffi::FMOD_DSP_OBJECTPAN_3D_ROLLOFF => Ok(DspObjectPan::Rolloff3D),
+            ffi::FMOD_DSP_OBJECTPAN_3D_MIN_DISTANCE => Ok(DspObjectPan::MinDistance3D),
+            ffi::FMOD_DSP_OBJECTPAN_3D_MAX_DISTANCE => Ok(DspObjectPan::MaxDistance3D),
+            ffi::FMOD_DSP_OBJECTPAN_3D_EXTENT_MODE => Ok(DspObjectPan::ExtentMode3D),
+            ffi::FMOD_DSP_OBJECTPAN_3D_SOUND_SIZE => Ok(DspObjectPan::SoundSize3D),
+            ffi::FMOD_DSP_OBJECTPAN_3D_MIN_EXTENT => Ok(DspObjectPan::MinExtent3D),
             ffi::FMOD_DSP_OBJECTPAN_OVERALL_GAIN => Ok(DspObjectPan::OverallGain),
             ffi::FMOD_DSP_OBJECTPAN_OUTPUTGAIN => Ok(DspObjectPan::OutputGain),
             ffi::FMOD_DSP_OBJECTPAN_ATTENUATION_RANGE => Ok(DspObjectPan::AttenuationRange),
