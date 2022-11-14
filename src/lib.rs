@@ -9393,13 +9393,8 @@ impl Bank {
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_STUDIO_BANK {
         self.pointer
     }
-    pub fn is_valid(&self) -> Result<(), Error> {
-        unsafe {
-            match ffi::FMOD_Studio_Bank_IsValid(self.pointer) {
-                ffi::FMOD_OK => Ok(()),
-                error => Err(err_fmod!("FMOD_Studio_Bank_IsValid", error)),
-            }
-        }
+    pub fn is_valid(&self) -> bool {
+        unsafe { to_bool!(ffi::FMOD_Studio_Bank_IsValid(self.pointer)) }
     }
     pub fn get_id(&self) -> Result<Guid, Error> {
         unsafe {
@@ -9410,17 +9405,24 @@ impl Bank {
             }
         }
     }
-    pub fn get_path(&self, size: i32) -> Result<(String, i32), Error> {
+    pub fn get_path(&self) -> Result<String, Error> {
         unsafe {
-            let path = CString::from_vec_unchecked(b"".to_vec()).into_raw();
             let mut retrieved = i32::default();
-            match ffi::FMOD_Studio_Bank_GetPath(self.pointer, path, size, &mut retrieved) {
-                ffi::FMOD_OK => Ok((
-                    CString::from_raw(path)
-                        .into_string()
-                        .map_err(Error::String)?,
-                    retrieved,
-                )),
+            match ffi::FMOD_Studio_Bank_GetPath(self.pointer, null_mut(), 0, &mut retrieved) {
+                ffi::FMOD_OK => {
+                    let mut buf = vec![0u8; retrieved as usize];
+                    match ffi::FMOD_Studio_Bank_GetPath(
+                        self.pointer,
+                        buf.as_mut_ptr() as *mut _,
+                        retrieved,
+                        &mut retrieved,
+                    ) {
+                        ffi::FMOD_OK => Ok(CString::from_vec_with_nul_unchecked(buf)
+                            .into_string()
+                            .map_err(Error::String)?),
+                        error => Err(err_fmod!("FMOD_Studio_Bank_GetPath", error)),
+                    }
+                }
                 error => Err(err_fmod!("FMOD_Studio_Bank_GetPath", error)),
             }
         }
@@ -9591,13 +9593,8 @@ impl Bus {
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_STUDIO_BUS {
         self.pointer
     }
-    pub fn is_valid(&self) -> Result<(), Error> {
-        unsafe {
-            match ffi::FMOD_Studio_Bus_IsValid(self.pointer) {
-                ffi::FMOD_OK => Ok(()),
-                error => Err(err_fmod!("FMOD_Studio_Bus_IsValid", error)),
-            }
-        }
+    pub fn is_valid(&self) -> bool {
+        unsafe { to_bool!(ffi::FMOD_Studio_Bus_IsValid(self.pointer)) }
     }
     pub fn get_id(&self) -> Result<Guid, Error> {
         unsafe {
@@ -9608,17 +9605,24 @@ impl Bus {
             }
         }
     }
-    pub fn get_path(&self, size: i32) -> Result<(String, i32), Error> {
+    pub fn get_path(&self) -> Result<String, Error> {
         unsafe {
-            let path = CString::from_vec_unchecked(b"".to_vec()).into_raw();
             let mut retrieved = i32::default();
-            match ffi::FMOD_Studio_Bus_GetPath(self.pointer, path, size, &mut retrieved) {
-                ffi::FMOD_OK => Ok((
-                    CString::from_raw(path)
-                        .into_string()
-                        .map_err(Error::String)?,
-                    retrieved,
-                )),
+            match ffi::FMOD_Studio_Bus_GetPath(self.pointer, null_mut(), 0, &mut retrieved) {
+                ffi::FMOD_OK => {
+                    let mut buf = vec![0u8; retrieved as usize];
+                    match ffi::FMOD_Studio_Bus_GetPath(
+                        self.pointer,
+                        buf.as_mut_ptr() as *mut _,
+                        retrieved,
+                        &mut retrieved,
+                    ) {
+                        ffi::FMOD_OK => Ok(CString::from_vec_with_nul_unchecked(buf)
+                            .into_string()
+                            .map_err(Error::String)?),
+                        error => Err(err_fmod!("FMOD_Studio_Bus_GetPath", error)),
+                    }
+                }
                 error => Err(err_fmod!("FMOD_Studio_Bus_GetPath", error)),
             }
         }
@@ -9760,13 +9764,8 @@ impl CommandReplay {
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_STUDIO_COMMANDREPLAY {
         self.pointer
     }
-    pub fn is_valid(&self) -> Result<(), Error> {
-        unsafe {
-            match ffi::FMOD_Studio_CommandReplay_IsValid(self.pointer) {
-                ffi::FMOD_OK => Ok(()),
-                error => Err(err_fmod!("FMOD_Studio_CommandReplay_IsValid", error)),
-            }
-        }
+    pub fn is_valid(&self) -> bool {
+        unsafe { to_bool!(ffi::FMOD_Studio_CommandReplay_IsValid(self.pointer)) }
     }
     pub fn get_system(&self) -> Result<Studio, Error> {
         unsafe {
@@ -10018,13 +10017,8 @@ impl EventDescription {
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_STUDIO_EVENTDESCRIPTION {
         self.pointer
     }
-    pub fn is_valid(&self) -> Result<(), Error> {
-        unsafe {
-            match ffi::FMOD_Studio_EventDescription_IsValid(self.pointer) {
-                ffi::FMOD_OK => Ok(()),
-                error => Err(err_fmod!("FMOD_Studio_EventDescription_IsValid", error)),
-            }
-        }
+    pub fn is_valid(&self) -> bool {
+        unsafe { to_bool!(ffi::FMOD_Studio_EventDescription_IsValid(self.pointer)) }
     }
     pub fn get_id(&self) -> Result<Guid, Error> {
         unsafe {
@@ -10035,22 +10029,29 @@ impl EventDescription {
             }
         }
     }
-    pub fn get_path(&self, size: i32) -> Result<(String, i32), Error> {
+    pub fn get_path(&self) -> Result<String, Error> {
         unsafe {
-            let path = CString::from_vec_unchecked(b"".to_vec()).into_raw();
             let mut retrieved = i32::default();
             match ffi::FMOD_Studio_EventDescription_GetPath(
                 self.pointer,
-                path,
-                size,
+                null_mut(),
+                0,
                 &mut retrieved,
             ) {
-                ffi::FMOD_OK => Ok((
-                    CString::from_raw(path)
-                        .into_string()
-                        .map_err(Error::String)?,
-                    retrieved,
-                )),
+                ffi::FMOD_OK => {
+                    let mut buf = vec![0u8; retrieved as usize];
+                    match ffi::FMOD_Studio_EventDescription_GetPath(
+                        self.pointer,
+                        buf.as_mut_ptr() as *mut _,
+                        retrieved,
+                        &mut retrieved,
+                    ) {
+                        ffi::FMOD_OK => Ok(CString::from_vec_with_nul_unchecked(buf)
+                            .into_string()
+                            .map_err(Error::String)?),
+                        error => Err(err_fmod!("FMOD_Studio_EventDescription_GetPath", error)),
+                    }
+                }
                 error => Err(err_fmod!("FMOD_Studio_EventDescription_GetPath", error)),
             }
         }
@@ -10499,13 +10500,8 @@ impl EventInstance {
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_STUDIO_EVENTINSTANCE {
         self.pointer
     }
-    pub fn is_valid(&self) -> Result<(), Error> {
-        unsafe {
-            match ffi::FMOD_Studio_EventInstance_IsValid(self.pointer) {
-                ffi::FMOD_OK => Ok(()),
-                error => Err(err_fmod!("FMOD_Studio_EventInstance_IsValid", error)),
-            }
-        }
+    pub fn is_valid(&self) -> bool {
+        unsafe { to_bool!(ffi::FMOD_Studio_EventInstance_IsValid(self.pointer)) }
     }
     pub fn get_description(&self) -> Result<EventDescription, Error> {
         unsafe {
@@ -10980,13 +10976,8 @@ impl Studio {
             }
         }
     }
-    pub fn is_valid(&self) -> Result<(), Error> {
-        unsafe {
-            match ffi::FMOD_Studio_System_IsValid(self.pointer) {
-                ffi::FMOD_OK => Ok(()),
-                error => Err(err_fmod!("FMOD_Studio_System_IsValid", error)),
-            }
-        }
+    pub fn is_valid(&self) -> bool {
+        unsafe { to_bool!(ffi::FMOD_Studio_System_IsValid(self.pointer)) }
     }
     pub fn set_advanced_settings(&self, settings: StudioAdvancedSettings) -> Result<(), Error> {
         unsafe {
@@ -11387,23 +11378,32 @@ impl Studio {
             }
         }
     }
-    pub fn lookup_path(&self, id: Guid, size: i32) -> Result<(String, i32), Error> {
+    pub fn lookup_path(&self, id: Guid) -> Result<String, Error> {
         unsafe {
-            let path = CString::from_vec_unchecked(b"".to_vec()).into_raw();
             let mut retrieved = i32::default();
+            let id = id.into();
             match ffi::FMOD_Studio_System_LookupPath(
                 self.pointer,
-                &id.into(),
-                path,
-                size,
+                &id,
+                null_mut(),
+                0,
                 &mut retrieved,
             ) {
-                ffi::FMOD_OK => Ok((
-                    CString::from_raw(path)
-                        .into_string()
-                        .map_err(Error::String)?,
-                    retrieved,
-                )),
+                ffi::FMOD_OK => {
+                    let mut buf = vec![0u8; retrieved as usize];
+                    match ffi::FMOD_Studio_System_LookupPath(
+                        self.pointer,
+                        &id,
+                        buf.as_mut_ptr() as *mut _,
+                        retrieved,
+                        &mut retrieved,
+                    ) {
+                        ffi::FMOD_OK => Ok(CString::from_vec_with_nul_unchecked(buf)
+                            .into_string()
+                            .map_err(Error::String)?),
+                        error => Err(err_fmod!("FMOD_Studio_System_LookupPath", error)),
+                    }
+                }
                 error => Err(err_fmod!("FMOD_Studio_System_LookupPath", error)),
             }
         }
@@ -11500,18 +11500,16 @@ impl Studio {
     }
     pub fn load_bank_memory(
         &self,
-        buffer: &str,
-        length: i32,
-        mode: LoadMemoryMode,
+        buffer: &[u8],
         flags: ffi::FMOD_STUDIO_LOAD_BANK_FLAGS,
     ) -> Result<Bank, Error> {
         unsafe {
             let mut bank = null_mut();
             match ffi::FMOD_Studio_System_LoadBankMemory(
                 self.pointer,
-                CString::new(buffer)?.as_ptr(),
-                length,
-                mode.into(),
+                buffer.as_ptr() as *const std::os::raw::c_char,
+                buffer.len() as std::os::raw::c_int,
+                LoadMemoryMode::Memory.into(),
                 flags,
                 &mut bank,
             ) {
@@ -11764,13 +11762,8 @@ impl Vca {
     pub fn as_mut_ptr(&self) -> *mut ffi::FMOD_STUDIO_VCA {
         self.pointer
     }
-    pub fn is_valid(&self) -> Result<(), Error> {
-        unsafe {
-            match ffi::FMOD_Studio_VCA_IsValid(self.pointer) {
-                ffi::FMOD_OK => Ok(()),
-                error => Err(err_fmod!("FMOD_Studio_VCA_IsValid", error)),
-            }
-        }
+    pub fn is_valid(&self) -> bool {
+        unsafe { to_bool!(ffi::FMOD_Studio_VCA_IsValid(self.pointer)) }
     }
     pub fn get_id(&self) -> Result<Guid, Error> {
         unsafe {
@@ -11781,17 +11774,24 @@ impl Vca {
             }
         }
     }
-    pub fn get_path(&self, size: i32) -> Result<(String, i32), Error> {
+    pub fn get_path(&self) -> Result<String, Error> {
         unsafe {
-            let path = CString::from_vec_unchecked(b"".to_vec()).into_raw();
             let mut retrieved = i32::default();
-            match ffi::FMOD_Studio_VCA_GetPath(self.pointer, path, size, &mut retrieved) {
-                ffi::FMOD_OK => Ok((
-                    CString::from_raw(path)
-                        .into_string()
-                        .map_err(Error::String)?,
-                    retrieved,
-                )),
+            match ffi::FMOD_Studio_VCA_GetPath(self.pointer, null_mut(), 0, &mut retrieved) {
+                ffi::FMOD_OK => {
+                    let mut buf = vec![0u8; retrieved as usize];
+                    match ffi::FMOD_Studio_VCA_GetPath(
+                        self.pointer,
+                        buf.as_mut_ptr() as *mut _,
+                        retrieved,
+                        &mut retrieved,
+                    ) {
+                        ffi::FMOD_OK => Ok(CString::from_vec_with_nul_unchecked(buf)
+                            .into_string()
+                            .map_err(Error::String)?),
+                        error => Err(err_fmod!("FMOD_Studio_VCA_GetPath", error)),
+                    }
+                }
                 error => Err(err_fmod!("FMOD_Studio_VCA_GetPath", error)),
             }
         }
