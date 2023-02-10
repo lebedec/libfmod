@@ -2,6 +2,7 @@
 
 use std::ffi::{c_void, CStr, CString, IntoStringError, NulError};
 use std::mem::size_of;
+use std::os::raw::c_char;
 use std::ptr::{null, null_mut};
 use std::slice;
 
@@ -5511,8 +5512,8 @@ impl Into<ffi::FMOD_DSP_PARAMETER_DESC_DATA> for DspParameterDescData {
 #[derive(Clone)]
 pub struct DspParameterDesc {
     pub type_: DspParameterType,
-    pub name: [i8; 16 as usize],
-    pub label: [i8; 16 as usize],
+    pub name: [c_char; 16 as usize],
+    pub label: [c_char; 16 as usize],
     pub description: String,
     pub union: ffi::FMOD_DSP_PARAMETER_DESC_UNION,
 }
@@ -5735,7 +5736,7 @@ impl Into<ffi::FMOD_DSP_PARAMETER_FFT> for DspParameterFft {
 #[derive(Clone)]
 pub struct DspDescription {
     pub pluginsdkversion: u32,
-    pub name: [i8; 32 as usize],
+    pub name: [c_char; 32 as usize],
     pub version: u32,
     pub numinputbuffers: i32,
     pub numoutputbuffers: i32,

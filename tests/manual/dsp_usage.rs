@@ -40,6 +40,20 @@ fn test_fft_dsp() -> Result<(), Error> {
 }
 
 #[test]
+fn test_dps_description_name() -> Result<(), Error> {
+    let system = System::create()?;
+    system.init(512, FMOD_INIT_NORMAL, None);
+
+    let description = system.get_dsp_info_by_type(DspType::Echo)?;
+    let bytes = description.name.map(|char| char as u8).to_vec();
+    let name = String::from_utf8(bytes[..9].to_vec());
+
+    assert_eq!(name, Ok("FMOD Echo".to_string()));
+
+    system.release()
+}
+
+#[test]
 fn test_channels_dsp() -> Result<(), Error> {
     let system = System::create()?;
     system.init(512, FMOD_INIT_NORMAL, None)?;
