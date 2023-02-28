@@ -68,7 +68,6 @@ fn test_bank_loading_from_memory() -> Result<(), Error> {
     let mut buffer = Vec::new();
     sfx_file.read_to_end(&mut buffer).unwrap();
     let sfx = studio.load_bank_memory(&buffer, FMOD_STUDIO_LOAD_BANK_NORMAL)?;
-
     let ambience_event = studio.get_event("event:/Ambience/Country")?;
     let ambience = ambience_event.create_instance()?;
     ambience.start()?;
@@ -161,6 +160,50 @@ fn test_lookup_path() -> Result<(), Error> {
 
     let path = studio.lookup_path(strings_id)?;
     assert_eq!(path, "bank:/Master.strings");
+
+    studio.release()
+}
+
+#[test]
+fn test_banks_list() -> Result<(), Error> {
+    let studio = Studio::create()?;
+    let system = studio.get_core_system()?;
+    system.set_software_format(None, Some(SpeakerMode::Quad), None)?;
+    studio.initialize(1024, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, None)?;
+    studio.load_bank_file("./data/Master.bank", FMOD_STUDIO_LOAD_BANK_NORMAL)?;
+    studio.load_bank_file("./data/Master.strings.bank", FMOD_STUDIO_LOAD_BANK_NORMAL)?;
+    let banks_count = studio.get_bank_count()?;
+    let banks = studio.get_bank_list(banks_count)?; // take all
+    let banks: Vec<String> = banks.iter().map(|bank| bank.get_path().unwrap()).collect();
+
+    assert_eq!(banks_count, 2);
+    assert_eq!(banks, vec![
+        "bank:/Master".to_string(),
+        "bank:/Master.strings".to_string(),
+    ]);
+
+    studio.release()
+}
+
+#[test]
+fn test_bank_events_list() -> Result<(), Error> {
+    let studio = Studio::create()?;
+    let system = studio.get_core_system()?;
+    system.set_software_format(None, Some(SpeakerMode::Quad), None)?;
+    studio.initialize(1024, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, None)?;
+    studio.load_bank_file("./data/Master.bank", FMOD_STUDIO_LOAD_BANK_NORMAL)?;
+    studio.load_bank_file("./data/Master.strings.bank", FMOD_STUDIO_LOAD_BANK_NORMAL)?;
+    let sfx = studio.load_bank_file("./data/SFX.bank", FMOD_STUDIO_LOAD_BANK_NORMAL)?;
+    let count = sfx.get_event_count()?;
+    let events = sfx.get_event_list(3)?; // take first 3
+    let events: Vec<String> = events.iter().map(|event| event.get_path().unwrap()).collect();
+
+    assert_eq!(count, 18);
+    assert_eq!(events, vec![
+        "event:/Character/Player Footsteps".to_string(),
+        "event:/Character/Door Open".to_string(),
+        "snapshot:/Health Low".to_string(),
+    ]);
 
     studio.release()
 }

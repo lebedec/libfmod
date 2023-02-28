@@ -9512,13 +9512,21 @@ impl Bank {
             }
         }
     }
-    pub fn get_event_list(&self, capacity: i32) -> Result<(EventDescription, i32), Error> {
+    pub fn get_event_list(&self, capacity: i32) -> Result<Vec<EventDescription>, Error> {
         unsafe {
-            let mut array = null_mut();
+            let mut array = vec![null_mut(); capacity as usize];
             let mut count = i32::default();
-            match ffi::FMOD_Studio_Bank_GetEventList(self.pointer, &mut array, capacity, &mut count)
-            {
-                ffi::FMOD_OK => Ok((EventDescription::from(array), count)),
+            match ffi::FMOD_Studio_Bank_GetEventList(
+                self.pointer,
+                array.as_mut_ptr(),
+                capacity,
+                &mut count,
+            ) {
+                ffi::FMOD_OK => Ok(array
+                    .into_iter()
+                    .take(count as usize)
+                    .map(EventDescription::from)
+                    .collect()),
                 error => Err(err_fmod!("FMOD_Studio_Bank_GetEventList", error)),
             }
         }
@@ -9532,12 +9540,21 @@ impl Bank {
             }
         }
     }
-    pub fn get_bus_list(&self, capacity: i32) -> Result<(Bus, i32), Error> {
+    pub fn get_bus_list(&self, capacity: i32) -> Result<Vec<Bus>, Error> {
         unsafe {
-            let mut array = null_mut();
+            let mut array = vec![null_mut(); capacity as usize];
             let mut count = i32::default();
-            match ffi::FMOD_Studio_Bank_GetBusList(self.pointer, &mut array, capacity, &mut count) {
-                ffi::FMOD_OK => Ok((Bus::from(array), count)),
+            match ffi::FMOD_Studio_Bank_GetBusList(
+                self.pointer,
+                array.as_mut_ptr(),
+                capacity,
+                &mut count,
+            ) {
+                ffi::FMOD_OK => Ok(array
+                    .into_iter()
+                    .take(count as usize)
+                    .map(Bus::from)
+                    .collect()),
                 error => Err(err_fmod!("FMOD_Studio_Bank_GetBusList", error)),
             }
         }
@@ -9551,12 +9568,21 @@ impl Bank {
             }
         }
     }
-    pub fn get_vca_list(&self, capacity: i32) -> Result<(Vca, i32), Error> {
+    pub fn get_vca_list(&self, capacity: i32) -> Result<Vec<Vca>, Error> {
         unsafe {
-            let mut array = null_mut();
+            let mut array = vec![null_mut(); capacity as usize];
             let mut count = i32::default();
-            match ffi::FMOD_Studio_Bank_GetVCAList(self.pointer, &mut array, capacity, &mut count) {
-                ffi::FMOD_OK => Ok((Vca::from(array), count)),
+            match ffi::FMOD_Studio_Bank_GetVCAList(
+                self.pointer,
+                array.as_mut_ptr(),
+                capacity,
+                &mut count,
+            ) {
+                ffi::FMOD_OK => Ok(array
+                    .into_iter()
+                    .take(count as usize)
+                    .map(Vca::from)
+                    .collect()),
                 error => Err(err_fmod!("FMOD_Studio_Bank_GetVCAList", error)),
             }
         }
@@ -10388,17 +10414,21 @@ impl EventDescription {
             }
         }
     }
-    pub fn get_instance_list(&self, capacity: i32) -> Result<(EventInstance, i32), Error> {
+    pub fn get_instance_list(&self, capacity: i32) -> Result<Vec<EventInstance>, Error> {
         unsafe {
-            let mut array = null_mut();
+            let mut array = vec![null_mut(); capacity as usize];
             let mut count = i32::default();
             match ffi::FMOD_Studio_EventDescription_GetInstanceList(
                 self.pointer,
-                &mut array,
+                array.as_mut_ptr(),
                 capacity,
                 &mut count,
             ) {
-                ffi::FMOD_OK => Ok((EventInstance::from(array), count)),
+                ffi::FMOD_OK => Ok(array
+                    .into_iter()
+                    .take(count as usize)
+                    .map(EventInstance::from)
+                    .collect()),
                 error => Err(err_fmod!(
                     "FMOD_Studio_EventDescription_GetInstanceList",
                     error
@@ -11631,17 +11661,21 @@ impl Studio {
             }
         }
     }
-    pub fn get_bank_list(&self, capacity: i32) -> Result<(Bank, i32), Error> {
+    pub fn get_bank_list(&self, capacity: i32) -> Result<Vec<Bank>, Error> {
         unsafe {
-            let mut array = null_mut();
+            let mut array = vec![null_mut(); capacity as usize];
             let mut count = i32::default();
             match ffi::FMOD_Studio_System_GetBankList(
                 self.pointer,
-                &mut array,
+                array.as_mut_ptr(),
                 capacity,
                 &mut count,
             ) {
-                ffi::FMOD_OK => Ok((Bank::from(array), count)),
+                ffi::FMOD_OK => Ok(array
+                    .into_iter()
+                    .take(count as usize)
+                    .map(Bank::from)
+                    .collect()),
                 error => Err(err_fmod!("FMOD_Studio_System_GetBankList", error)),
             }
         }
@@ -11661,17 +11695,22 @@ impl Studio {
     pub fn get_parameter_description_list(
         &self,
         capacity: i32,
-    ) -> Result<(ParameterDescription, i32), Error> {
+    ) -> Result<Vec<ParameterDescription>, Error> {
         unsafe {
-            let mut array = ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION::default();
+            let mut array =
+                vec![ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION::default(); capacity as usize];
             let mut count = i32::default();
             match ffi::FMOD_Studio_System_GetParameterDescriptionList(
                 self.pointer,
-                &mut array,
+                array.as_mut_ptr(),
                 capacity,
                 &mut count,
             ) {
-                ffi::FMOD_OK => Ok((ParameterDescription::try_from(array)?, count)),
+                ffi::FMOD_OK => Ok(array
+                    .into_iter()
+                    .take(count as usize)
+                    .map(ParameterDescription::try_from)
+                    .collect::<Result<_, Error>>()?),
                 error => Err(err_fmod!(
                     "FMOD_Studio_System_GetParameterDescriptionList",
                     error
