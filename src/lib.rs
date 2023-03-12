@@ -1,6 +1,7 @@
 #![allow(unused_unsafe)]
 
 use std::ffi::{c_void, CStr, CString, IntoStringError, NulError};
+use std::fmt::{Display, Formatter};
 use std::mem::size_of;
 use std::os::raw::c_char;
 use std::ptr::{null, null_mut};
@@ -23,6 +24,30 @@ pub enum Error {
     StringNul(NulError),
     NotDspFft,
 }
+
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::Fmod { function,code,message } => {
+                write!(f, "{}: {} ({})", function, message, code)
+            }
+            Error::EnumBindgen { enumeration, value } => {
+                write!(f, "{}: {}", enumeration, value)
+            }
+            Error::String(error) => {
+                write!(f, "{}", error)
+            }
+            Error::StringNul(error) => {
+                write!(f, "{}", error)
+            }
+            Error::NotDspFft => {
+                write!(f, "NotDspFft")
+            }
+        }
+    }
+}
+
+impl std::error::Error for Error {}
 
 impl From<NulError> for Error {
     fn from(error: NulError) -> Self {
