@@ -1,6 +1,7 @@
 #![allow(unused_unsafe)]
 
 use std::ffi::{c_void, CStr, CString, IntoStringError, NulError};
+use std::fmt::{Display, Formatter};
 use std::mem::size_of;
 use std::os::raw::c_char;
 use std::ptr::{null, null_mut};
@@ -23,6 +24,41 @@ pub enum Error {
     StringNul(NulError),
     NotDspFft,
 }
+
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::Fmod {
+                function,
+                code,
+                message,
+            } => {
+                write!(f, "{}: {} ({})", function, message, code)
+            }
+            Error::EnumBindgen { enumeration, value } => {
+                write!(
+                    f,
+                    "FMOD returns unexpected value {} for {} enum",
+                    value, enumeration
+                )
+            }
+            Error::String(_) => {
+                write!(f, "invalid UTF-8 when converting C string")
+            }
+            Error::StringNul(_) => {
+                write!(
+                    f,
+                    "nul byte was found in the middle, C strings can't contain it"
+                )
+            }
+            Error::NotDspFft => {
+                write!(f, "trying get FFT from DSP which not FFT")
+            }
+        }
+    }
+}
+
+impl std::error::Error for Error {}
 
 impl From<NulError> for Error {
     fn from(error: NulError) -> Self {

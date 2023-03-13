@@ -40,6 +40,21 @@ fn test_fft_dsp() -> Result<(), Error> {
 }
 
 #[test]
+fn test_fft_from_type_mismatched_dsp() -> Result<(), Error> {
+    let system = System::create()?;
+    system.init(512, FMOD_INIT_NORMAL, None)?;
+
+    let sound = system.create_sound("./data/beep.wav", FMOD_DEFAULT, None)?;
+    let channel = system.play_sound(sound, None, false)?;
+    let echo_dsp = system.create_dsp_by_type(DspType::Echo)?;
+    channel.add_dsp(0, echo_dsp)?;
+    let fft = DspParameterFft::try_from(echo_dsp);
+    assert_eq!("trying get FFT from DSP which not FFT", format!("{}", fft.err().unwrap()));
+
+    system.release()
+}
+
+#[test]
 fn test_dps_description_name() -> Result<(), Error> {
     let system = System::create()?;
     system.init(512, FMOD_INIT_NORMAL, None);
