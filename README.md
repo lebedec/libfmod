@@ -43,6 +43,12 @@ api\studio\lib\x64\fmodstudio_vc.lib
 
 And then rename `fmod_vc.lib` and `fmodstudio_vc.lib` to `fmod.lib` and `fmodstudio.lib` accordingly.
 
+#### Features
+
+You can enable or disable wrapper features depending on your needs:
+
+- `flags` provides C-style flags with ergonomic Rust API based on [bitflags](https://crates.io/crates/bitflags) crate
+
 #### Getting Started
 
 The simplest way to get started is to initialize the FMOD system, load a sound, and play it.
@@ -50,13 +56,12 @@ Playing a sound does not block the application, all functions execute immediatel
 finish.
 
 ```rust
-use libfmod::{Error, System};
-use libfmod::ffi::{FMOD_DEFAULT, FMOD_INIT_NORMAL};
+use libfmod::{Error, System, Init, Mode};
 
 fn test_playing_sound() -> Result<(), Error> {
     let system = System::create()?;
-    system.init(512, FMOD_INIT_NORMAL, None)?;
-    let sound = system.create_sound("./data/heartbeat.ogg", FMOD_DEFAULT, None)?;
+    system.init(512, Init::NORMAL, None)?;
+    let sound = system.create_sound("./data/heartbeat.ogg", Mode::DEFAULT, None)?;
     let channel = system.play_sound(sound, None, false)?;
     while channel.is_playing()? {
         // do something else

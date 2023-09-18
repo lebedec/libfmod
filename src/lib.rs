@@ -8,6 +8,11 @@ use std::ptr::{null, null_mut};
 use std::slice;
 
 pub mod ffi;
+#[cfg(feature = "flags")]
+mod flags;
+
+#[cfg(feature = "flags")]
+pub use flags::*;
 
 #[derive(Debug)]
 pub enum Error {
@@ -6145,6 +6150,10 @@ pub struct Channel {
     pointer: *mut ffi::FMOD_CHANNEL,
 }
 
+unsafe impl Send for Channel {}
+
+unsafe impl Sync for Channel {}
+
 impl Channel {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_CHANNEL) -> Self {
@@ -6299,9 +6308,9 @@ impl Channel {
             }
         }
     }
-    pub fn set_mode(&self, mode: ffi::FMOD_MODE) -> Result<(), Error> {
+    pub fn set_mode(&self, mode: impl Into<ffi::FMOD_MODE>) -> Result<(), Error> {
         unsafe {
-            match ffi::FMOD_Channel_SetMode(self.pointer, mode) {
+            match ffi::FMOD_Channel_SetMode(self.pointer, mode.into()) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Channel_SetMode", error)),
             }
@@ -6829,18 +6838,22 @@ impl Channel {
             }
         }
     }
-    pub fn set_position(&self, position: u32, postype: ffi::FMOD_TIMEUNIT) -> Result<(), Error> {
+    pub fn set_position(
+        &self,
+        position: u32,
+        postype: impl Into<ffi::FMOD_TIMEUNIT>,
+    ) -> Result<(), Error> {
         unsafe {
-            match ffi::FMOD_Channel_SetPosition(self.pointer, position, postype) {
+            match ffi::FMOD_Channel_SetPosition(self.pointer, position, postype.into()) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Channel_SetPosition", error)),
             }
         }
     }
-    pub fn get_position(&self, postype: ffi::FMOD_TIMEUNIT) -> Result<u32, Error> {
+    pub fn get_position(&self, postype: impl Into<ffi::FMOD_TIMEUNIT>) -> Result<u32, Error> {
         unsafe {
             let mut position = u32::default();
-            match ffi::FMOD_Channel_GetPosition(self.pointer, &mut position, postype) {
+            match ffi::FMOD_Channel_GetPosition(self.pointer, &mut position, postype.into()) {
                 ffi::FMOD_OK => Ok(position),
                 error => Err(err_fmod!("FMOD_Channel_GetPosition", error)),
             }
@@ -6883,17 +6896,17 @@ impl Channel {
     pub fn set_loop_points(
         &self,
         loopstart: u32,
-        loopstarttype: ffi::FMOD_TIMEUNIT,
+        loopstarttype: impl Into<ffi::FMOD_TIMEUNIT>,
         loopend: u32,
-        loopendtype: ffi::FMOD_TIMEUNIT,
+        loopendtype: impl Into<ffi::FMOD_TIMEUNIT>,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Channel_SetLoopPoints(
                 self.pointer,
                 loopstart,
-                loopstarttype,
+                loopstarttype.into(),
                 loopend,
-                loopendtype,
+                loopendtype.into(),
             ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Channel_SetLoopPoints", error)),
@@ -6902,8 +6915,8 @@ impl Channel {
     }
     pub fn get_loop_points(
         &self,
-        loopstarttype: ffi::FMOD_TIMEUNIT,
-        loopendtype: ffi::FMOD_TIMEUNIT,
+        loopstarttype: impl Into<ffi::FMOD_TIMEUNIT>,
+        loopendtype: impl Into<ffi::FMOD_TIMEUNIT>,
     ) -> Result<(u32, u32), Error> {
         unsafe {
             let mut loopstart = u32::default();
@@ -6911,9 +6924,9 @@ impl Channel {
             match ffi::FMOD_Channel_GetLoopPoints(
                 self.pointer,
                 &mut loopstart,
-                loopstarttype,
+                loopstarttype.into(),
                 &mut loopend,
-                loopendtype,
+                loopendtype.into(),
             ) {
                 ffi::FMOD_OK => Ok((loopstart, loopend)),
                 error => Err(err_fmod!("FMOD_Channel_GetLoopPoints", error)),
@@ -6954,6 +6967,10 @@ pub struct ChannelControl {
     pointer: *mut ffi::FMOD_CHANNELCONTROL,
 }
 
+unsafe impl Send for ChannelControl {}
+
+unsafe impl Sync for ChannelControl {}
+
 impl ChannelControl {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_CHANNELCONTROL) -> Self {
@@ -6969,6 +6986,10 @@ impl ChannelControl {
 pub struct ChannelGroup {
     pointer: *mut ffi::FMOD_CHANNELGROUP,
 }
+
+unsafe impl Send for ChannelGroup {}
+
+unsafe impl Sync for ChannelGroup {}
 
 impl ChannelGroup {
     #[inline]
@@ -7124,9 +7145,9 @@ impl ChannelGroup {
             }
         }
     }
-    pub fn set_mode(&self, mode: ffi::FMOD_MODE) -> Result<(), Error> {
+    pub fn set_mode(&self, mode: impl Into<ffi::FMOD_MODE>) -> Result<(), Error> {
         unsafe {
-            match ffi::FMOD_ChannelGroup_SetMode(self.pointer, mode) {
+            match ffi::FMOD_ChannelGroup_SetMode(self.pointer, mode.into()) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_ChannelGroup_SetMode", error)),
             }
@@ -7724,6 +7745,10 @@ pub struct Dsp {
     pointer: *mut ffi::FMOD_DSP,
 }
 
+unsafe impl Send for Dsp {}
+
+unsafe impl Sync for Dsp {}
+
 impl Dsp {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_DSP) -> Self {
@@ -7884,14 +7909,14 @@ impl Dsp {
     }
     pub fn set_channel_format(
         &self,
-        channelmask: ffi::FMOD_CHANNELMASK,
+        channelmask: impl Into<ffi::FMOD_CHANNELMASK>,
         numchannels: i32,
         source_speakermode: SpeakerMode,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_DSP_SetChannelFormat(
                 self.pointer,
-                channelmask,
+                channelmask.into(),
                 numchannels,
                 source_speakermode.into(),
             ) {
@@ -7922,7 +7947,7 @@ impl Dsp {
     }
     pub fn get_output_channel_format(
         &self,
-        inmask: ffi::FMOD_CHANNELMASK,
+        inmask: impl Into<ffi::FMOD_CHANNELMASK>,
         inchannels: i32,
         inspeakermode: SpeakerMode,
     ) -> Result<(ffi::FMOD_CHANNELMASK, i32, SpeakerMode), Error> {
@@ -7932,7 +7957,7 @@ impl Dsp {
             let mut outspeakermode = ffi::FMOD_SPEAKERMODE::default();
             match ffi::FMOD_DSP_GetOutputChannelFormat(
                 self.pointer,
-                inmask,
+                inmask.into(),
                 inchannels,
                 inspeakermode.into(),
                 &mut outmask,
@@ -8246,6 +8271,10 @@ pub struct DspConnection {
     pointer: *mut ffi::FMOD_DSPCONNECTION,
 }
 
+unsafe impl Send for DspConnection {}
+
+unsafe impl Sync for DspConnection {}
+
 impl DspConnection {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_DSPCONNECTION) -> Self {
@@ -8359,6 +8388,10 @@ impl DspConnection {
 pub struct Geometry {
     pointer: *mut ffi::FMOD_GEOMETRY,
 }
+
+unsafe impl Send for Geometry {}
+
+unsafe impl Sync for Geometry {}
 
 impl Geometry {
     #[inline]
@@ -8607,6 +8640,10 @@ pub struct Polygon {
     pointer: *mut ffi::FMOD_POLYGON,
 }
 
+unsafe impl Send for Polygon {}
+
+unsafe impl Sync for Polygon {}
+
 impl Polygon {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_POLYGON) -> Self {
@@ -8622,6 +8659,10 @@ impl Polygon {
 pub struct Reverb3d {
     pointer: *mut ffi::FMOD_REVERB3D,
 }
+
+unsafe impl Send for Reverb3d {}
+
+unsafe impl Sync for Reverb3d {}
 
 impl Reverb3d {
     #[inline]
@@ -8733,6 +8774,10 @@ impl Reverb3d {
 pub struct Sound {
     pointer: *mut ffi::FMOD_SOUND,
 }
+
+unsafe impl Send for Sound {}
+
+unsafe impl Sync for Sound {}
 
 impl Sound {
     #[inline]
@@ -8920,10 +8965,10 @@ impl Sound {
             }
         }
     }
-    pub fn get_length(&self, lengthtype: ffi::FMOD_TIMEUNIT) -> Result<u32, Error> {
+    pub fn get_length(&self, lengthtype: impl Into<ffi::FMOD_TIMEUNIT>) -> Result<u32, Error> {
         unsafe {
             let mut length = u32::default();
-            match ffi::FMOD_Sound_GetLength(self.pointer, &mut length, lengthtype) {
+            match ffi::FMOD_Sound_GetLength(self.pointer, &mut length, lengthtype.into()) {
                 ffi::FMOD_OK => Ok(length),
                 error => Err(err_fmod!("FMOD_Sound_GetLength", error)),
             }
@@ -9064,7 +9109,7 @@ impl Sound {
         &self,
         point: SyncPoint,
         namelen: i32,
-        offsettype: ffi::FMOD_TIMEUNIT,
+        offsettype: impl Into<ffi::FMOD_TIMEUNIT>,
     ) -> Result<(String, u32), Error> {
         unsafe {
             let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
@@ -9075,7 +9120,7 @@ impl Sound {
                 name,
                 namelen,
                 &mut offset,
-                offsettype,
+                offsettype.into(),
             ) {
                 ffi::FMOD_OK => Ok((
                     CString::from_raw(name)
@@ -9090,7 +9135,7 @@ impl Sound {
     pub fn add_sync_point(
         &self,
         offset: u32,
-        offsettype: ffi::FMOD_TIMEUNIT,
+        offsettype: impl Into<ffi::FMOD_TIMEUNIT>,
         name: Option<String>,
     ) -> Result<SyncPoint, Error> {
         unsafe {
@@ -9098,7 +9143,7 @@ impl Sound {
             match ffi::FMOD_Sound_AddSyncPoint(
                 self.pointer,
                 offset,
-                offsettype,
+                offsettype.into(),
                 name.map(|value| CString::new(value).map(|value| value.as_ptr()))
                     .unwrap_or(Ok(null_mut()))?,
                 &mut point,
@@ -9116,9 +9161,9 @@ impl Sound {
             }
         }
     }
-    pub fn set_mode(&self, mode: ffi::FMOD_MODE) -> Result<(), Error> {
+    pub fn set_mode(&self, mode: impl Into<ffi::FMOD_MODE>) -> Result<(), Error> {
         unsafe {
-            match ffi::FMOD_Sound_SetMode(self.pointer, mode) {
+            match ffi::FMOD_Sound_SetMode(self.pointer, mode.into()) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Sound_SetMode", error)),
             }
@@ -9153,17 +9198,17 @@ impl Sound {
     pub fn set_loop_points(
         &self,
         loopstart: u32,
-        loopstarttype: ffi::FMOD_TIMEUNIT,
+        loopstarttype: impl Into<ffi::FMOD_TIMEUNIT>,
         loopend: u32,
-        loopendtype: ffi::FMOD_TIMEUNIT,
+        loopendtype: impl Into<ffi::FMOD_TIMEUNIT>,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Sound_SetLoopPoints(
                 self.pointer,
                 loopstart,
-                loopstarttype,
+                loopstarttype.into(),
                 loopend,
-                loopendtype,
+                loopendtype.into(),
             ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Sound_SetLoopPoints", error)),
@@ -9172,8 +9217,8 @@ impl Sound {
     }
     pub fn get_loop_points(
         &self,
-        loopstarttype: ffi::FMOD_TIMEUNIT,
-        loopendtype: ffi::FMOD_TIMEUNIT,
+        loopstarttype: impl Into<ffi::FMOD_TIMEUNIT>,
+        loopendtype: impl Into<ffi::FMOD_TIMEUNIT>,
     ) -> Result<(u32, u32), Error> {
         unsafe {
             let mut loopstart = u32::default();
@@ -9181,9 +9226,9 @@ impl Sound {
             match ffi::FMOD_Sound_GetLoopPoints(
                 self.pointer,
                 &mut loopstart,
-                loopstarttype,
+                loopstarttype.into(),
                 &mut loopend,
-                loopendtype,
+                loopendtype.into(),
             ) {
                 ffi::FMOD_OK => Ok((loopstart, loopend)),
                 error => Err(err_fmod!("FMOD_Sound_GetLoopPoints", error)),
@@ -9256,6 +9301,10 @@ impl Sound {
 pub struct SoundGroup {
     pointer: *mut ffi::FMOD_SOUNDGROUP,
 }
+
+unsafe impl Send for SoundGroup {}
+
+unsafe impl Sync for SoundGroup {}
 
 impl SoundGroup {
     #[inline]
@@ -9420,6 +9469,10 @@ impl SoundGroup {
 pub struct Bank {
     pointer: *mut ffi::FMOD_STUDIO_BANK,
 }
+
+unsafe impl Send for Bank {}
+
+unsafe impl Sync for Bank {}
 
 impl Bank {
     #[inline]
@@ -9647,6 +9700,10 @@ pub struct Bus {
     pointer: *mut ffi::FMOD_STUDIO_BUS,
 }
 
+unsafe impl Send for Bus {}
+
+unsafe impl Sync for Bus {}
+
 impl Bus {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_STUDIO_BUS) -> Self {
@@ -9817,6 +9874,10 @@ impl Bus {
 pub struct CommandReplay {
     pointer: *mut ffi::FMOD_STUDIO_COMMANDREPLAY,
 }
+
+unsafe impl Send for CommandReplay {}
+
+unsafe impl Sync for CommandReplay {}
 
 impl CommandReplay {
     #[inline]
@@ -10070,6 +10131,10 @@ impl CommandReplay {
 pub struct EventDescription {
     pointer: *mut ffi::FMOD_STUDIO_EVENTDESCRIPTION,
 }
+
+unsafe impl Send for EventDescription {}
+
+unsafe impl Sync for EventDescription {}
 
 impl EventDescription {
     #[inline]
@@ -10521,13 +10586,13 @@ impl EventDescription {
     pub fn set_callback(
         &self,
         callback: ffi::FMOD_STUDIO_EVENT_CALLBACK,
-        callbackmask: ffi::FMOD_STUDIO_EVENT_CALLBACK_TYPE,
+        callbackmask: impl Into<ffi::FMOD_STUDIO_EVENT_CALLBACK_TYPE>,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Studio_EventDescription_SetCallback(
                 self.pointer,
                 callback,
-                callbackmask,
+                callbackmask.into(),
             ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Studio_EventDescription_SetCallback", error)),
@@ -10557,6 +10622,10 @@ impl EventDescription {
 pub struct EventInstance {
     pointer: *mut ffi::FMOD_STUDIO_EVENTINSTANCE,
 }
+
+unsafe impl Send for EventInstance {}
+
+unsafe impl Sync for EventInstance {}
 
 impl EventInstance {
     #[inline]
@@ -10969,10 +11038,14 @@ impl EventInstance {
     pub fn set_callback(
         &self,
         callback: ffi::FMOD_STUDIO_EVENT_CALLBACK,
-        callbackmask: ffi::FMOD_STUDIO_EVENT_CALLBACK_TYPE,
+        callbackmask: impl Into<ffi::FMOD_STUDIO_EVENT_CALLBACK_TYPE>,
     ) -> Result<(), Error> {
         unsafe {
-            match ffi::FMOD_Studio_EventInstance_SetCallback(self.pointer, callback, callbackmask) {
+            match ffi::FMOD_Studio_EventInstance_SetCallback(
+                self.pointer,
+                callback,
+                callbackmask.into(),
+            ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Studio_EventInstance_SetCallback", error)),
             }
@@ -11025,6 +11098,10 @@ pub struct Studio {
     pointer: *mut ffi::FMOD_STUDIO_SYSTEM,
 }
 
+unsafe impl Send for Studio {}
+
+unsafe impl Sync for Studio {}
+
 impl Studio {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_STUDIO_SYSTEM) -> Self {
@@ -11066,16 +11143,16 @@ impl Studio {
     pub fn initialize(
         &self,
         maxchannels: i32,
-        studioflags: ffi::FMOD_STUDIO_INITFLAGS,
-        flags: ffi::FMOD_INITFLAGS,
+        studioflags: impl Into<ffi::FMOD_STUDIO_INITFLAGS>,
+        flags: impl Into<ffi::FMOD_INITFLAGS>,
         extradriverdata: Option<*mut c_void>,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Studio_System_Initialize(
                 self.pointer,
                 maxchannels,
-                studioflags,
-                flags,
+                studioflags.into(),
+                flags.into(),
                 extradriverdata.unwrap_or(null_mut()),
             ) {
                 ffi::FMOD_OK => Ok(()),
@@ -11550,14 +11627,14 @@ impl Studio {
     pub fn load_bank_file(
         &self,
         filename: &str,
-        flags: ffi::FMOD_STUDIO_LOAD_BANK_FLAGS,
+        flags: impl Into<ffi::FMOD_STUDIO_LOAD_BANK_FLAGS>,
     ) -> Result<Bank, Error> {
         unsafe {
             let mut bank = null_mut();
             match ffi::FMOD_Studio_System_LoadBankFile(
                 self.pointer,
                 CString::new(filename)?.as_ptr(),
-                flags,
+                flags.into(),
                 &mut bank,
             ) {
                 ffi::FMOD_OK => Ok(Bank::from(bank)),
@@ -11568,7 +11645,7 @@ impl Studio {
     pub fn load_bank_memory(
         &self,
         buffer: &[u8],
-        flags: ffi::FMOD_STUDIO_LOAD_BANK_FLAGS,
+        flags: impl Into<ffi::FMOD_STUDIO_LOAD_BANK_FLAGS>,
     ) -> Result<Bank, Error> {
         unsafe {
             let mut bank = null_mut();
@@ -11577,7 +11654,7 @@ impl Studio {
                 buffer.as_ptr() as *const std::os::raw::c_char,
                 buffer.len() as std::os::raw::c_int,
                 LoadMemoryMode::Memory.into(),
-                flags,
+                flags.into(),
                 &mut bank,
             ) {
                 ffi::FMOD_OK => Ok(Bank::from(bank)),
@@ -11588,14 +11665,14 @@ impl Studio {
     pub fn load_bank_custom(
         &self,
         info: BankInfo,
-        flags: ffi::FMOD_STUDIO_LOAD_BANK_FLAGS,
+        flags: impl Into<ffi::FMOD_STUDIO_LOAD_BANK_FLAGS>,
     ) -> Result<Bank, Error> {
         unsafe {
             let mut bank = null_mut();
             match ffi::FMOD_Studio_System_LoadBankCustom(
                 self.pointer,
                 &info.into(),
-                flags,
+                flags.into(),
                 &mut bank,
             ) {
                 ffi::FMOD_OK => Ok(Bank::from(bank)),
@@ -11649,13 +11726,13 @@ impl Studio {
     pub fn start_command_capture(
         &self,
         filename: &str,
-        flags: ffi::FMOD_STUDIO_COMMANDCAPTURE_FLAGS,
+        flags: impl Into<ffi::FMOD_STUDIO_COMMANDCAPTURE_FLAGS>,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_Studio_System_StartCommandCapture(
                 self.pointer,
                 CString::new(filename)?.as_ptr(),
-                flags,
+                flags.into(),
             ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Studio_System_StartCommandCapture", error)),
@@ -11673,14 +11750,14 @@ impl Studio {
     pub fn load_command_replay(
         &self,
         filename: &str,
-        flags: ffi::FMOD_STUDIO_COMMANDREPLAY_FLAGS,
+        flags: impl Into<ffi::FMOD_STUDIO_COMMANDREPLAY_FLAGS>,
     ) -> Result<CommandReplay, Error> {
         unsafe {
             let mut replay = null_mut();
             match ffi::FMOD_Studio_System_LoadCommandReplay(
                 self.pointer,
                 CString::new(filename)?.as_ptr(),
-                flags,
+                flags.into(),
                 &mut replay,
             ) {
                 ffi::FMOD_OK => Ok(CommandReplay::from(replay)),
@@ -11787,10 +11864,10 @@ impl Studio {
     pub fn set_callback(
         &self,
         callback: ffi::FMOD_STUDIO_SYSTEM_CALLBACK,
-        callbackmask: ffi::FMOD_STUDIO_SYSTEM_CALLBACK_TYPE,
+        callbackmask: impl Into<ffi::FMOD_STUDIO_SYSTEM_CALLBACK_TYPE>,
     ) -> Result<(), Error> {
         unsafe {
-            match ffi::FMOD_Studio_System_SetCallback(self.pointer, callback, callbackmask) {
+            match ffi::FMOD_Studio_System_SetCallback(self.pointer, callback, callbackmask.into()) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Studio_System_SetCallback", error)),
             }
@@ -11828,6 +11905,10 @@ impl Studio {
 pub struct Vca {
     pointer: *mut ffi::FMOD_STUDIO_VCA,
 }
+
+unsafe impl Send for Vca {}
+
+unsafe impl Sync for Vca {}
 
 impl Vca {
     #[inline]
@@ -11897,6 +11978,10 @@ pub struct SyncPoint {
     pointer: *mut ffi::FMOD_SYNCPOINT,
 }
 
+unsafe impl Send for SyncPoint {}
+
+unsafe impl Sync for SyncPoint {}
+
 impl SyncPoint {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_SYNCPOINT) -> Self {
@@ -11912,6 +11997,10 @@ impl SyncPoint {
 pub struct System {
     pointer: *mut ffi::FMOD_SYSTEM,
 }
+
+unsafe impl Send for System {}
+
+unsafe impl Sync for System {}
 
 impl System {
     #[inline]
@@ -12155,10 +12244,10 @@ impl System {
     pub fn set_callback(
         &self,
         callback: ffi::FMOD_SYSTEM_CALLBACK,
-        callbackmask: ffi::FMOD_SYSTEM_CALLBACK_TYPE,
+        callbackmask: impl Into<ffi::FMOD_SYSTEM_CALLBACK_TYPE>,
     ) -> Result<(), Error> {
         unsafe {
-            match ffi::FMOD_System_SetCallback(self.pointer, callback, callbackmask) {
+            match ffi::FMOD_System_SetCallback(self.pointer, callback, callbackmask.into()) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_System_SetCallback", error)),
             }
@@ -12337,14 +12426,14 @@ impl System {
     pub fn init(
         &self,
         maxchannels: i32,
-        flags: ffi::FMOD_INITFLAGS,
+        flags: impl Into<ffi::FMOD_INITFLAGS>,
         extradriverdata: Option<*mut c_void>,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_System_Init(
                 self.pointer,
                 maxchannels,
-                flags,
+                flags.into(),
                 extradriverdata.unwrap_or(null_mut()),
             ) {
                 ffi::FMOD_OK => Ok(()),
@@ -12408,13 +12497,13 @@ impl System {
     pub fn set_stream_buffer_size(
         &self,
         filebuffersize: u32,
-        filebuffersizetype: ffi::FMOD_TIMEUNIT,
+        filebuffersizetype: impl Into<ffi::FMOD_TIMEUNIT>,
     ) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_System_SetStreamBufferSize(
                 self.pointer,
                 filebuffersize,
-                filebuffersizetype,
+                filebuffersizetype.into(),
             ) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_System_SetStreamBufferSize", error)),
@@ -12654,7 +12743,7 @@ impl System {
     pub fn create_sound(
         &self,
         name_or_data: &str,
-        mode: ffi::FMOD_MODE,
+        mode: impl Into<ffi::FMOD_MODE>,
         exinfo: Option<CreateSoundexInfo>,
     ) -> Result<Sound, Error> {
         unsafe {
@@ -12662,7 +12751,7 @@ impl System {
             match ffi::FMOD_System_CreateSound(
                 self.pointer,
                 CString::new(name_or_data)?.as_ptr(),
-                mode,
+                mode.into(),
                 exinfo
                     .map(|value| &mut value.into() as *mut _)
                     .unwrap_or(null_mut()),
@@ -12676,7 +12765,7 @@ impl System {
     pub fn create_stream(
         &self,
         name_or_data: &str,
-        mode: ffi::FMOD_MODE,
+        mode: impl Into<ffi::FMOD_MODE>,
         exinfo: Option<CreateSoundexInfo>,
     ) -> Result<Sound, Error> {
         unsafe {
@@ -12684,7 +12773,7 @@ impl System {
             match ffi::FMOD_System_CreateStream(
                 self.pointer,
                 CString::new(name_or_data)?.as_ptr(),
-                mode,
+                mode.into(),
                 exinfo
                     .map(|value| &mut value.into() as *mut _)
                     .unwrap_or(null_mut()),
