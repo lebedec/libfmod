@@ -7,20 +7,20 @@ and abstract away uncomfortable manual C interface using.
 #### Installation
 
 A crate uses FMOD development libraries version to simplify version match and avoid link-time errors because of
-incompatible FMOD API changes in patch versions.
+incompatible FMOD API changes in patched versions.
 
-Changes and bug fixes in library wrapper Rust code encoded using the concept of “pre-releases” with a dash in
-the version, such as `2.2.6-bindings.1` or `2.2.17-bindings.1`.
+FMOD API version encoded in left-most major and minor components. But changes and bug fixes in library wrapper encoded
+using patch component, such as `2.206.1` or `2.217.1`.
 
 For example for FMOD Engine 2.02.06 you should use:
 
 ```toml
 [dependencies]
-libfmod = "2.2.6-bindings"
+libfmod = "2.206"
 ```
 
-That means that if backwards compatible bug fix `2.2.6-bindings.2` is published, that will be chosen as the greatest
-release automatically for your project.
+That means that if backwards compatible bug fix `2.206.2` is published, that will be chosen as the greatest
+release for your project automatically.
 
 #### FMOD Development Libraries
 
