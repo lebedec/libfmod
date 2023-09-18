@@ -16,11 +16,11 @@ For example for FMOD Engine 2.02.06 you should use:
 
 ```toml
 [dependencies]
-libfmod = "2.206"
+libfmod = "~2.206"
 ```
 
 That means that if backwards compatible bug fix `2.206.2` is published, that will be chosen as the greatest
-release for your project automatically.
+release for your project with FMOD 2.02.06 version.
 
 #### FMOD Development Libraries
 
