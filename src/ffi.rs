@@ -3772,7 +3772,6 @@ pub type FMOD_DSP_PAN_GETROLLOFFGAIN_FUNC = Option<
     ) -> FMOD_RESULT,
 >;
 
-#[link(name = "fmodstudio")]
 extern "C" {
     pub fn FMOD_Studio_ParseID(idstring: *const c_char, id: *mut FMOD_GUID) -> FMOD_RESULT;
     pub fn FMOD_Studio_System_Create(
@@ -4581,7 +4580,6 @@ extern "C" {
     ) -> FMOD_RESULT;
 }
 
-#[link(name = "fmod")]
 extern "C" {
     pub fn FMOD_Memory_Initialize(
         poolmem: *mut c_void,

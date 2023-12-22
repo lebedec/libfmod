@@ -1,31 +1,18 @@
 use std::os::raw::{c_char, c_float, c_int};
 use std::ptr::null_mut;
 
+use libfmod::ffi::{
+    FMOD_DSP_PARAMETER_DESC_FLOAT, FMOD_DSP_PARAMETER_DESC_UNION, FMOD_DSP_STATE, FMOD_INIT_NORMAL,
+    FMOD_LOOP_NORMAL, FMOD_OK, FMOD_RESULT,
+};
 use libfmod::{DspDescription, DspParameterDesc, DspParameterType, Error, System};
-use libfmod::ffi::{FMOD_DSP_PARAMETER_DESC_FLOAT, FMOD_DSP_PARAMETER_DESC_UNION, FMOD_DSP_STATE, FMOD_INIT_NORMAL, FMOD_LOOP_NORMAL, FMOD_OK, FMOD_RESULT};
-
-fn name16(name: &str) -> [i8; 16] {
-    let mut output = [0; 16];
-    for (i, ch) in name.as_bytes().iter().enumerate() {
-        output[i] = *ch as i8;
-    }
-    output
-}
-
-fn name32(name: &str) -> [i8; 32] {
-    let mut output = [0; 32];
-    for (i, ch) in name.as_bytes().iter().enumerate() {
-        output[i] = *ch as i8;
-    }
-    output
-}
 
 #[test]
 fn test_dsp_custom() -> Result<(), Error> {
     let system = System::create()?;
     system.init(32, FMOD_INIT_NORMAL, None)?;
 
-    let sound = system.create_sound("./data/heartbeat.ogg", FMOD_LOOP_NORMAL, None)?;
+    let sound = system.create_sound("./tests/data/Assets/1.ogg", FMOD_LOOP_NORMAL, None)?;
     system.play_sound(sound, None, false)?;
 
     let volume_desc = DspParameterDesc {
@@ -39,7 +26,7 @@ fn test_dsp_custom() -> Result<(), Error> {
                 max: 1.0,
                 defaultval: 1.0,
                 mapping: Default::default(),
-            }
+            },
         },
     };
 
@@ -48,9 +35,7 @@ fn test_dsp_custom() -> Result<(), Error> {
     }
 
     unsafe extern "C" fn create_callback(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT {
-        let data = Box::new(MyDspData {
-            volume: 1.0
-        });
+        let data = Box::new(MyDspData { volume: 1.0 });
         (*dsp_state).plugindata = Box::into_raw(data) as *mut MyDspData as *mut _;
         FMOD_OK
     }
@@ -125,11 +110,25 @@ fn test_dsp_custom() -> Result<(), Error> {
             }
             _ => {}
         }
-        system.update()?;
     }
-
     let info = mydsp.get_parameter_info(0)?;
     println!("default: {}", unsafe { info.union.floatdesc.defaultval });
 
     system.release()
+}
+
+fn name16(name: &str) -> [i8; 16] {
+    let mut output = [0; 16];
+    for (i, ch) in name.as_bytes().iter().enumerate() {
+        output[i] = *ch as i8;
+    }
+    output
+}
+
+fn name32(name: &str) -> [i8; 32] {
+    let mut output = [0; 32];
+    for (i, ch) in name.as_bytes().iter().enumerate() {
+        output[i] = *ch as i8;
+    }
+    output
 }

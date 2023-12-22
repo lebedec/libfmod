@@ -1,7 +1,12 @@
 use std::ffi::c_void;
 
-use libfmod::{AdvancedSettings, DspResampler, Error, ffi, OpenState, Studio, StudioAdvancedSettings, System};
-use libfmod::ffi::{FMOD_DEFAULT, FMOD_INIT_NORMAL, FMOD_NONBLOCKING, FMOD_RESULT, FMOD_STUDIO_INIT_NORMAL, FMOD_SYSTEM_CALLBACK_PREUPDATE};
+use libfmod::ffi::{
+    FMOD_DEFAULT, FMOD_INIT_NORMAL, FMOD_NONBLOCKING, FMOD_RESULT, FMOD_STUDIO_INIT_NORMAL,
+    FMOD_SYSTEM_CALLBACK_PREUPDATE,
+};
+use libfmod::{
+    ffi, AdvancedSettings, DspResampler, Error, OpenState, Studio, StudioAdvancedSettings, System,
+};
 
 #[test]
 fn test_core_system_initialization() -> Result<(), Error> {
@@ -69,7 +74,7 @@ fn test_studio_system_advanced_settings() -> Result<(), Error> {
 fn test_playing_sound() -> Result<(), Error> {
     let system = System::create()?;
     system.init(512, FMOD_INIT_NORMAL, None)?;
-    let sound = system.create_sound("./data/heartbeat.ogg", FMOD_DEFAULT, None)?;
+    let sound = system.create_sound("./tests/data/Assets/1.ogg", FMOD_DEFAULT, None)?;
     let channel = system.play_sound(sound, None, false)?;
     while channel.is_playing()? {
         // do something else
@@ -77,63 +82,11 @@ fn test_playing_sound() -> Result<(), Error> {
     system.release()
 }
 
-/*
-#[test]
-fn test_extended_sound_creating() -> Result<(), Error> {
-    let system = System::create()?;
-    system.init(512, FMOD_INIT_NORMAL, None)?;
-    let master = system.get_master_sound_group()?;
-    let config = CreateSoundexInfo {
-        length: 0,
-        fileoffset: 0,
-        numchannels: 0,
-        defaultfrequency: 0,
-        format: SoundFormat::None,
-        decodebuffersize: 0,
-        initialsubsound: 0,
-        numsubsounds: 0,
-        inclusionlist: vec![],
-        inclusionlistnum: 0,
-        pcmreadcallback: None,
-        pcmsetposcallback: None,
-        nonblockcallback: None,
-        dlsname: "".to_string(),
-        encryptionkey: "".to_string(),
-        maxpolyphony: 0,
-        userdata: null_mut(),
-        suggestedsoundtype: SoundType::Unknown,
-        fileuseropen: None,
-        fileuserclose: None,
-        fileuserread: None,
-        fileuserseek: None,
-        fileuserasyncread: None,
-        fileuserasynccancel: None,
-        fileuserdata: null_mut(),
-        filebuffersize: 0,
-        channelorder: ChannelOrder::Default,
-        initialsoundgroup: master,
-        initialseekposition: 0,
-        initialseekpostype: 0,
-        ignoresetfilesystem: 0,
-        audioqueuepolicy: 0,
-        minmidigranularity: 0,
-        nonblockthreadid: 0,
-        fsbguid: Guid {
-            data_1: 0,
-            data_2: 0,
-            data_3: 0,
-            data_4: [0, 0, 0, 0, 0, 0, 0, 0]
-        }
-    };
-    let sound = system.create_sound("./data/heartbeat.ogg", FMOD_DEFAULT, Some(config))?;
-    system.release()
-}*/
-
 #[test]
 fn test_playing_streams() -> Result<(), Error> {
     let system = System::create()?;
     system.init(512, FMOD_INIT_NORMAL, None)?;
-    let sound = system.create_stream("./data/heartbeat.ogg", FMOD_DEFAULT, None)?;
+    let sound = system.create_stream("./tests/data/Assets/2.ogg", FMOD_DEFAULT, None)?;
     let channel = system.play_sound(sound, None, false)?;
     while channel.is_playing()? {
         // do something else
@@ -145,7 +98,7 @@ fn test_playing_streams() -> Result<(), Error> {
 fn test_background_loading() -> Result<(), Error> {
     let system = System::create()?;
     system.init(512, FMOD_INIT_NORMAL, None)?;
-    let sound = system.create_sound("./data/heartbeat.ogg", FMOD_NONBLOCKING, None)?;
+    let sound = system.create_sound("./tests/data/Assets/1.ogg", FMOD_NONBLOCKING, None)?;
     let (state, filled, starving, busy) = sound.get_open_state()?;
     assert_eq!(state, OpenState::Loading);
     assert_eq!(filled, 0);
@@ -165,7 +118,12 @@ fn test_system_pre_update_callback() -> Result<(), Error> {
         _commanddata2: *mut c_void,
         _userdata: *mut c_void,
     ) -> FMOD_RESULT {
-        println!("system {} callback {} {}", system as usize, type_, type_ == FMOD_SYSTEM_CALLBACK_PREUPDATE);
+        println!(
+            "system {} callback {} {}",
+            system as usize,
+            type_,
+            type_ == FMOD_SYSTEM_CALLBACK_PREUPDATE
+        );
         ffi::FMOD_OK
     }
     system.set_callback(Some(callback), FMOD_SYSTEM_CALLBACK_PREUPDATE)?;

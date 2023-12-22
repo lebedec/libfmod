@@ -1,12 +1,17 @@
 [package]
 name = "libfmod"
-version = "2.206.2"
+version = "1.0.0"
+publish = false
 edition = "2021"
 license = "MIT"
 description = "A library wrapper for integrating FMOD Engine in Rust applications."
 readme = "README.md"
 homepage = "https://github.com/lebedec/libfmod"
 repository = "https://github.com/lebedec/libfmod"
+
+exclude = [
+    "tests/data/**"
+]
 
 [features]
 default = ["flags"]
