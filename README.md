@@ -1,4 +1,8 @@
-# libFMOD ![Crates.io](https://img.shields.io/crates/v/libfmod)
+# libFMOD
+
+[![Crates.io Version](https://img.shields.io/crates/v/libfmod.svg)](https://crates.io/crates/ash)
+[![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
+[![MSRV](https://img.shields.io/badge/rustc-1.69.0+-ab6000.svg)](https://blog.rust-lang.org/2023/04/20/Rust-1.69.0.html)
 
 A library wrapper for integrating FMOD Engine in Rust applications.
 FFI wrapped in Rust code to make them safe, more idiomatic
@@ -28,24 +32,31 @@ FMOD development libraries can't be integrated and distributed as part of this c
 You should download and install it considering your platform from:
 https://www.fmod.com/download
 
-**Windows TODO!**
+**Windows (MSVC)**
 
 You should manually provide FMOD development libraries for MSVC linker.
-For the first time you can just put following files to `.\target\debug\deps`
-from default FMOD Engine installation folder `C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\`:
+Copy following files from default FMOD Engine installation folder
+`C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows\`:
 
 ```bash
-api\core\lib\x64\fmod.dll
-api\core\lib\x64\fmod_vc.lib
-api\studio\lib\x64\fmodstudio.dll
-api\studio\lib\x64\fmodstudio_vc.lib
+.\api\core\lib\x64\fmod.dll
+.\api\core\lib\x64\fmod_vc.lib
+.\api\studio\lib\x64\fmodstudio.dll
+.\api\studio\lib\x64\fmodstudio_vc.lib
 ```
 
-And then rename `fmod_vc.lib` and `fmodstudio_vc.lib` to `fmod.lib` and `fmodstudio.lib` accordingly.
+To one of the folders where Rust can find these libraries:
+
+```bash
+.\target\debug\deps\
+%USERPROFILE%\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib
+```
+
+⚠️ When you're shipping your application make sure to copy FMOD *.dll to the same directory that your *.exe is in.
 
 **Linux / macOS**
 
-Before you can use libmod, FMOD libraries must be installed on your computer.
+Before you can use libfmod, FMOD libraries must be installed on your computer.
 The standard locations for dynamic libraries on unix are `/usr/local/lib` and `/usr/lib`.
 
 You may also place the files in a non-standard location in your file system, but you must create symbolic links to that
@@ -65,7 +76,7 @@ You may also place the files in location in which Rust searches for dynamic libr
 ~/lib/
 ```
 
-When you're shipping your application make sure to copy FMOD libraries to the same directory that your executable is in.
+⚠️ When you're shipping your application make sure to copy FMOD libraries to the same directory that your executable is in.
 
 **Why no build options?**
 
