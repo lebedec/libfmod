@@ -1,7 +1,7 @@
 # libFMOD
 
-[![Crates.io Version](https://img.shields.io/crates/v/libfmod.svg)](https://crates.io/crates/ash)
-[![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE-MIT)
+[![Crates.io Version](https://img.shields.io/crates/v/libfmod.svg)](https://crates.io/crates/libfmod)
+[![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![MSRV](https://img.shields.io/badge/rustc-1.69.0+-ab6000.svg)](https://blog.rust-lang.org/2023/04/20/Rust-1.69.0.html)
 
 A library wrapper for integrating FMOD Engine in Rust applications.
