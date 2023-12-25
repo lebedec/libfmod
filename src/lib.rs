@@ -133,8 +133,8 @@ pub fn attr3d_array8(
 }
 
 pub fn vec_as_mut_ptr<T, O, F>(values: Vec<T>, map: F) -> *mut O
-    where
-        F: FnMut(T) -> O,
+where
+    F: FnMut(T) -> O,
 {
     let mut values = values.into_iter().map(map).collect::<Vec<O>>();
     let pointer = values.as_mut_ptr();
@@ -5373,7 +5373,7 @@ pub struct DspParameterFloatMappingPiecewiseLinear {
 }
 
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR>
-for DspParameterFloatMappingPiecewiseLinear
+    for DspParameterFloatMappingPiecewiseLinear
 {
     type Error = Error;
     fn try_from(
@@ -5390,7 +5390,7 @@ for DspParameterFloatMappingPiecewiseLinear
 }
 
 impl Into<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR>
-for DspParameterFloatMappingPiecewiseLinear
+    for DspParameterFloatMappingPiecewiseLinear
 {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
         ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
