@@ -1,10 +1,10 @@
-# libFMOD
+# libfmod
 
 [![Crates.io Version](https://img.shields.io/crates/v/libfmod.svg)](https://crates.io/crates/libfmod)
 [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![MSRV](https://img.shields.io/badge/rustc-1.69.0+-ab6000.svg)](https://blog.rust-lang.org/2023/04/20/Rust-1.69.0.html)
 
-A library wrapper for integrating FMOD Engine in Rust applications.
+A Rust bindings for [FMOD Engine](https://fmod.com/).
 FFI wrapped in Rust code to make them safe, more idiomatic
 and abstract away uncomfortable manual C interface using.
 
