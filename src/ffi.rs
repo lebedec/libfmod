@@ -2,11 +2,9 @@
 #![allow(non_snake_case)]
 #![allow(unused_parens)]
 
-use std::mem::size_of;
 use std::os::raw::{
     c_char, c_float, c_int, c_longlong, c_short, c_uchar, c_uint, c_ulonglong, c_ushort, c_void,
 };
-use std::ptr::null_mut;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -1420,15 +1418,7 @@ pub struct FMOD_STUDIO_BANK_INFO {
 
 impl Default for FMOD_STUDIO_BANK_INFO {
     fn default() -> Self {
-        Self {
-            size: Default::default(),
-            userdata: null_mut(),
-            userdatalength: Default::default(),
-            opencallback: Default::default(),
-            closecallback: Default::default(),
-            readcallback: Default::default(),
-            seekcallback: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1441,10 +1431,7 @@ pub struct FMOD_STUDIO_PARAMETER_ID {
 
 impl Default for FMOD_STUDIO_PARAMETER_ID {
     fn default() -> Self {
-        Self {
-            data1: Default::default(),
-            data2: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1463,16 +1450,7 @@ pub struct FMOD_STUDIO_PARAMETER_DESCRIPTION {
 
 impl Default for FMOD_STUDIO_PARAMETER_DESCRIPTION {
     fn default() -> Self {
-        Self {
-            name: null_mut(),
-            id: Default::default(),
-            minimum: Default::default(),
-            maximum: Default::default(),
-            defaultvalue: Default::default(),
-            type_: Default::default(),
-            flags: Default::default(),
-            guid: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1486,11 +1464,7 @@ pub struct FMOD_STUDIO_USER_PROPERTY {
 
 impl Default for FMOD_STUDIO_USER_PROPERTY {
     fn default() -> Self {
-        Self {
-            name: null_mut(),
-            type_: Default::default(),
-            union: FMOD_STUDIO_USER_PROPERTY_UNION { intvalue: 0 },
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1513,11 +1487,7 @@ pub struct FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES {
 
 impl Default for FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES {
     fn default() -> Self {
-        Self {
-            name: null_mut(),
-            sound: null_mut(),
-            subsoundIndex: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1530,10 +1500,7 @@ pub struct FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES {
 
 impl Default for FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES {
     fn default() -> Self {
-        Self {
-            name: null_mut(),
-            dsp: null_mut(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1546,10 +1513,7 @@ pub struct FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES {
 
 impl Default for FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES {
     fn default() -> Self {
-        Self {
-            name: null_mut(),
-            position: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1566,14 +1530,7 @@ pub struct FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES {
 
 impl Default for FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES {
     fn default() -> Self {
-        Self {
-            bar: Default::default(),
-            beat: Default::default(),
-            position: Default::default(),
-            tempo: Default::default(),
-            timesignatureupper: Default::default(),
-            timesignaturelower: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1586,10 +1543,7 @@ pub struct FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES {
 
 impl Default for FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES {
     fn default() -> Self {
-        Self {
-            eventid: Default::default(),
-            properties: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1607,15 +1561,9 @@ pub struct FMOD_STUDIO_ADVANCEDSETTINGS {
 
 impl Default for FMOD_STUDIO_ADVANCEDSETTINGS {
     fn default() -> Self {
-        Self {
-            cbsize: size_of::<FMOD_STUDIO_ADVANCEDSETTINGS>() as i32,
-            commandqueuesize: Default::default(),
-            handleinitialsize: Default::default(),
-            studioupdateperiod: Default::default(),
-            idlesampledatapoolsize: Default::default(),
-            streamingscheduledelay: Default::default(),
-            encryptionkey: null_mut(),
-        }
+        let mut value: Self = unsafe { std::mem::zeroed() };
+        value.cbsize = std::mem::size_of::<FMOD_STUDIO_ADVANCEDSETTINGS>() as _;
+        value
     }
 }
 
@@ -1627,9 +1575,7 @@ pub struct FMOD_STUDIO_CPU_USAGE {
 
 impl Default for FMOD_STUDIO_CPU_USAGE {
     fn default() -> Self {
-        Self {
-            update: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1645,13 +1591,7 @@ pub struct FMOD_STUDIO_BUFFER_INFO {
 
 impl Default for FMOD_STUDIO_BUFFER_INFO {
     fn default() -> Self {
-        Self {
-            currentusage: Default::default(),
-            peakusage: Default::default(),
-            capacity: Default::default(),
-            stallcount: Default::default(),
-            stalltime: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1664,10 +1604,7 @@ pub struct FMOD_STUDIO_BUFFER_USAGE {
 
 impl Default for FMOD_STUDIO_BUFFER_USAGE {
     fn default() -> Self {
-        Self {
-            studiocommandqueue: Default::default(),
-            studiohandle: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1682,12 +1619,7 @@ pub struct FMOD_STUDIO_SOUND_INFO {
 
 impl Default for FMOD_STUDIO_SOUND_INFO {
     fn default() -> Self {
-        Self {
-            name_or_data: null_mut(),
-            mode: Default::default(),
-            exinfo: Default::default(),
-            subsoundindex: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1706,16 +1638,7 @@ pub struct FMOD_STUDIO_COMMAND_INFO {
 
 impl Default for FMOD_STUDIO_COMMAND_INFO {
     fn default() -> Self {
-        Self {
-            commandname: null_mut(),
-            parentcommandindex: Default::default(),
-            framenumber: Default::default(),
-            frametime: Default::default(),
-            instancetype: Default::default(),
-            outputtype: Default::default(),
-            instancehandle: Default::default(),
-            outputhandle: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1729,11 +1652,7 @@ pub struct FMOD_STUDIO_MEMORY_USAGE {
 
 impl Default for FMOD_STUDIO_MEMORY_USAGE {
     fn default() -> Self {
-        Self {
-            exclusive: Default::default(),
-            inclusive: Default::default(),
-            sampledata: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1752,16 +1671,7 @@ pub struct FMOD_ASYNCREADINFO {
 
 impl Default for FMOD_ASYNCREADINFO {
     fn default() -> Self {
-        Self {
-            handle: null_mut(),
-            offset: Default::default(),
-            sizebytes: Default::default(),
-            priority: Default::default(),
-            userdata: null_mut(),
-            buffer: null_mut(),
-            bytesread: Default::default(),
-            done: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1775,11 +1685,7 @@ pub struct FMOD_VECTOR {
 
 impl Default for FMOD_VECTOR {
     fn default() -> Self {
-        Self {
-            x: Default::default(),
-            y: Default::default(),
-            z: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1794,12 +1700,7 @@ pub struct FMOD_3D_ATTRIBUTES {
 
 impl Default for FMOD_3D_ATTRIBUTES {
     fn default() -> Self {
-        Self {
-            position: Default::default(),
-            velocity: Default::default(),
-            forward: Default::default(),
-            up: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1814,12 +1715,7 @@ pub struct FMOD_GUID {
 
 impl Default for FMOD_GUID {
     fn default() -> Self {
-        Self {
-            Data1: Default::default(),
-            Data2: Default::default(),
-            Data3: Default::default(),
-            Data4: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1832,10 +1728,7 @@ pub struct FMOD_PLUGINLIST {
 
 impl Default for FMOD_PLUGINLIST {
     fn default() -> Self {
-        Self {
-            type_: Default::default(),
-            description: null_mut(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1868,30 +1761,9 @@ pub struct FMOD_ADVANCEDSETTINGS {
 
 impl Default for FMOD_ADVANCEDSETTINGS {
     fn default() -> Self {
-        Self {
-            cbSize: size_of::<FMOD_ADVANCEDSETTINGS>() as i32,
-            maxMPEGCodecs: Default::default(),
-            maxADPCMCodecs: Default::default(),
-            maxXMACodecs: Default::default(),
-            maxVorbisCodecs: Default::default(),
-            maxAT9Codecs: Default::default(),
-            maxFADPCMCodecs: Default::default(),
-            maxPCMCodecs: Default::default(),
-            ASIONumChannels: Default::default(),
-            ASIOChannelList: null_mut(),
-            ASIOSpeakerList: null_mut(),
-            vol0virtualvol: Default::default(),
-            defaultDecodeBufferSize: Default::default(),
-            profilePort: Default::default(),
-            geometryMaxFadeTime: Default::default(),
-            distanceFilterCenterFreq: Default::default(),
-            reverb3Dinstance: Default::default(),
-            DSPBufferPoolSize: Default::default(),
-            resamplerMethod: Default::default(),
-            randomSeed: Default::default(),
-            maxConvolutionThreads: Default::default(),
-            maxOpusCodecs: Default::default(),
-        }
+        let mut value: Self = unsafe { std::mem::zeroed() };
+        value.cbSize = std::mem::size_of::<FMOD_ADVANCEDSETTINGS>() as _;
+        value
     }
 }
 
@@ -1908,14 +1780,7 @@ pub struct FMOD_TAG {
 
 impl Default for FMOD_TAG {
     fn default() -> Self {
-        Self {
-            type_: Default::default(),
-            datatype: Default::default(),
-            name: null_mut(),
-            data: null_mut(),
-            datalen: Default::default(),
-            updated: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -1962,44 +1827,9 @@ pub struct FMOD_CREATESOUNDEXINFO {
 
 impl Default for FMOD_CREATESOUNDEXINFO {
     fn default() -> Self {
-        Self {
-            cbsize: size_of::<FMOD_CREATESOUNDEXINFO>() as i32,
-            length: Default::default(),
-            fileoffset: Default::default(),
-            numchannels: Default::default(),
-            defaultfrequency: Default::default(),
-            format: Default::default(),
-            decodebuffersize: Default::default(),
-            initialsubsound: Default::default(),
-            numsubsounds: Default::default(),
-            inclusionlist: null_mut(),
-            inclusionlistnum: Default::default(),
-            pcmreadcallback: Default::default(),
-            pcmsetposcallback: Default::default(),
-            nonblockcallback: Default::default(),
-            dlsname: null_mut(),
-            encryptionkey: null_mut(),
-            maxpolyphony: Default::default(),
-            userdata: null_mut(),
-            suggestedsoundtype: Default::default(),
-            fileuseropen: Default::default(),
-            fileuserclose: Default::default(),
-            fileuserread: Default::default(),
-            fileuserseek: Default::default(),
-            fileuserasyncread: Default::default(),
-            fileuserasynccancel: Default::default(),
-            fileuserdata: null_mut(),
-            filebuffersize: Default::default(),
-            channelorder: Default::default(),
-            initialsoundgroup: null_mut(),
-            initialseekposition: Default::default(),
-            initialseekpostype: Default::default(),
-            ignoresetfilesystem: Default::default(),
-            audioqueuepolicy: Default::default(),
-            minmidigranularity: Default::default(),
-            nonblockthreadid: Default::default(),
-            fsbguid: null_mut(),
-        }
+        let mut value: Self = unsafe { std::mem::zeroed() };
+        value.cbsize = std::mem::size_of::<FMOD_CREATESOUNDEXINFO>() as _;
+        value
     }
 }
 
@@ -2022,20 +1852,7 @@ pub struct FMOD_REVERB_PROPERTIES {
 
 impl Default for FMOD_REVERB_PROPERTIES {
     fn default() -> Self {
-        Self {
-            DecayTime: Default::default(),
-            EarlyDelay: Default::default(),
-            LateDelay: Default::default(),
-            HFReference: Default::default(),
-            HFDecayRatio: Default::default(),
-            Diffusion: Default::default(),
-            Density: Default::default(),
-            LowShelfFrequency: Default::default(),
-            LowShelfGain: Default::default(),
-            HighCut: Default::default(),
-            EarlyLateMix: Default::default(),
-            WetLevel: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2051,13 +1868,7 @@ pub struct FMOD_ERRORCALLBACK_INFO {
 
 impl Default for FMOD_ERRORCALLBACK_INFO {
     fn default() -> Self {
-        Self {
-            result: Default::default(),
-            instancetype: Default::default(),
-            instance: null_mut(),
-            functionname: null_mut(),
-            functionparams: null_mut(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2074,14 +1885,7 @@ pub struct FMOD_CPU_USAGE {
 
 impl Default for FMOD_CPU_USAGE {
     fn default() -> Self {
-        Self {
-            dsp: Default::default(),
-            stream: Default::default(),
-            geometry: Default::default(),
-            update: Default::default(),
-            convolution1: Default::default(),
-            convolution2: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2105,21 +1909,7 @@ pub struct FMOD_CODEC_DESCRIPTION {
 
 impl Default for FMOD_CODEC_DESCRIPTION {
     fn default() -> Self {
-        Self {
-            apiversion: Default::default(),
-            name: null_mut(),
-            version: Default::default(),
-            defaultasstream: Default::default(),
-            timeunits: Default::default(),
-            open: Default::default(),
-            close: Default::default(),
-            read: Default::default(),
-            getlength: Default::default(),
-            setposition: Default::default(),
-            getposition: Default::default(),
-            soundcreate: Default::default(),
-            getwaveformat: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2143,21 +1933,7 @@ pub struct FMOD_CODEC_WAVEFORMAT {
 
 impl Default for FMOD_CODEC_WAVEFORMAT {
     fn default() -> Self {
-        Self {
-            name: null_mut(),
-            format: Default::default(),
-            channels: Default::default(),
-            frequency: Default::default(),
-            lengthbytes: Default::default(),
-            lengthpcm: Default::default(),
-            pcmblocksize: Default::default(),
-            loopstart: Default::default(),
-            loopend: Default::default(),
-            mode: Default::default(),
-            channelmask: Default::default(),
-            channelorder: Default::default(),
-            peakvolume: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2176,16 +1952,7 @@ pub struct FMOD_CODEC_STATE_FUNCTIONS {
 
 impl Default for FMOD_CODEC_STATE_FUNCTIONS {
     fn default() -> Self {
-        Self {
-            metadata: Default::default(),
-            alloc: Default::default(),
-            free: Default::default(),
-            log: Default::default(),
-            read: Default::default(),
-            seek: Default::default(),
-            tell: Default::default(),
-            size: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2200,12 +1967,7 @@ pub struct FMOD_CODEC_STATE {
 
 impl Default for FMOD_CODEC_STATE {
     fn default() -> Self {
-        Self {
-            plugindata: null_mut(),
-            waveformat: null_mut(),
-            functions: null_mut(),
-            numsubsounds: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2236,28 +1998,7 @@ pub struct FMOD_OUTPUT_DESCRIPTION {
 
 impl Default for FMOD_OUTPUT_DESCRIPTION {
     fn default() -> Self {
-        Self {
-            apiversion: Default::default(),
-            name: null_mut(),
-            version: Default::default(),
-            method: Default::default(),
-            getnumdrivers: Default::default(),
-            getdriverinfo: Default::default(),
-            init: Default::default(),
-            start: Default::default(),
-            stop: Default::default(),
-            close: Default::default(),
-            update: Default::default(),
-            gethandle: Default::default(),
-            mixer: Default::default(),
-            object3dgetinfo: Default::default(),
-            object3dalloc: Default::default(),
-            object3dfree: Default::default(),
-            object3dupdate: Default::default(),
-            openport: Default::default(),
-            closeport: Default::default(),
-            devicelistchanged: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2275,15 +2016,7 @@ pub struct FMOD_OUTPUT_STATE {
 
 impl Default for FMOD_OUTPUT_STATE {
     fn default() -> Self {
-        Self {
-            plugindata: null_mut(),
-            readfrommixer: Default::default(),
-            alloc: Default::default(),
-            free: Default::default(),
-            log: Default::default(),
-            copyport: Default::default(),
-            requestreset: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2300,14 +2033,7 @@ pub struct FMOD_OUTPUT_OBJECT3DINFO {
 
 impl Default for FMOD_OUTPUT_OBJECT3DINFO {
     fn default() -> Self {
-        Self {
-            buffer: null_mut(),
-            bufferlength: Default::default(),
-            position: Default::default(),
-            gain: Default::default(),
-            spread: Default::default(),
-            priority: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2323,13 +2049,7 @@ pub struct FMOD_DSP_BUFFER_ARRAY {
 
 impl Default for FMOD_DSP_BUFFER_ARRAY {
     fn default() -> Self {
-        Self {
-            numbuffers: Default::default(),
-            buffernumchannels: null_mut(),
-            bufferchannelmask: null_mut(),
-            buffers: null_mut(),
-            speakermode: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2342,10 +2062,7 @@ pub struct FMOD_COMPLEX {
 
 impl Default for FMOD_COMPLEX {
     fn default() -> Self {
-        Self {
-            real: Default::default(),
-            imag: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2359,11 +2076,7 @@ pub struct FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
 
 impl Default for FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
     fn default() -> Self {
-        Self {
-            numpoints: Default::default(),
-            pointparamvalues: null_mut(),
-            pointpositions: null_mut(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2376,10 +2089,7 @@ pub struct FMOD_DSP_PARAMETER_FLOAT_MAPPING {
 
 impl Default for FMOD_DSP_PARAMETER_FLOAT_MAPPING {
     fn default() -> Self {
-        Self {
-            type_: Default::default(),
-            piecewiselinearmapping: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2394,12 +2104,7 @@ pub struct FMOD_DSP_PARAMETER_DESC_FLOAT {
 
 impl Default for FMOD_DSP_PARAMETER_DESC_FLOAT {
     fn default() -> Self {
-        Self {
-            min: Default::default(),
-            max: Default::default(),
-            defaultval: Default::default(),
-            mapping: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2415,13 +2120,7 @@ pub struct FMOD_DSP_PARAMETER_DESC_INT {
 
 impl Default for FMOD_DSP_PARAMETER_DESC_INT {
     fn default() -> Self {
-        Self {
-            min: Default::default(),
-            max: Default::default(),
-            defaultval: Default::default(),
-            goestoinf: Default::default(),
-            valuenames: null_mut(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2434,10 +2133,7 @@ pub struct FMOD_DSP_PARAMETER_DESC_BOOL {
 
 impl Default for FMOD_DSP_PARAMETER_DESC_BOOL {
     fn default() -> Self {
-        Self {
-            defaultval: Default::default(),
-            valuenames: null_mut(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2449,9 +2145,7 @@ pub struct FMOD_DSP_PARAMETER_DESC_DATA {
 
 impl Default for FMOD_DSP_PARAMETER_DESC_DATA {
     fn default() -> Self {
-        Self {
-            datatype: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2467,15 +2161,7 @@ pub struct FMOD_DSP_PARAMETER_DESC {
 
 impl Default for FMOD_DSP_PARAMETER_DESC {
     fn default() -> Self {
-        Self {
-            type_: Default::default(),
-            name: Default::default(),
-            label: Default::default(),
-            description: null_mut(),
-            union: FMOD_DSP_PARAMETER_DESC_UNION {
-                floatdesc: Default::default(),
-            },
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2497,10 +2183,7 @@ pub struct FMOD_DSP_PARAMETER_OVERALLGAIN {
 
 impl Default for FMOD_DSP_PARAMETER_OVERALLGAIN {
     fn default() -> Self {
-        Self {
-            linear_gain: Default::default(),
-            linear_gain_additive: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2513,10 +2196,7 @@ pub struct FMOD_DSP_PARAMETER_3DATTRIBUTES {
 
 impl Default for FMOD_DSP_PARAMETER_3DATTRIBUTES {
     fn default() -> Self {
-        Self {
-            relative: Default::default(),
-            absolute: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2531,12 +2211,7 @@ pub struct FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI {
 
 impl Default for FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI {
     fn default() -> Self {
-        Self {
-            numlisteners: Default::default(),
-            relative: Default::default(),
-            weight: Default::default(),
-            absolute: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2549,10 +2224,7 @@ pub struct FMOD_DSP_PARAMETER_ATTENUATION_RANGE {
 
 impl Default for FMOD_DSP_PARAMETER_ATTENUATION_RANGE {
     fn default() -> Self {
-        Self {
-            min: Default::default(),
-            max: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2564,9 +2236,7 @@ pub struct FMOD_DSP_PARAMETER_SIDECHAIN {
 
 impl Default for FMOD_DSP_PARAMETER_SIDECHAIN {
     fn default() -> Self {
-        Self {
-            sidechainenable: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2580,11 +2250,7 @@ pub struct FMOD_DSP_PARAMETER_FFT {
 
 impl Default for FMOD_DSP_PARAMETER_FFT {
     fn default() -> Self {
-        Self {
-            length: Default::default(),
-            numchannels: Default::default(),
-            spectrum: [null_mut(); 32],
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2621,34 +2287,7 @@ pub struct FMOD_DSP_DESCRIPTION {
 
 impl Default for FMOD_DSP_DESCRIPTION {
     fn default() -> Self {
-        Self {
-            pluginsdkversion: Default::default(),
-            name: Default::default(),
-            version: Default::default(),
-            numinputbuffers: Default::default(),
-            numoutputbuffers: Default::default(),
-            create: Default::default(),
-            release: Default::default(),
-            reset: Default::default(),
-            read: Default::default(),
-            process: Default::default(),
-            setposition: Default::default(),
-            numparameters: Default::default(),
-            paramdesc: null_mut(),
-            setparameterfloat: Default::default(),
-            setparameterint: Default::default(),
-            setparameterbool: Default::default(),
-            setparameterdata: Default::default(),
-            getparameterfloat: Default::default(),
-            getparameterint: Default::default(),
-            getparameterbool: Default::default(),
-            getparameterdata: Default::default(),
-            shouldiprocess: Default::default(),
-            userdata: null_mut(),
-            sys_register: Default::default(),
-            sys_deregister: Default::default(),
-            sys_mix: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2661,10 +2300,7 @@ pub struct FMOD_DSP_STATE_DFT_FUNCTIONS {
 
 impl Default for FMOD_DSP_STATE_DFT_FUNCTIONS {
     fn default() -> Self {
-        Self {
-            fftreal: Default::default(),
-            inversefftreal: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2681,14 +2317,7 @@ pub struct FMOD_DSP_STATE_PAN_FUNCTIONS {
 
 impl Default for FMOD_DSP_STATE_PAN_FUNCTIONS {
     fn default() -> Self {
-        Self {
-            summonomatrix: Default::default(),
-            sumstereomatrix: Default::default(),
-            sumsurroundmatrix: Default::default(),
-            summonotosurroundmatrix: Default::default(),
-            sumstereotosurroundmatrix: Default::default(),
-            getrolloffgain: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2711,20 +2340,7 @@ pub struct FMOD_DSP_STATE_FUNCTIONS {
 
 impl Default for FMOD_DSP_STATE_FUNCTIONS {
     fn default() -> Self {
-        Self {
-            alloc: Default::default(),
-            realloc: Default::default(),
-            free: Default::default(),
-            getsamplerate: Default::default(),
-            getblocksize: Default::default(),
-            dft: null_mut(),
-            pan: null_mut(),
-            getspeakermode: Default::default(),
-            getclock: Default::default(),
-            getlistenerattributes: Default::default(),
-            log: Default::default(),
-            getuserdata: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2743,16 +2359,7 @@ pub struct FMOD_DSP_STATE {
 
 impl Default for FMOD_DSP_STATE {
     fn default() -> Self {
-        Self {
-            instance: null_mut(),
-            plugindata: null_mut(),
-            channelmask: Default::default(),
-            source_speakermode: Default::default(),
-            sidechaindata: null_mut(),
-            sidechainchannels: Default::default(),
-            functions: null_mut(),
-            systemobject: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2767,12 +2374,7 @@ pub struct FMOD_DSP_METERING_INFO {
 
 impl Default for FMOD_DSP_METERING_INFO {
     fn default() -> Self {
-        Self {
-            numsamples: Default::default(),
-            peaklevel: Default::default(),
-            rmslevel: Default::default(),
-            numchannels: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2791,16 +2393,7 @@ pub struct FMOD_DSP_LOUDNESS_METER_INFO_TYPE {
 
 impl Default for FMOD_DSP_LOUDNESS_METER_INFO_TYPE {
     fn default() -> Self {
-        Self {
-            momentaryloudness: Default::default(),
-            shorttermloudness: Default::default(),
-            integratedloudness: Default::default(),
-            loudness10thpercentile: Default::default(),
-            loudness95thpercentile: Default::default(),
-            loudnesshistogram: [0.0; FMOD_DSP_LOUDNESS_METER_HISTOGRAM_SAMPLES as usize],
-            maxtruepeak: Default::default(),
-            maxmomentaryloudness: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
@@ -2812,9 +2405,7 @@ pub struct FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE {
 
 impl Default for FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE {
     fn default() -> Self {
-        Self {
-            channelweight: Default::default(),
-        }
+        unsafe { std::mem::zeroed() }
     }
 }
 
