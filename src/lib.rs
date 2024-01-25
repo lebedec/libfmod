@@ -98,6 +98,20 @@ macro_rules! to_string {
         }
     };
 }
+macro_rules! ptr_opt {
+    ($ ptr : expr , $ value : expr) => {
+        if $ptr.is_null() {
+            None
+        } else {
+            Some($value)
+        }
+    };
+}
+macro_rules! opt_ptr {
+    ($ opt : expr , $ map : expr) => {
+        $opt.map($map).unwrap_or(null_mut())
+    };
+}
 macro_rules! to_vec {
     ($ ptr : expr , $ length : expr , $ closure : expr) => {
         slice::from_raw_parts($ptr, $length as usize)
@@ -4403,6 +4417,18 @@ impl TryFrom<ffi::FMOD_GUID> for Guid {
     }
 }
 
+impl Guid {
+    pub fn from_ptr(value: *mut ffi::FMOD_GUID) -> Self {
+        let value = unsafe { *value };
+        Self {
+            data_1: value.Data1,
+            data_2: value.Data2,
+            data_3: value.Data3,
+            data_4: value.Data4,
+        }
+    }
+}
+
 impl Into<ffi::FMOD_GUID> for Guid {
     fn into(self) -> ffi::FMOD_GUID {
         ffi::FMOD_GUID {
@@ -4594,13 +4620,12 @@ pub struct CreateSoundexInfo {
     pub decodebuffersize: u32,
     pub initialsubsound: i32,
     pub numsubsounds: i32,
-    pub inclusionlist: Vec<i32>,
-    pub inclusionlistnum: i32,
+    pub inclusionlist: Option<Vec<i32>>,
     pub pcmreadcallback: ffi::FMOD_SOUND_PCMREAD_CALLBACK,
     pub pcmsetposcallback: ffi::FMOD_SOUND_PCMSETPOS_CALLBACK,
     pub nonblockcallback: ffi::FMOD_SOUND_NONBLOCK_CALLBACK,
-    pub dlsname: String,
-    pub encryptionkey: String,
+    pub dlsname: Option<String>,
+    pub encryptionkey: Option<String>,
     pub maxpolyphony: i32,
     pub userdata: *mut c_void,
     pub suggestedsoundtype: SoundType,
@@ -4613,14 +4638,14 @@ pub struct CreateSoundexInfo {
     pub fileuserdata: *mut c_void,
     pub filebuffersize: i32,
     pub channelorder: ChannelOrder,
-    pub initialsoundgroup: SoundGroup,
+    pub initialsoundgroup: Option<SoundGroup>,
     pub initialseekposition: u32,
     pub initialseekpostype: ffi::FMOD_TIMEUNIT,
     pub ignoresetfilesystem: i32,
     pub audioqueuepolicy: u32,
     pub minmidigranularity: u32,
     pub nonblockthreadid: i32,
-    pub fsbguid: Guid,
+    pub fsbguid: Option<Guid>,
 }
 
 impl TryFrom<ffi::FMOD_CREATESOUNDEXINFO> for CreateSoundexInfo {
@@ -4636,13 +4661,15 @@ impl TryFrom<ffi::FMOD_CREATESOUNDEXINFO> for CreateSoundexInfo {
                 decodebuffersize: value.decodebuffersize,
                 initialsubsound: value.initialsubsound,
                 numsubsounds: value.numsubsounds,
-                inclusionlist: to_vec!(value.inclusionlist, value.inclusionlistnum),
-                inclusionlistnum: value.inclusionlistnum,
+                inclusionlist: ptr_opt!(
+                    value.inclusionlist,
+                    to_vec!(value.inclusionlist, value.inclusionlistnum)
+                ),
                 pcmreadcallback: value.pcmreadcallback,
                 pcmsetposcallback: value.pcmsetposcallback,
                 nonblockcallback: value.nonblockcallback,
-                dlsname: to_string!(value.dlsname)?,
-                encryptionkey: to_string!(value.encryptionkey)?,
+                dlsname: ptr_opt!(value.dlsname, to_string!(value.dlsname)?),
+                encryptionkey: ptr_opt!(value.encryptionkey, to_string!(value.encryptionkey)?),
                 maxpolyphony: value.maxpolyphony,
                 userdata: value.userdata,
                 suggestedsoundtype: SoundType::from(value.suggestedsoundtype)?,
@@ -4655,16 +4682,25 @@ impl TryFrom<ffi::FMOD_CREATESOUNDEXINFO> for CreateSoundexInfo {
                 fileuserdata: value.fileuserdata,
                 filebuffersize: value.filebuffersize,
                 channelorder: ChannelOrder::from(value.channelorder)?,
-                initialsoundgroup: SoundGroup::from(value.initialsoundgroup),
+                initialsoundgroup: ptr_opt!(
+                    value.initialsoundgroup,
+                    SoundGroup::from(value.initialsoundgroup)
+                ),
                 initialseekposition: value.initialseekposition,
                 initialseekpostype: value.initialseekpostype,
                 ignoresetfilesystem: value.ignoresetfilesystem,
                 audioqueuepolicy: value.audioqueuepolicy,
                 minmidigranularity: value.minmidigranularity,
                 nonblockthreadid: value.nonblockthreadid,
-                fsbguid: Guid::try_from(*value.fsbguid)?,
+                fsbguid: ptr_opt!(value.fsbguid, Guid::from_ptr(value.fsbguid)),
             })
         }
+    }
+}
+
+impl Default for CreateSoundexInfo {
+    fn default() -> Self {
+        Self::try_from(ffi::FMOD_CREATESOUNDEXINFO::default()).unwrap()
     }
 }
 
@@ -4680,13 +4716,16 @@ impl Into<ffi::FMOD_CREATESOUNDEXINFO> for CreateSoundexInfo {
             decodebuffersize: self.decodebuffersize,
             initialsubsound: self.initialsubsound,
             numsubsounds: self.numsubsounds,
-            inclusionlist: self.inclusionlist.as_ptr() as *mut _,
-            inclusionlistnum: self.inclusionlistnum,
+            inclusionlist: opt_ptr!(self.inclusionlist.clone(), |v| v.as_slice().as_ptr()
+                as *mut _),
+            inclusionlistnum: self.inclusionlist.map(|v| v.len()).unwrap_or(0) as _,
             pcmreadcallback: self.pcmreadcallback,
             pcmsetposcallback: self.pcmsetposcallback,
             nonblockcallback: self.nonblockcallback,
-            dlsname: self.dlsname.as_ptr().cast(),
-            encryptionkey: self.encryptionkey.as_ptr().cast(),
+            dlsname: opt_ptr!(self.dlsname.map(|v| CString::new(v).unwrap()), |v| v
+                .as_ptr()),
+            encryptionkey: opt_ptr!(self.encryptionkey.map(|v| CString::new(v).unwrap()), |v| v
+                .as_ptr()),
             maxpolyphony: self.maxpolyphony,
             userdata: self.userdata,
             suggestedsoundtype: self.suggestedsoundtype.into(),
@@ -4699,14 +4738,14 @@ impl Into<ffi::FMOD_CREATESOUNDEXINFO> for CreateSoundexInfo {
             fileuserdata: self.fileuserdata,
             filebuffersize: self.filebuffersize,
             channelorder: self.channelorder.into(),
-            initialsoundgroup: self.initialsoundgroup.as_mut_ptr(),
+            initialsoundgroup: opt_ptr!(self.initialsoundgroup, |v| v.as_mut_ptr()),
             initialseekposition: self.initialseekposition,
             initialseekpostype: self.initialseekpostype,
             ignoresetfilesystem: self.ignoresetfilesystem,
             audioqueuepolicy: self.audioqueuepolicy,
             minmidigranularity: self.minmidigranularity,
             nonblockthreadid: self.nonblockthreadid,
-            fsbguid: &mut self.fsbguid.into(),
+            fsbguid: opt_ptr!(self.fsbguid, |v| &mut v.into() as *mut _),
         }
     }
 }
@@ -12762,6 +12801,26 @@ impl System {
             }
         }
     }
+    pub fn create_sound_from(
+        &self,
+        data: &[u8],
+        mode: impl Into<ffi::FMOD_MODE>,
+        exinfo: CreateSoundexInfo,
+    ) -> Result<Sound, Error> {
+        unsafe {
+            let mut sound = null_mut();
+            match ffi::FMOD_System_CreateSound(
+                self.pointer,
+                data.as_ptr() as *const _,
+                mode.into(),
+                &mut exinfo.into() as *mut _,
+                &mut sound,
+            ) {
+                ffi::FMOD_OK => Ok(Sound::from(sound)),
+                error => Err(err_fmod!("FMOD_System_CreateSound", error)),
+            }
+        }
+    }
     pub fn create_stream(
         &self,
         name_or_data: &str,
@@ -12777,6 +12836,26 @@ impl System {
                 exinfo
                     .map(|value| &mut value.into() as *mut _)
                     .unwrap_or(null_mut()),
+                &mut sound,
+            ) {
+                ffi::FMOD_OK => Ok(Sound::from(sound)),
+                error => Err(err_fmod!("FMOD_System_CreateStream", error)),
+            }
+        }
+    }
+    pub fn create_stream_from(
+        &self,
+        data: &[u8],
+        mode: impl Into<ffi::FMOD_MODE>,
+        exinfo: CreateSoundexInfo,
+    ) -> Result<Sound, Error> {
+        unsafe {
+            let mut sound = null_mut();
+            match ffi::FMOD_System_CreateStream(
+                self.pointer,
+                data.as_ptr() as *const _,
+                mode.into(),
+                &mut exinfo.into() as *mut _,
                 &mut sound,
             ) {
                 ffi::FMOD_OK => Ok(Sound::from(sound)),
