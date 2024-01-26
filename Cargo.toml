@@ -1,7 +1,7 @@
 [package]
 name = "libfmod"
-version = "1.0.0"
-publish = false
+version = "2.206.4"
+publish = true
 edition = "2021"
 license = "MIT"
 description = "A library wrapper for integrating FMOD Engine in Rust applications."
