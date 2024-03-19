@@ -42,6 +42,24 @@ fn test_3d_sound() -> Result<(), Error> {
 }
 
 #[test]
+fn test_3d_optional_parameters() -> Result<(), Error> {
+    let system = System::create()?;
+    system.init(512, FMOD_INIT_NORMAL, None)?;
+    system.set_3d_settings(1.0, 1.0, 1.0)?;
+
+    let position = Vector::new(0.1, 0.2, 0.3);
+    let velocity = Vector::new(0.0, 0.5, 0.0);
+    let forward = Vector::new(0.0, 0.0, 1.0); // default
+    let up = Vector::new(0.0, 1.0, 0.0); // default
+    system.set_3d_listener_attributes(0, Some(position), Some(velocity), None, None)?;
+
+    let expected = (position, velocity, forward, up);
+    let attributes = system.get_3d_listener_attributes(0)?;
+    assert_eq!(attributes, expected, "position, velocity, forward, up");
+    system.release()
+}
+
+#[test]
 fn test_multiple_listeners() -> Result<(), Error> {
     let system = System::create()?;
     system.init(512, FMOD_INIT_NORMAL, None)?;

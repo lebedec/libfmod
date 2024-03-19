@@ -5,9 +5,10 @@ use libfmod::ffi::{
     FMOD_DEFAULT, FMOD_INIT_NORMAL, FMOD_NONBLOCKING, FMOD_RESULT, FMOD_STUDIO_INIT_NORMAL,
     FMOD_SYSTEM_CALLBACK_PREUPDATE,
 };
+use libfmod::Error::Fmod;
 use libfmod::{
-    ffi, AdvancedSettings, CreateSoundexInfo, DspResampler, Error, Mode, OpenState, Sound, Studio,
-    StudioAdvancedSettings, System,
+    ffi, AdvancedSettings, CreateSoundexInfo, DspResampler, Error, Init, Mode, OpenState, Sound,
+    Studio, StudioAdvancedSettings, System,
 };
 
 #[test]
@@ -87,11 +88,11 @@ fn test_playing_sound() -> Result<(), Error> {
 #[test]
 fn test_playing_sound_from_data() -> Result<(), Error> {
     let system = System::create()?;
-    system.init(512, FMOD_INIT_NORMAL, None)?;
+    system.init(512, Init::NORMAL, None)?;
     let data = fs::read("./tests/data/Assets/1.ogg").unwrap();
-    let mut myinfo = CreateSoundexInfo::default();
-    myinfo.length = data.len() as u32;
-    let sound = system.create_sound_from(&data, Mode::OPENMEMORY, myinfo)?;
+    let mut info = CreateSoundexInfo::default();
+    info.length = data.len() as u32;
+    let sound = system.create_sound_from(&data, Mode::OPENMEMORY, info)?;
     let channel = system.play_sound(sound, None, false)?;
     while channel.is_playing()? {
         // do something else
