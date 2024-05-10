@@ -1,30 +1,26 @@
-# libFMOD
+# libfmod
 
 [![Crates.io Version](https://img.shields.io/crates/v/libfmod.svg)](https://crates.io/crates/libfmod)
 [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![MSRV](https://img.shields.io/badge/rustc-1.69.0+-ab6000.svg)](https://blog.rust-lang.org/2023/04/20/Rust-1.69.0.html)
 
-A library wrapper for integrating FMOD Engine in Rust applications.
+A Rust bindings for [FMOD Engine](https://fmod.com/).
 FFI wrapped in Rust code to make them safe, more idiomatic
 and abstract away uncomfortable manual C interface using.
 
 ### Installation
 
-A crate uses FMOD development libraries version to simplify version match and avoid link-time errors because of
-incompatible FMOD API changes in patched versions.
+Choose one of FMOD supported versions:
 
-FMOD API version encoded in left-most major and minor components. But changes and bug fixes in library wrapper encoded
-using patch component, such as `2.206.1` or `2.217.1`.
-
-For example for FMOD Engine 2.02.06 you should use:
+| libfmod | FMOD    |
+|---------|---------|
+| 2.222.1 | 2.02.22 |
+| 2.206.5 | 2.02.06 |
 
 ```toml
 [dependencies]
-libfmod = "~2.206"
+libfmod = "2.206.5"
 ```
-
-That means that if backwards compatible bug fix `2.206.2` is published, that will be chosen as the greatest
-release for your project with FMOD 2.02.06 version.
 
 #### FMOD Development Libraries
 
@@ -76,7 +72,8 @@ You may also place the files in location in which Rust searches for dynamic libr
 ~/lib/
 ```
 
-⚠️ When you're shipping your application make sure to copy FMOD libraries to the same directory that your executable is in.
+⚠️ When you're shipping your application make sure to copy FMOD libraries to the same directory that your executable is
+in.
 
 **Why no build options?**
 
@@ -84,7 +81,7 @@ You may also place the files in location in which Rust searches for dynamic libr
 * The crate not implement dynamic loading, only dynamic linking
 * There is no simple way to control how Rust search for libraries
 
-So, we can provide some configuration (e.g "FMOD_SDK" location variable), but this is not useful 
+So, we can provide some configuration (e.g "FMOD_SDK" location variable), but this is not useful
 because you still have to install the FMOD libraries as described above.
 
 ### Features
