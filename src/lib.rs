@@ -147,8 +147,8 @@ pub fn attr3d_array8(
 }
 
 pub fn vec_as_mut_ptr<T, O, F>(values: Vec<T>, map: F) -> *mut O
-where
-    F: FnMut(T) -> O,
+    where
+        F: FnMut(T) -> O,
 {
     let mut values = values.into_iter().map(map).collect::<Vec<O>>();
     let pointer = values.as_mut_ptr();
@@ -845,6 +845,8 @@ pub enum OutputType {
     Winsonic,
     AAudio,
     AudioWorklet,
+    Phase,
+    Ohaudio,
     Max,
 }
 
@@ -871,6 +873,8 @@ impl From<OutputType> for ffi::FMOD_OUTPUTTYPE {
             OutputType::Winsonic => ffi::FMOD_OUTPUTTYPE_WINSONIC,
             OutputType::AAudio => ffi::FMOD_OUTPUTTYPE_AAUDIO,
             OutputType::AudioWorklet => ffi::FMOD_OUTPUTTYPE_AUDIOWORKLET,
+            OutputType::Phase => ffi::FMOD_OUTPUTTYPE_PHASE,
+            OutputType::Ohaudio => ffi::FMOD_OUTPUTTYPE_OHAUDIO,
             OutputType::Max => ffi::FMOD_OUTPUTTYPE_MAX,
         }
     }
@@ -899,6 +903,8 @@ impl OutputType {
             ffi::FMOD_OUTPUTTYPE_WINSONIC => Ok(OutputType::Winsonic),
             ffi::FMOD_OUTPUTTYPE_AAUDIO => Ok(OutputType::AAudio),
             ffi::FMOD_OUTPUTTYPE_AUDIOWORKLET => Ok(OutputType::AudioWorklet),
+            ffi::FMOD_OUTPUTTYPE_PHASE => Ok(OutputType::Phase),
+            ffi::FMOD_OUTPUTTYPE_OHAUDIO => Ok(OutputType::Ohaudio),
             ffi::FMOD_OUTPUTTYPE_MAX => Ok(OutputType::Max),
             _ => Err(err_enum!("FMOD_OUTPUTTYPE", value)),
         }
@@ -1554,6 +1560,33 @@ impl DspResampler {
             ffi::FMOD_DSP_RESAMPLER_SPLINE => Ok(DspResampler::Spline),
             ffi::FMOD_DSP_RESAMPLER_MAX => Ok(DspResampler::Max),
             _ => Err(err_enum!("FMOD_DSP_RESAMPLER", value)),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum DspCallbackType {
+    Dataparameterrelease,
+    Max,
+}
+
+impl From<DspCallbackType> for ffi::FMOD_DSP_CALLBACK_TYPE {
+    fn from(value: DspCallbackType) -> ffi::FMOD_DSP_CALLBACK_TYPE {
+        match value {
+            DspCallbackType::Dataparameterrelease => ffi::FMOD_DSP_CALLBACK_DATAPARAMETERRELEASE,
+            DspCallbackType::Max => ffi::FMOD_DSP_CALLBACK_MAX,
+        }
+    }
+}
+
+impl DspCallbackType {
+    pub fn from(value: ffi::FMOD_DSP_CALLBACK_TYPE) -> Result<DspCallbackType, Error> {
+        match value {
+            ffi::FMOD_DSP_CALLBACK_DATAPARAMETERRELEASE => {
+                Ok(DspCallbackType::Dataparameterrelease)
+            }
+            ffi::FMOD_DSP_CALLBACK_MAX => Ok(DspCallbackType::Max),
+            _ => Err(err_enum!("FMOD_DSP_CALLBACK_TYPE", value)),
         }
     }
 }
@@ -4532,6 +4565,7 @@ pub struct AdvancedSettings {
     pub random_seed: u32,
     pub max_convolution_threads: i32,
     pub max_opus_codecs: i32,
+    pub max_spatial_objects: i32,
 }
 
 impl TryFrom<ffi::FMOD_ADVANCEDSETTINGS> for AdvancedSettings {
@@ -4568,6 +4602,7 @@ impl TryFrom<ffi::FMOD_ADVANCEDSETTINGS> for AdvancedSettings {
                 random_seed: value.randomSeed,
                 max_convolution_threads: value.maxConvolutionThreads,
                 max_opus_codecs: value.maxOpusCodecs,
+                max_spatial_objects: value.maxSpatialObjects,
             })
         }
     }
@@ -4609,6 +4644,7 @@ impl Into<ffi::FMOD_ADVANCEDSETTINGS> for AdvancedSettings {
             randomSeed: self.random_seed,
             maxConvolutionThreads: self.max_convolution_threads,
             maxOpusCodecs: self.max_opus_codecs,
+            maxSpatialObjects: self.max_spatial_objects,
         }
     }
 }
@@ -5019,6 +5055,36 @@ impl Into<ffi::FMOD_CPU_USAGE> for CpuUsage {
             update: self.update,
             convolution1: self.convolution_1,
             convolution2: self.convolution_2,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DspDataParameterInfo {
+    pub data: *mut c_void,
+    pub length: u32,
+    pub index: i32,
+}
+
+impl TryFrom<ffi::FMOD_DSP_DATA_PARAMETER_INFO> for DspDataParameterInfo {
+    type Error = Error;
+    fn try_from(value: ffi::FMOD_DSP_DATA_PARAMETER_INFO) -> Result<Self, Self::Error> {
+        unsafe {
+            Ok(DspDataParameterInfo {
+                data: value.data,
+                length: value.length,
+                index: value.index,
+            })
+        }
+    }
+}
+
+impl Into<ffi::FMOD_DSP_DATA_PARAMETER_INFO> for DspDataParameterInfo {
+    fn into(self) -> ffi::FMOD_DSP_DATA_PARAMETER_INFO {
+        ffi::FMOD_DSP_DATA_PARAMETER_INFO {
+            data: self.data,
+            length: self.length,
+            index: self.index,
         }
     }
 }
@@ -5454,7 +5520,7 @@ pub struct DspParameterFloatMappingPiecewiseLinear {
 }
 
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR>
-    for DspParameterFloatMappingPiecewiseLinear
+for DspParameterFloatMappingPiecewiseLinear
 {
     type Error = Error;
     fn try_from(
@@ -5471,7 +5537,7 @@ impl TryFrom<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR>
 }
 
 impl Into<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR>
-    for DspParameterFloatMappingPiecewiseLinear
+for DspParameterFloatMappingPiecewiseLinear
 {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
         ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
@@ -8070,6 +8136,14 @@ impl Dsp {
             }
         }
     }
+    pub fn set_callback(&self, callback: ffi::FMOD_DSP_CALLBACK) -> Result<(), Error> {
+        unsafe {
+            match ffi::FMOD_DSP_SetCallback(self.pointer, callback) {
+                ffi::FMOD_OK => Ok(()),
+                error => Err(err_fmod!("FMOD_DSP_SetCallback", error)),
+            }
+        }
+    }
     pub fn set_parameter_float(&self, index: i32, value: f32) -> Result<(), Error> {
         unsafe {
             match ffi::FMOD_DSP_SetParameterFloat(self.pointer, index, value) {
@@ -9907,18 +9981,18 @@ impl Bus {
             }
         }
     }
-    pub fn get_port_index(&self) -> Result<u64, Error> {
+    pub fn get_port_index(&self) -> Result<ffi::FMOD_PORT_INDEX, Error> {
         unsafe {
-            let mut index = u64::default();
+            let mut index = ffi::FMOD_PORT_INDEX::default();
             match ffi::FMOD_Studio_Bus_GetPortIndex(self.pointer, &mut index) {
                 ffi::FMOD_OK => Ok(index),
                 error => Err(err_fmod!("FMOD_Studio_Bus_GetPortIndex", error)),
             }
         }
     }
-    pub fn set_port_index(&self, index: u64) -> Result<(), Error> {
+    pub fn set_port_index(&self, index: impl Into<ffi::FMOD_PORT_INDEX>) -> Result<(), Error> {
         unsafe {
-            match ffi::FMOD_Studio_Bus_SetPortIndex(self.pointer, index) {
+            match ffi::FMOD_Studio_Bus_SetPortIndex(self.pointer, index.into()) {
                 ffi::FMOD_OK => Ok(()),
                 error => Err(err_fmod!("FMOD_Studio_Bus_SetPortIndex", error)),
             }
@@ -13074,7 +13148,7 @@ impl System {
     pub fn attach_channel_group_to_port(
         &self,
         port_type: PortType,
-        port_index: u64,
+        port_index: impl Into<ffi::FMOD_PORT_INDEX>,
         channelgroup: ChannelGroup,
         pass_thru: bool,
     ) -> Result<(), Error> {
@@ -13082,7 +13156,7 @@ impl System {
             match ffi::FMOD_System_AttachChannelGroupToPort(
                 self.pointer,
                 port_type.into(),
-                port_index,
+                port_index.into(),
                 channelgroup.as_mut_ptr(),
                 from_bool!(pass_thru),
             ) {

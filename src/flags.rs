@@ -103,6 +103,7 @@ bitflags! {
         const STREAM_FROM_UPDATE = ffi::FMOD_INIT_STREAM_FROM_UPDATE;
         const MIX_FROM_UPDATE = ffi::FMOD_INIT_MIX_FROM_UPDATE;
         const RIGHTHANDED_3D = ffi::FMOD_INIT_3D_RIGHTHANDED;
+        const CLIP_OUTPUT = ffi::FMOD_INIT_CLIP_OUTPUT;
         const CHANNEL_LOWPASS = ffi::FMOD_INIT_CHANNEL_LOWPASS;
         const CHANNEL_DISTANCEFILTER = ffi::FMOD_INIT_CHANNEL_DISTANCEFILTER;
         const PROFILE_ENABLE = ffi::FMOD_INIT_PROFILE_ENABLE;
@@ -147,6 +148,7 @@ bitflags! {
         const BUFFEREDNOMIX = ffi::FMOD_SYSTEM_CALLBACK_BUFFEREDNOMIX;
         const DEVICEREINITIALIZE = ffi::FMOD_SYSTEM_CALLBACK_DEVICEREINITIALIZE;
         const OUTPUTUNDERRUN = ffi::FMOD_SYSTEM_CALLBACK_OUTPUTUNDERRUN;
+        const RECORDPOSITIONCHANGED = ffi::FMOD_SYSTEM_CALLBACK_RECORDPOSITIONCHANGED;
         const ALL = ffi::FMOD_SYSTEM_CALLBACK_ALL;
     }
     
@@ -201,6 +203,11 @@ bitflags! {
         const MASK_5POINT1_REARS = ffi::FMOD_CHANNELMASK_5POINT1_REARS;
         const MASK_7POINT0 = ffi::FMOD_CHANNELMASK_7POINT0;
         const MASK_7POINT1 = ffi::FMOD_CHANNELMASK_7POINT1;
+    }
+    
+    pub struct PortIndex: ffi::FMOD_PORT_INDEX {
+        const NONE = ffi::FMOD_PORT_INDEX_NONE;
+        const FLAG_VR_CONTROLLER = ffi::FMOD_PORT_INDEX_FLAG_VR_CONTROLLER;
     }
     
     pub struct ThreadPriority: ffi::FMOD_THREAD_PRIORITY {
@@ -300,115 +307,121 @@ impl Into<ffi::FMOD_STUDIO_INITFLAGS> for StudioInit {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_STUDIO_PARAMETER_FLAGS> for Parameter {
     fn into(self) -> ffi::FMOD_STUDIO_PARAMETER_FLAGS {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_STUDIO_SYSTEM_CALLBACK_TYPE> for StudioSystemCallback {
     fn into(self) -> ffi::FMOD_STUDIO_SYSTEM_CALLBACK_TYPE {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_STUDIO_EVENT_CALLBACK_TYPE> for EventCallback {
     fn into(self) -> ffi::FMOD_STUDIO_EVENT_CALLBACK_TYPE {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_STUDIO_LOAD_BANK_FLAGS> for LoadBank {
     fn into(self) -> ffi::FMOD_STUDIO_LOAD_BANK_FLAGS {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_STUDIO_COMMANDCAPTURE_FLAGS> for CommandCapture {
     fn into(self) -> ffi::FMOD_STUDIO_COMMANDCAPTURE_FLAGS {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_STUDIO_COMMANDREPLAY_FLAGS> for CommandReplay {
     fn into(self) -> ffi::FMOD_STUDIO_COMMANDREPLAY_FLAGS {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_DEBUG_FLAGS> for Debug {
     fn into(self) -> ffi::FMOD_DEBUG_FLAGS {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_MEMORY_TYPE> for Memory {
     fn into(self) -> ffi::FMOD_MEMORY_TYPE {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_INITFLAGS> for Init {
     fn into(self) -> ffi::FMOD_INITFLAGS {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_DRIVER_STATE> for DriverState {
     fn into(self) -> ffi::FMOD_DRIVER_STATE {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_TIMEUNIT> for TimeUnit {
     fn into(self) -> ffi::FMOD_TIMEUNIT {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_SYSTEM_CALLBACK_TYPE> for SystemCallback {
     fn into(self) -> ffi::FMOD_SYSTEM_CALLBACK_TYPE {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_MODE> for Mode {
     fn into(self) -> ffi::FMOD_MODE {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_CHANNELMASK> for ChannelMask {
     fn into(self) -> ffi::FMOD_CHANNELMASK {
         self.bits
     }
 }
-    
+
+impl Into<ffi::FMOD_PORT_INDEX> for PortIndex {
+    fn into(self) -> ffi::FMOD_PORT_INDEX {
+        self.bits
+    }
+}
+
 impl Into<ffi::FMOD_THREAD_PRIORITY> for ThreadPriority {
     fn into(self) -> ffi::FMOD_THREAD_PRIORITY {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_THREAD_STACK_SIZE> for ThreadStackSize {
     fn into(self) -> ffi::FMOD_THREAD_STACK_SIZE {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_THREAD_AFFINITY> for ThreadAffinity {
     fn into(self) -> ffi::FMOD_THREAD_AFFINITY {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_CODEC_SEEK_METHOD> for CodecSeekMethod {
     fn into(self) -> ffi::FMOD_CODEC_SEEK_METHOD {
         self.bits
     }
 }
-    
+
 impl Into<ffi::FMOD_OUTPUT_METHOD> for OutputMethodMix {
     fn into(self) -> ffi::FMOD_OUTPUT_METHOD {
         self.bits

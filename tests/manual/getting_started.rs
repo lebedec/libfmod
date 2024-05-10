@@ -42,6 +42,7 @@ fn test_core_system_advanced_settings() -> Result<(), Error> {
         random_seed: 0,
         max_convolution_threads: 3,
         max_opus_codecs: 32,
+        max_spatial_objects: 0,
     };
     system.set_advanced_settings(settings)?;
     let settings = system.get_advanced_settings()?;
