@@ -14,12 +14,12 @@ Choose one of FMOD supported versions:
 
 | libfmod | FMOD    |
 |---------|---------|
-| 2.222.1 | 2.02.22 |
-| 2.206.5 | 2.02.06 |
+| 2.222   | 2.02.22 |
+| 2.206   | 2.02.06 |
 
 ```toml
 [dependencies]
-libfmod = "2.206.5"
+libfmod = "~2.206"
 ```
 
 #### FMOD Development Libraries
