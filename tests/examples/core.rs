@@ -8,6 +8,14 @@ use libfmod::ffi::{
 use libfmod::{DspDescription, DspParameterDesc, DspParameterType, Error, System};
 
 #[test]
+fn test_system_advanced_settings_before_init() -> Result<(), Error> {
+    let system = System::create()?;
+    let settings = system.get_advanced_settings()?;
+    println!("Settings: {:?}", settings);
+    system.release()
+}
+
+#[test]
 fn test_dsp_custom() -> Result<(), Error> {
     let system = System::create()?;
     system.init(32, FMOD_INIT_NORMAL, None)?;

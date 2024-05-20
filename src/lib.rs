@@ -114,14 +114,22 @@ macro_rules! opt_ptr {
 }
 macro_rules! to_vec {
     ($ ptr : expr , $ length : expr , $ closure : expr) => {
-        slice::from_raw_parts($ptr, $length as usize)
-            .to_vec()
-            .into_iter()
-            .map($closure)
-            .collect::<Result<Vec<_>, Error>>()
+        if $length == 0 {
+            Ok(vec![])
+        } else {
+            slice::from_raw_parts($ptr, $length as usize)
+                .to_vec()
+                .into_iter()
+                .map($closure)
+                .collect::<Result<Vec<_>, Error>>()
+        }
     };
     ($ ptr : expr , $ length : expr) => {
-        slice::from_raw_parts($ptr, $length as usize).to_vec()
+        if $length == 0 {
+            vec![]
+        } else {
+            slice::from_raw_parts($ptr, $length as usize).to_vec()
+        }
     };
 }
 macro_rules! to_bool {
