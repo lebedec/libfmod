@@ -505,7 +505,7 @@ pub const FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_EVENTDESCRIPTION: FMOD_ERRORCAL
 pub const FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_EVENTINSTANCE: FMOD_ERRORCALLBACK_INSTANCETYPE =
     13;
 pub const FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_PARAMETERINSTANCE:
-    FMOD_ERRORCALLBACK_INSTANCETYPE = 14;
+FMOD_ERRORCALLBACK_INSTANCETYPE = 14;
 pub const FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_BUS: FMOD_ERRORCALLBACK_INSTANCETYPE = 15;
 pub const FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_VCA: FMOD_ERRORCALLBACK_INSTANCETYPE = 16;
 pub const FMOD_ERRORCALLBACK_INSTANCETYPE_STUDIO_BANK: FMOD_ERRORCALLBACK_INSTANCETYPE = 17;
@@ -597,7 +597,7 @@ pub type FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE = c_int;
 pub const FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_LINEAR: FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE = 0;
 pub const FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_AUTO: FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE = 1;
 pub const FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_PIECEWISE_LINEAR:
-    FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE = 2;
+FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE = 2;
 pub const FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE_FORCEINT: FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE =
     65536;
 
@@ -2817,7 +2817,7 @@ pub type FMOD_CHANNELCONTROL_CALLBACK = Option<
     ) -> FMOD_RESULT,
 >;
 pub type FMOD_SOUND_NONBLOCK_CALLBACK =
-    Option<unsafe extern "C" fn(sound: *mut FMOD_SOUND, result: FMOD_RESULT) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(sound: *mut FMOD_SOUND, result: FMOD_RESULT) -> FMOD_RESULT>;
 pub type FMOD_SOUND_PCMREAD_CALLBACK = Option<
     unsafe extern "C" fn(sound: *mut FMOD_SOUND, data: *mut c_void, datalen: c_uint) -> FMOD_RESULT,
 >;
@@ -2838,7 +2838,7 @@ pub type FMOD_FILE_OPEN_CALLBACK = Option<
     ) -> FMOD_RESULT,
 >;
 pub type FMOD_FILE_CLOSE_CALLBACK =
-    Option<unsafe extern "C" fn(handle: *mut c_void, userdata: *mut c_void) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(handle: *mut c_void, userdata: *mut c_void) -> FMOD_RESULT>;
 pub type FMOD_FILE_READ_CALLBACK = Option<
     unsafe extern "C" fn(
         handle: *mut c_void,
@@ -2858,7 +2858,7 @@ pub type FMOD_FILE_ASYNCCANCEL_CALLBACK = Option<
     unsafe extern "C" fn(info: *mut FMOD_ASYNCREADINFO, userdata: *mut c_void) -> FMOD_RESULT,
 >;
 pub type FMOD_FILE_ASYNCDONE_FUNC =
-    Option<unsafe extern "C" fn(info: *mut FMOD_ASYNCREADINFO, result: FMOD_RESULT)>;
+Option<unsafe extern "C" fn(info: *mut FMOD_ASYNCREADINFO, result: FMOD_RESULT)>;
 pub type FMOD_MEMORY_ALLOC_CALLBACK = Option<
     unsafe extern "C" fn(
         size: c_uint,
@@ -2888,7 +2888,7 @@ pub type FMOD_CODEC_OPEN_CALLBACK = Option<
     ) -> FMOD_RESULT,
 >;
 pub type FMOD_CODEC_CLOSE_CALLBACK =
-    Option<unsafe extern "C" fn(codec_state: *mut FMOD_CODEC_STATE) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(codec_state: *mut FMOD_CODEC_STATE) -> FMOD_RESULT>;
 pub type FMOD_CODEC_READ_CALLBACK = Option<
     unsafe extern "C" fn(
         codec_state: *mut FMOD_CODEC_STATE,
@@ -2953,7 +2953,7 @@ pub type FMOD_CODEC_ALLOC_FUNC = Option<
     ) -> *mut c_void,
 >;
 pub type FMOD_CODEC_FREE_FUNC =
-    Option<unsafe extern "C" fn(ptr: *mut c_void, file: *const c_char, line: c_int)>;
+Option<unsafe extern "C" fn(ptr: *mut c_void, file: *const c_char, line: c_int)>;
 pub type FMOD_CODEC_LOG_FUNC = Option<
     unsafe extern "C" fn(
         level: FMOD_DEBUG_FLAGS,
@@ -3019,13 +3019,13 @@ pub type FMOD_OUTPUT_INIT_CALLBACK = Option<
     ) -> FMOD_RESULT,
 >;
 pub type FMOD_OUTPUT_START_CALLBACK =
-    Option<unsafe extern "C" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT>;
 pub type FMOD_OUTPUT_STOP_CALLBACK =
-    Option<unsafe extern "C" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT>;
 pub type FMOD_OUTPUT_CLOSE_CALLBACK =
-    Option<unsafe extern "C" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT>;
 pub type FMOD_OUTPUT_UPDATE_CALLBACK =
-    Option<unsafe extern "C" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT>;
 pub type FMOD_OUTPUT_GETHANDLE_CALLBACK = Option<
     unsafe extern "C" fn(
         output_state: *mut FMOD_OUTPUT_STATE,
@@ -3033,7 +3033,7 @@ pub type FMOD_OUTPUT_GETHANDLE_CALLBACK = Option<
     ) -> FMOD_RESULT,
 >;
 pub type FMOD_OUTPUT_MIXER_CALLBACK =
-    Option<unsafe extern "C" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT>;
 pub type FMOD_OUTPUT_OBJECT3DGETINFO_CALLBACK = Option<
     unsafe extern "C" fn(
         output_state: *mut FMOD_OUTPUT_STATE,
@@ -3074,7 +3074,7 @@ pub type FMOD_OUTPUT_CLOSEPORT_CALLBACK = Option<
     unsafe extern "C" fn(output_state: *mut FMOD_OUTPUT_STATE, portId: c_int) -> FMOD_RESULT,
 >;
 pub type FMOD_OUTPUT_DEVICELISTCHANGED_CALLBACK =
-    Option<unsafe extern "C" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT>;
 pub type FMOD_OUTPUT_READFROMMIXER_FUNC = Option<
     unsafe extern "C" fn(
         output_state: *mut FMOD_OUTPUT_STATE,
@@ -3091,7 +3091,7 @@ pub type FMOD_OUTPUT_COPYPORT_FUNC = Option<
     ) -> FMOD_RESULT,
 >;
 pub type FMOD_OUTPUT_REQUESTRESET_FUNC =
-    Option<unsafe extern "C" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(output_state: *mut FMOD_OUTPUT_STATE) -> FMOD_RESULT>;
 pub type FMOD_OUTPUT_ALLOC_FUNC = Option<
     unsafe extern "C" fn(
         size: c_uint,
@@ -3101,7 +3101,7 @@ pub type FMOD_OUTPUT_ALLOC_FUNC = Option<
     ) -> *mut c_void,
 >;
 pub type FMOD_OUTPUT_FREE_FUNC =
-    Option<unsafe extern "C" fn(ptr: *mut c_void, file: *const c_char, line: c_int)>;
+Option<unsafe extern "C" fn(ptr: *mut c_void, file: *const c_char, line: c_int)>;
 pub type FMOD_OUTPUT_LOG_FUNC = Option<
     unsafe extern "C" fn(
         level: FMOD_DEBUG_FLAGS,
@@ -3113,11 +3113,11 @@ pub type FMOD_OUTPUT_LOG_FUNC = Option<
     ),
 >;
 pub type FMOD_DSP_CREATE_CALLBACK =
-    Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
 pub type FMOD_DSP_RELEASE_CALLBACK =
-    Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
 pub type FMOD_DSP_RESET_CALLBACK =
-    Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
 pub type FMOD_DSP_READ_CALLBACK = Option<
     unsafe extern "C" fn(
         dsp_state: *mut FMOD_DSP_STATE,
@@ -3139,7 +3139,7 @@ pub type FMOD_DSP_PROCESS_CALLBACK = Option<
     ) -> FMOD_RESULT,
 >;
 pub type FMOD_DSP_SETPOSITION_CALLBACK =
-    Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE, pos: c_uint) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE, pos: c_uint) -> FMOD_RESULT>;
 pub type FMOD_DSP_SHOULDIPROCESS_CALLBACK = Option<
     unsafe extern "C" fn(
         dsp_state: *mut FMOD_DSP_STATE,
@@ -3209,11 +3209,11 @@ pub type FMOD_DSP_GETPARAM_DATA_CALLBACK = Option<
     ) -> FMOD_RESULT,
 >;
 pub type FMOD_DSP_SYSTEM_REGISTER_CALLBACK =
-    Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
 pub type FMOD_DSP_SYSTEM_DEREGISTER_CALLBACK =
-    Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT>;
 pub type FMOD_DSP_SYSTEM_MIX_CALLBACK =
-    Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE, stage: c_int) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE, stage: c_int) -> FMOD_RESULT>;
 pub type FMOD_DSP_ALLOC_FUNC = Option<
     unsafe extern "C" fn(
         size: c_uint,
@@ -3243,7 +3243,7 @@ pub type FMOD_DSP_LOG_FUNC = Option<
     ),
 >;
 pub type FMOD_DSP_GETSAMPLERATE_FUNC =
-    Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE, rate: *mut c_int) -> FMOD_RESULT>;
+Option<unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE, rate: *mut c_int) -> FMOD_RESULT>;
 pub type FMOD_DSP_GETBLOCKSIZE_FUNC = Option<
     unsafe extern "C" fn(dsp_state: *mut FMOD_DSP_STATE, blocksize: *mut c_uint) -> FMOD_RESULT,
 >;
@@ -4148,7 +4148,7 @@ extern "C" {
         currenttime: *mut c_float,
     ) -> FMOD_RESULT;
     pub fn FMOD_Studio_CommandReplay_Release(replay: *mut FMOD_STUDIO_COMMANDREPLAY)
-        -> FMOD_RESULT;
+                                             -> FMOD_RESULT;
     pub fn FMOD_Studio_CommandReplay_SetFrameCallback(
         replay: *mut FMOD_STUDIO_COMMANDREPLAY,
         callback: FMOD_STUDIO_COMMANDREPLAY_FRAME_CALLBACK,
@@ -5025,7 +5025,7 @@ extern "C" {
     ) -> FMOD_RESULT;
     pub fn FMOD_Channel_Set3DSpread(channel: *mut FMOD_CHANNEL, angle: c_float) -> FMOD_RESULT;
     pub fn FMOD_Channel_Get3DSpread(channel: *mut FMOD_CHANNEL, angle: *mut c_float)
-        -> FMOD_RESULT;
+                                    -> FMOD_RESULT;
     pub fn FMOD_Channel_Set3DLevel(channel: *mut FMOD_CHANNEL, level: c_float) -> FMOD_RESULT;
     pub fn FMOD_Channel_Get3DLevel(channel: *mut FMOD_CHANNEL, level: *mut c_float) -> FMOD_RESULT;
     pub fn FMOD_Channel_Set3DDopplerLevel(
@@ -5057,7 +5057,7 @@ extern "C" {
         userdata: *mut *mut c_void,
     ) -> FMOD_RESULT;
     pub fn FMOD_Channel_SetFrequency(channel: *mut FMOD_CHANNEL, frequency: c_float)
-        -> FMOD_RESULT;
+                                     -> FMOD_RESULT;
     pub fn FMOD_Channel_GetFrequency(
         channel: *mut FMOD_CHANNEL,
         frequency: *mut c_float,

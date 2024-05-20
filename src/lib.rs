@@ -114,14 +114,22 @@ macro_rules! opt_ptr {
 }
 macro_rules! to_vec {
     ($ ptr : expr , $ length : expr , $ closure : expr) => {
-        slice::from_raw_parts($ptr, $length as usize)
-            .to_vec()
-            .into_iter()
-            .map($closure)
-            .collect::<Result<Vec<_>, Error>>()
+        if $length == 0 {
+            Ok(vec![])
+        } else {
+            slice::from_raw_parts($ptr, $length as usize)
+                .to_vec()
+                .into_iter()
+                .map($closure)
+                .collect::<Result<Vec<_>, Error>>()
+        }
     };
     ($ ptr : expr , $ length : expr) => {
-        slice::from_raw_parts($ptr, $length as usize).to_vec()
+        if $length == 0 {
+            vec![]
+        } else {
+            slice::from_raw_parts($ptr, $length as usize).to_vec()
+        }
     };
 }
 macro_rules! to_bool {
@@ -147,8 +155,8 @@ pub fn attr3d_array8(
 }
 
 pub fn vec_as_mut_ptr<T, O, F>(values: Vec<T>, map: F) -> *mut O
-where
-    F: FnMut(T) -> O,
+    where
+        F: FnMut(T) -> O,
 {
     let mut values = values.into_iter().map(map).collect::<Vec<O>>();
     let pointer = values.as_mut_ptr();
@@ -5454,7 +5462,7 @@ pub struct DspParameterFloatMappingPiecewiseLinear {
 }
 
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR>
-    for DspParameterFloatMappingPiecewiseLinear
+for DspParameterFloatMappingPiecewiseLinear
 {
     type Error = Error;
     fn try_from(
@@ -5471,7 +5479,7 @@ impl TryFrom<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR>
 }
 
 impl Into<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR>
-    for DspParameterFloatMappingPiecewiseLinear
+for DspParameterFloatMappingPiecewiseLinear
 {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
         ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
