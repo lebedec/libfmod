@@ -10,12 +10,6 @@ use crate::models::{
     Function, OpaqueType, Pointer, Preset, Structure, Type, TypeAlias, Union,
 };
 
-impl From<rustfmt_wrapper::Error> for Error {
-    fn from(error: rustfmt_wrapper::Error) -> Self {
-        Error::Fmt(format!("{:?}", error))
-    }
-}
-
 impl From<ParseIntError> for Error {
     fn from(error: ParseIntError) -> Self {
         Error::ParseInt(error.to_string())
@@ -342,24 +336,6 @@ pub fn generate_preset(structure: &Structure, preset: &Preset) -> Result<TokenSt
     })
 }
 
-pub fn generate_errors_mapping_code(mapping: &ErrorStringMapping) -> TokenStream {
-    let mut cases = vec![];
-    for error in &mapping.errors {
-        let result = format_ident!("{}", error.name);
-        let error = &error.string;
-        cases.push(quote! {
-            #result => #error,
-        });
-    }
-    quote! {
-        pub fn map_fmod_error(result: FMOD_RESULT) -> &'static str {
-            match result {
-                #(#cases)*
-                _ => "Unknown error code"
-            }
-        }
-    }
-}
 
 pub fn generate_ffi_code(api: &Api) -> Result<TokenStream, Error> {
     let opaque_types: Vec<TokenStream> =
@@ -405,12 +381,6 @@ pub fn generate_ffi_code(api: &Api) -> Result<TokenStream, Error> {
         }
     }
 
-    let errors = if api.errors.errors.is_empty() {
-        None
-    } else {
-        Some(generate_errors_mapping_code(&api.errors))
-    };
-
     Ok(quote! {
         #![allow(non_camel_case_types)]
         #![allow(non_snake_case)]
@@ -426,11 +396,9 @@ pub fn generate_ffi_code(api: &Api) -> Result<TokenStream, Error> {
         #(#presets)*
         #(#callbacks)*
         #(#libraries)*
-        #errors
     })
 }
 
 pub fn generate(api: &Api) -> Result<String, Error> {
-    let code = generate_ffi_code(api)?;
-    rustfmt_wrapper::rustfmt(code).map_err(Error::from)
+    generate_ffi_code(api).map(|code| code.to_string())
 }

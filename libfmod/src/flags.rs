@@ -1,8 +1,8 @@
-use bitflags::bitflags;
 use crate::ffi;
+use bitflags::bitflags;
 
 bitflags! {
-    
+
     pub struct StudioInit: ffi::FMOD_STUDIO_INITFLAGS {
         const NORMAL = ffi::FMOD_STUDIO_INIT_NORMAL;
         const LIVEUPDATE = ffi::FMOD_STUDIO_INIT_LIVEUPDATE;
@@ -12,7 +12,7 @@ bitflags! {
         const LOAD_FROM_UPDATE = ffi::FMOD_STUDIO_INIT_LOAD_FROM_UPDATE;
         const MEMORY_TRACKING = ffi::FMOD_STUDIO_INIT_MEMORY_TRACKING;
     }
-    
+
     pub struct Parameter: ffi::FMOD_STUDIO_PARAMETER_FLAGS {
         const READONLY = ffi::FMOD_STUDIO_PARAMETER_READONLY;
         const AUTOMATIC = ffi::FMOD_STUDIO_PARAMETER_AUTOMATIC;
@@ -20,7 +20,7 @@ bitflags! {
         const DISCRETE = ffi::FMOD_STUDIO_PARAMETER_DISCRETE;
         const LABELED = ffi::FMOD_STUDIO_PARAMETER_LABELED;
     }
-    
+
     pub struct StudioSystemCallback: ffi::FMOD_STUDIO_SYSTEM_CALLBACK_TYPE {
         const PREUPDATE = ffi::FMOD_STUDIO_SYSTEM_CALLBACK_PREUPDATE;
         const POSTUPDATE = ffi::FMOD_STUDIO_SYSTEM_CALLBACK_POSTUPDATE;
@@ -29,7 +29,7 @@ bitflags! {
         const LIVEUPDATE_DISCONNECTED = ffi::FMOD_STUDIO_SYSTEM_CALLBACK_LIVEUPDATE_DISCONNECTED;
         const ALL = ffi::FMOD_STUDIO_SYSTEM_CALLBACK_ALL;
     }
-    
+
     pub struct EventCallback: ffi::FMOD_STUDIO_EVENT_CALLBACK_TYPE {
         const CREATED = ffi::FMOD_STUDIO_EVENT_CALLBACK_CREATED;
         const DESTROYED = ffi::FMOD_STUDIO_EVENT_CALLBACK_DESTROYED;
@@ -52,27 +52,27 @@ bitflags! {
         const NESTED_TIMELINE_BEAT = ffi::FMOD_STUDIO_EVENT_CALLBACK_NESTED_TIMELINE_BEAT;
         const ALL = ffi::FMOD_STUDIO_EVENT_CALLBACK_ALL;
     }
-    
+
     pub struct LoadBank: ffi::FMOD_STUDIO_LOAD_BANK_FLAGS {
         const NORMAL = ffi::FMOD_STUDIO_LOAD_BANK_NORMAL;
         const NONBLOCKING = ffi::FMOD_STUDIO_LOAD_BANK_NONBLOCKING;
         const DECOMPRESS_SAMPLES = ffi::FMOD_STUDIO_LOAD_BANK_DECOMPRESS_SAMPLES;
         const UNENCRYPTED = ffi::FMOD_STUDIO_LOAD_BANK_UNENCRYPTED;
     }
-    
+
     pub struct CommandCapture: ffi::FMOD_STUDIO_COMMANDCAPTURE_FLAGS {
         const NORMAL = ffi::FMOD_STUDIO_COMMANDCAPTURE_NORMAL;
         const FILEFLUSH = ffi::FMOD_STUDIO_COMMANDCAPTURE_FILEFLUSH;
         const SKIP_INITIAL_STATE = ffi::FMOD_STUDIO_COMMANDCAPTURE_SKIP_INITIAL_STATE;
     }
-    
+
     pub struct CommandReplay: ffi::FMOD_STUDIO_COMMANDREPLAY_FLAGS {
         const NORMAL = ffi::FMOD_STUDIO_COMMANDREPLAY_NORMAL;
         const SKIP_CLEANUP = ffi::FMOD_STUDIO_COMMANDREPLAY_SKIP_CLEANUP;
         const FAST_FORWARD = ffi::FMOD_STUDIO_COMMANDREPLAY_FAST_FORWARD;
         const SKIP_BANK_LOAD = ffi::FMOD_STUDIO_COMMANDREPLAY_SKIP_BANK_LOAD;
     }
-    
+
     pub struct Debug: ffi::FMOD_DEBUG_FLAGS {
         const LEVEL_NONE = ffi::FMOD_DEBUG_LEVEL_NONE;
         const LEVEL_ERROR = ffi::FMOD_DEBUG_LEVEL_ERROR;
@@ -86,7 +86,7 @@ bitflags! {
         const DISPLAY_LINENUMBERS = ffi::FMOD_DEBUG_DISPLAY_LINENUMBERS;
         const DISPLAY_THREAD = ffi::FMOD_DEBUG_DISPLAY_THREAD;
     }
-    
+
     pub struct Memory: ffi::FMOD_MEMORY_TYPE {
         const NORMAL = ffi::FMOD_MEMORY_NORMAL;
         const STREAM_FILE = ffi::FMOD_MEMORY_STREAM_FILE;
@@ -97,7 +97,7 @@ bitflags! {
         const PERSISTENT = ffi::FMOD_MEMORY_PERSISTENT;
         const ALL = ffi::FMOD_MEMORY_ALL;
     }
-    
+
     pub struct Init: ffi::FMOD_INITFLAGS {
         const NORMAL = ffi::FMOD_INIT_NORMAL;
         const STREAM_FROM_UPDATE = ffi::FMOD_INIT_STREAM_FROM_UPDATE;
@@ -114,12 +114,12 @@ bitflags! {
         const PROFILE_METER_ALL = ffi::FMOD_INIT_PROFILE_METER_ALL;
         const MEMORY_TRACKING = ffi::FMOD_INIT_MEMORY_TRACKING;
     }
-    
+
     pub struct DriverState: ffi::FMOD_DRIVER_STATE {
         const CONNECTED = ffi::FMOD_DRIVER_STATE_CONNECTED;
         const DEFAULT = ffi::FMOD_DRIVER_STATE_DEFAULT;
     }
-    
+
     pub struct TimeUnit: ffi::FMOD_TIMEUNIT {
         const MS = ffi::FMOD_TIMEUNIT_MS;
         const PCM = ffi::FMOD_TIMEUNIT_PCM;
@@ -130,7 +130,7 @@ bitflags! {
         const MODROW = ffi::FMOD_TIMEUNIT_MODROW;
         const MODPATTERN = ffi::FMOD_TIMEUNIT_MODPATTERN;
     }
-    
+
     pub struct SystemCallback: ffi::FMOD_SYSTEM_CALLBACK_TYPE {
         const DEVICELISTCHANGED = ffi::FMOD_SYSTEM_CALLBACK_DEVICELISTCHANGED;
         const DEVICELOST = ffi::FMOD_SYSTEM_CALLBACK_DEVICELOST;
@@ -151,7 +151,7 @@ bitflags! {
         const RECORDPOSITIONCHANGED = ffi::FMOD_SYSTEM_CALLBACK_RECORDPOSITIONCHANGED;
         const ALL = ffi::FMOD_SYSTEM_CALLBACK_ALL;
     }
-    
+
     pub struct Mode: ffi::FMOD_MODE {
         const DEFAULT = ffi::FMOD_DEFAULT;
         const LOOP_OFF = ffi::FMOD_LOOP_OFF;
@@ -183,7 +183,7 @@ bitflags! {
         const LOWMEM = ffi::FMOD_LOWMEM;
         const VIRTUAL_PLAYFROMSTART = ffi::FMOD_VIRTUAL_PLAYFROMSTART;
     }
-    
+
     pub struct ChannelMask: ffi::FMOD_CHANNELMASK {
         const FRONT_LEFT = ffi::FMOD_CHANNELMASK_FRONT_LEFT;
         const FRONT_RIGHT = ffi::FMOD_CHANNELMASK_FRONT_RIGHT;
@@ -204,12 +204,12 @@ bitflags! {
         const MASK_7POINT0 = ffi::FMOD_CHANNELMASK_7POINT0;
         const MASK_7POINT1 = ffi::FMOD_CHANNELMASK_7POINT1;
     }
-    
+
     pub struct PortIndex: ffi::FMOD_PORT_INDEX {
         const NONE = ffi::FMOD_PORT_INDEX_NONE;
         const FLAG_VR_CONTROLLER = ffi::FMOD_PORT_INDEX_FLAG_VR_CONTROLLER;
     }
-    
+
     pub struct ThreadPriority: ffi::FMOD_THREAD_PRIORITY {
         const PLATFORM_MIN = ffi::FMOD_THREAD_PRIORITY_PLATFORM_MIN;
         const PLATFORM_MAX = ffi::FMOD_THREAD_PRIORITY_PLATFORM_MAX;
@@ -234,7 +234,7 @@ bitflags! {
         const CONVOLUTION1 = ffi::FMOD_THREAD_PRIORITY_CONVOLUTION1;
         const CONVOLUTION2 = ffi::FMOD_THREAD_PRIORITY_CONVOLUTION2;
     }
-    
+
     pub struct ThreadStackSize: ffi::FMOD_THREAD_STACK_SIZE {
         const DEFAULT = ffi::FMOD_THREAD_STACK_SIZE_DEFAULT;
         const MIXER = ffi::FMOD_THREAD_STACK_SIZE_MIXER;
@@ -251,7 +251,7 @@ bitflags! {
         const CONVOLUTION1 = ffi::FMOD_THREAD_STACK_SIZE_CONVOLUTION1;
         const CONVOLUTION2 = ffi::FMOD_THREAD_STACK_SIZE_CONVOLUTION2;
     }
-    
+
     pub struct ThreadAffinity: ffi::FMOD_THREAD_AFFINITY {
         const GROUP_DEFAULT = ffi::FMOD_THREAD_AFFINITY_GROUP_DEFAULT;
         const GROUP_A = ffi::FMOD_THREAD_AFFINITY_GROUP_A;
@@ -288,18 +288,18 @@ bitflags! {
         const CORE_14 = ffi::FMOD_THREAD_AFFINITY_CORE_14;
         const CORE_15 = ffi::FMOD_THREAD_AFFINITY_CORE_15;
     }
-    
+
     pub struct CodecSeekMethod: ffi::FMOD_CODEC_SEEK_METHOD {
         const SET = ffi::FMOD_CODEC_SEEK_METHOD_SET;
         const CURRENT = ffi::FMOD_CODEC_SEEK_METHOD_CURRENT;
         const END = ffi::FMOD_CODEC_SEEK_METHOD_END;
     }
-    
+
     pub struct OutputMethodMix: ffi::FMOD_OUTPUT_METHOD {
         const DIRECT = ffi::FMOD_OUTPUT_METHOD_MIX_DIRECT;
         const BUFFERED = ffi::FMOD_OUTPUT_METHOD_MIX_BUFFERED;
     }
-    
+
 }
 
 impl Into<ffi::FMOD_STUDIO_INITFLAGS> for StudioInit {
@@ -427,4 +427,3 @@ impl Into<ffi::FMOD_OUTPUT_METHOD> for OutputMethodMix {
         self.bits
     }
 }
-    
