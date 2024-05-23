@@ -231,7 +231,7 @@ fn test_bank_events_list() -> Result<(), Error> {
     assert_eq!(count, 2);
     assert_eq!(
         events,
-        vec!["event:/events/1".to_string(), "event:/events/2".to_string(),]
+        vec!["event:/events/1".to_string(), "event:/events/2".to_string()]
     );
 
     studio.release()
