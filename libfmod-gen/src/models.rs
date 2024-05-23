@@ -3,12 +3,12 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum Error {
     FileMalformed,
     Pest(String),
     Serde(String),
-    Fmt(String),
+    Fmt(std::io::Error),
     ParseInt(String),
     ParseFloat(String),
     LexError(String),

@@ -1,2 +1,2 @@
-mod manual;
 mod examples;
+mod manual;

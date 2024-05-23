@@ -1,19 +1,16 @@
 #![allow(unused_unsafe)]
-
 use std::ffi::{c_void, CStr, CString, IntoStringError, NulError};
 use std::fmt::{Display, Formatter};
 use std::mem::size_of;
 use std::os::raw::c_char;
 use std::ptr::{null, null_mut};
 use std::slice;
-
+pub mod errors;
 pub mod ffi;
 #[cfg(feature = "flags")]
 mod flags;
-
 #[cfg(feature = "flags")]
 pub use flags::*;
-
 #[derive(Debug)]
 pub enum Error {
     Fmod {
@@ -29,7 +26,6 @@ pub enum Error {
     StringNul(NulError),
     NotDspFft,
 }
-
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -62,9 +58,7 @@ impl Display for Error {
         }
     }
 }
-
 impl std::error::Error for Error {}
-
 impl From<NulError> for Error {
     fn from(error: NulError) -> Self {
         Error::StringNul(error)
@@ -75,7 +69,7 @@ macro_rules! err_fmod {
         Error::Fmod {
             function: $function.to_string(),
             code: $code,
-            message: ffi::map_fmod_error($code).to_string(),
+            message: errors::map_fmod_error($code).to_string(),
         }
     };
 }
@@ -153,21 +147,18 @@ pub fn attr3d_array8(
 ) -> [Attributes3d; ffi::FMOD_MAX_LISTENERS as usize] {
     values.try_into().expect("slice with incorrect length")
 }
-
 pub fn vec_as_mut_ptr<T, O, F>(values: Vec<T>, map: F) -> *mut O
-    where
-        F: FnMut(T) -> O,
+where
+    F: FnMut(T) -> O,
 {
     let mut values = values.into_iter().map(map).collect::<Vec<O>>();
     let pointer = values.as_mut_ptr();
     std::mem::forget(values);
     pointer
 }
-
 const fn from_ref<T: ?Sized>(value: &T) -> *const T {
     value
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LoadingState {
     Unloading,
@@ -176,7 +167,6 @@ pub enum LoadingState {
     Loaded,
     Error,
 }
-
 impl From<LoadingState> for ffi::FMOD_STUDIO_LOADING_STATE {
     fn from(value: LoadingState) -> ffi::FMOD_STUDIO_LOADING_STATE {
         match value {
@@ -188,7 +178,6 @@ impl From<LoadingState> for ffi::FMOD_STUDIO_LOADING_STATE {
         }
     }
 }
-
 impl LoadingState {
     pub fn from(value: ffi::FMOD_STUDIO_LOADING_STATE) -> Result<LoadingState, Error> {
         match value {
@@ -201,13 +190,11 @@ impl LoadingState {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LoadMemoryMode {
     Memory,
     MemoryPoint,
 }
-
 impl From<LoadMemoryMode> for ffi::FMOD_STUDIO_LOAD_MEMORY_MODE {
     fn from(value: LoadMemoryMode) -> ffi::FMOD_STUDIO_LOAD_MEMORY_MODE {
         match value {
@@ -216,7 +203,6 @@ impl From<LoadMemoryMode> for ffi::FMOD_STUDIO_LOAD_MEMORY_MODE {
         }
     }
 }
-
 impl LoadMemoryMode {
     pub fn from(value: ffi::FMOD_STUDIO_LOAD_MEMORY_MODE) -> Result<LoadMemoryMode, Error> {
         match value {
@@ -226,7 +212,6 @@ impl LoadMemoryMode {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ParameterType {
     GameControlled,
@@ -241,7 +226,6 @@ pub enum ParameterType {
     AutomaticDistanceNormalized,
     Max,
 }
-
 impl From<ParameterType> for ffi::FMOD_STUDIO_PARAMETER_TYPE {
     fn from(value: ParameterType) -> ffi::FMOD_STUDIO_PARAMETER_TYPE {
         match value {
@@ -269,7 +253,6 @@ impl From<ParameterType> for ffi::FMOD_STUDIO_PARAMETER_TYPE {
         }
     }
 }
-
 impl ParameterType {
     pub fn from(value: ffi::FMOD_STUDIO_PARAMETER_TYPE) -> Result<ParameterType, Error> {
         match value {
@@ -298,7 +281,6 @@ impl ParameterType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum UserPropertyType {
     Integer,
@@ -306,7 +288,6 @@ pub enum UserPropertyType {
     Float,
     String,
 }
-
 impl From<UserPropertyType> for ffi::FMOD_STUDIO_USER_PROPERTY_TYPE {
     fn from(value: UserPropertyType) -> ffi::FMOD_STUDIO_USER_PROPERTY_TYPE {
         match value {
@@ -317,7 +298,6 @@ impl From<UserPropertyType> for ffi::FMOD_STUDIO_USER_PROPERTY_TYPE {
         }
     }
 }
-
 impl UserPropertyType {
     pub fn from(value: ffi::FMOD_STUDIO_USER_PROPERTY_TYPE) -> Result<UserPropertyType, Error> {
         match value {
@@ -329,7 +309,6 @@ impl UserPropertyType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum EventProperty {
     ChannelPriority,
@@ -340,7 +319,6 @@ pub enum EventProperty {
     Cooldown,
     Max,
 }
-
 impl From<EventProperty> for ffi::FMOD_STUDIO_EVENT_PROPERTY {
     fn from(value: EventProperty) -> ffi::FMOD_STUDIO_EVENT_PROPERTY {
         match value {
@@ -354,7 +332,6 @@ impl From<EventProperty> for ffi::FMOD_STUDIO_EVENT_PROPERTY {
         }
     }
 }
-
 impl EventProperty {
     pub fn from(value: ffi::FMOD_STUDIO_EVENT_PROPERTY) -> Result<EventProperty, Error> {
         match value {
@@ -371,7 +348,6 @@ impl EventProperty {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PlaybackState {
     Playing,
@@ -380,7 +356,6 @@ pub enum PlaybackState {
     Starting,
     Stopping,
 }
-
 impl From<PlaybackState> for ffi::FMOD_STUDIO_PLAYBACK_STATE {
     fn from(value: PlaybackState) -> ffi::FMOD_STUDIO_PLAYBACK_STATE {
         match value {
@@ -392,7 +367,6 @@ impl From<PlaybackState> for ffi::FMOD_STUDIO_PLAYBACK_STATE {
         }
     }
 }
-
 impl PlaybackState {
     pub fn from(value: ffi::FMOD_STUDIO_PLAYBACK_STATE) -> Result<PlaybackState, Error> {
         match value {
@@ -405,13 +379,11 @@ impl PlaybackState {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StopMode {
     AllowFadeout,
     Immediate,
 }
-
 impl From<StopMode> for ffi::FMOD_STUDIO_STOP_MODE {
     fn from(value: StopMode) -> ffi::FMOD_STUDIO_STOP_MODE {
         match value {
@@ -420,7 +392,6 @@ impl From<StopMode> for ffi::FMOD_STUDIO_STOP_MODE {
         }
     }
 }
-
 impl StopMode {
     pub fn from(value: ffi::FMOD_STUDIO_STOP_MODE) -> Result<StopMode, Error> {
         match value {
@@ -430,7 +401,6 @@ impl StopMode {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum InstanceType {
     None,
@@ -443,7 +413,6 @@ pub enum InstanceType {
     Bank,
     CommandReplay,
 }
-
 impl From<InstanceType> for ffi::FMOD_STUDIO_INSTANCETYPE {
     fn from(value: InstanceType) -> ffi::FMOD_STUDIO_INSTANCETYPE {
         match value {
@@ -459,7 +428,6 @@ impl From<InstanceType> for ffi::FMOD_STUDIO_INSTANCETYPE {
         }
     }
 }
-
 impl InstanceType {
     pub fn from(value: ffi::FMOD_STUDIO_INSTANCETYPE) -> Result<InstanceType, Error> {
         match value {
@@ -476,7 +444,6 @@ impl InstanceType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ThreadType {
     Mixer,
@@ -494,7 +461,6 @@ pub enum ThreadType {
     Convolution2,
     Max,
 }
-
 impl From<ThreadType> for ffi::FMOD_THREAD_TYPE {
     fn from(value: ThreadType) -> ffi::FMOD_THREAD_TYPE {
         match value {
@@ -515,7 +481,6 @@ impl From<ThreadType> for ffi::FMOD_THREAD_TYPE {
         }
     }
 }
-
 impl ThreadType {
     pub fn from(value: ffi::FMOD_THREAD_TYPE) -> Result<ThreadType, Error> {
         match value {
@@ -537,7 +502,6 @@ impl ThreadType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum FmodResult {
     Ok,
@@ -623,7 +587,6 @@ pub enum FmodResult {
     ErrRecordDisconnected,
     ErrToomanysamples,
 }
-
 impl From<FmodResult> for ffi::FMOD_RESULT {
     fn from(value: FmodResult) -> ffi::FMOD_RESULT {
         match value {
@@ -712,7 +675,6 @@ impl From<FmodResult> for ffi::FMOD_RESULT {
         }
     }
 }
-
 impl FmodResult {
     pub fn from(value: ffi::FMOD_RESULT) -> Result<FmodResult, Error> {
         match value {
@@ -802,14 +764,12 @@ impl FmodResult {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ChannelControlType {
     Channel,
     ChannelGroup,
     Max,
 }
-
 impl From<ChannelControlType> for ffi::FMOD_CHANNELCONTROL_TYPE {
     fn from(value: ChannelControlType) -> ffi::FMOD_CHANNELCONTROL_TYPE {
         match value {
@@ -819,7 +779,6 @@ impl From<ChannelControlType> for ffi::FMOD_CHANNELCONTROL_TYPE {
         }
     }
 }
-
 impl ChannelControlType {
     pub fn from(value: ffi::FMOD_CHANNELCONTROL_TYPE) -> Result<ChannelControlType, Error> {
         match value {
@@ -830,7 +789,6 @@ impl ChannelControlType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OutputType {
     Autodetect,
@@ -855,7 +813,6 @@ pub enum OutputType {
     AudioWorklet,
     Max,
 }
-
 impl From<OutputType> for ffi::FMOD_OUTPUTTYPE {
     fn from(value: OutputType) -> ffi::FMOD_OUTPUTTYPE {
         match value {
@@ -883,7 +840,6 @@ impl From<OutputType> for ffi::FMOD_OUTPUTTYPE {
         }
     }
 }
-
 impl OutputType {
     pub fn from(value: ffi::FMOD_OUTPUTTYPE) -> Result<OutputType, Error> {
         match value {
@@ -912,14 +868,12 @@ impl OutputType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DebugMode {
     Tty,
     File,
     Callback,
 }
-
 impl From<DebugMode> for ffi::FMOD_DEBUG_MODE {
     fn from(value: DebugMode) -> ffi::FMOD_DEBUG_MODE {
         match value {
@@ -929,7 +883,6 @@ impl From<DebugMode> for ffi::FMOD_DEBUG_MODE {
         }
     }
 }
-
 impl DebugMode {
     pub fn from(value: ffi::FMOD_DEBUG_MODE) -> Result<DebugMode, Error> {
         match value {
@@ -940,7 +893,6 @@ impl DebugMode {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SpeakerMode {
     Default,
@@ -954,7 +906,6 @@ pub enum SpeakerMode {
     Mode7Point1Point4,
     Max,
 }
-
 impl From<SpeakerMode> for ffi::FMOD_SPEAKERMODE {
     fn from(value: SpeakerMode) -> ffi::FMOD_SPEAKERMODE {
         match value {
@@ -971,7 +922,6 @@ impl From<SpeakerMode> for ffi::FMOD_SPEAKERMODE {
         }
     }
 }
-
 impl SpeakerMode {
     pub fn from(value: ffi::FMOD_SPEAKERMODE) -> Result<SpeakerMode, Error> {
         match value {
@@ -989,7 +939,6 @@ impl SpeakerMode {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Speaker {
     None,
@@ -1007,7 +956,6 @@ pub enum Speaker {
     TopBackRight,
     Max,
 }
-
 impl From<Speaker> for ffi::FMOD_SPEAKER {
     fn from(value: Speaker) -> ffi::FMOD_SPEAKER {
         match value {
@@ -1028,7 +976,6 @@ impl From<Speaker> for ffi::FMOD_SPEAKER {
         }
     }
 }
-
 impl Speaker {
     pub fn from(value: ffi::FMOD_SPEAKER) -> Result<Speaker, Error> {
         match value {
@@ -1050,7 +997,6 @@ impl Speaker {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ChannelOrder {
     Default,
@@ -1061,7 +1007,6 @@ pub enum ChannelOrder {
     Alsa,
     Max,
 }
-
 impl From<ChannelOrder> for ffi::FMOD_CHANNELORDER {
     fn from(value: ChannelOrder) -> ffi::FMOD_CHANNELORDER {
         match value {
@@ -1075,7 +1020,6 @@ impl From<ChannelOrder> for ffi::FMOD_CHANNELORDER {
         }
     }
 }
-
 impl ChannelOrder {
     pub fn from(value: ffi::FMOD_CHANNELORDER) -> Result<ChannelOrder, Error> {
         match value {
@@ -1090,7 +1034,6 @@ impl ChannelOrder {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PluginType {
     Output,
@@ -1098,7 +1041,6 @@ pub enum PluginType {
     Dsp,
     Max,
 }
-
 impl From<PluginType> for ffi::FMOD_PLUGINTYPE {
     fn from(value: PluginType) -> ffi::FMOD_PLUGINTYPE {
         match value {
@@ -1109,7 +1051,6 @@ impl From<PluginType> for ffi::FMOD_PLUGINTYPE {
         }
     }
 }
-
 impl PluginType {
     pub fn from(value: ffi::FMOD_PLUGINTYPE) -> Result<PluginType, Error> {
         match value {
@@ -1121,7 +1062,6 @@ impl PluginType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SoundType {
     Unknown,
@@ -1151,7 +1091,6 @@ pub enum SoundType {
     Opus,
     Max,
 }
-
 impl From<SoundType> for ffi::FMOD_SOUND_TYPE {
     fn from(value: SoundType) -> ffi::FMOD_SOUND_TYPE {
         match value {
@@ -1184,7 +1123,6 @@ impl From<SoundType> for ffi::FMOD_SOUND_TYPE {
         }
     }
 }
-
 impl SoundType {
     pub fn from(value: ffi::FMOD_SOUND_TYPE) -> Result<SoundType, Error> {
         match value {
@@ -1218,7 +1156,6 @@ impl SoundType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SoundFormat {
     None,
@@ -1230,7 +1167,6 @@ pub enum SoundFormat {
     Bitstream,
     Max,
 }
-
 impl From<SoundFormat> for ffi::FMOD_SOUND_FORMAT {
     fn from(value: SoundFormat) -> ffi::FMOD_SOUND_FORMAT {
         match value {
@@ -1245,7 +1181,6 @@ impl From<SoundFormat> for ffi::FMOD_SOUND_FORMAT {
         }
     }
 }
-
 impl SoundFormat {
     pub fn from(value: ffi::FMOD_SOUND_FORMAT) -> Result<SoundFormat, Error> {
         match value {
@@ -1261,7 +1196,6 @@ impl SoundFormat {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OpenState {
     Ready,
@@ -1274,7 +1208,6 @@ pub enum OpenState {
     SetPosition,
     Max,
 }
-
 impl From<OpenState> for ffi::FMOD_OPENSTATE {
     fn from(value: OpenState) -> ffi::FMOD_OPENSTATE {
         match value {
@@ -1290,7 +1223,6 @@ impl From<OpenState> for ffi::FMOD_OPENSTATE {
         }
     }
 }
-
 impl OpenState {
     pub fn from(value: ffi::FMOD_OPENSTATE) -> Result<OpenState, Error> {
         match value {
@@ -1307,7 +1239,6 @@ impl OpenState {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SoundGroupBehavior {
     Fail,
@@ -1315,7 +1246,6 @@ pub enum SoundGroupBehavior {
     StealLowest,
     Max,
 }
-
 impl From<SoundGroupBehavior> for ffi::FMOD_SOUNDGROUP_BEHAVIOR {
     fn from(value: SoundGroupBehavior) -> ffi::FMOD_SOUNDGROUP_BEHAVIOR {
         match value {
@@ -1326,7 +1256,6 @@ impl From<SoundGroupBehavior> for ffi::FMOD_SOUNDGROUP_BEHAVIOR {
         }
     }
 }
-
 impl SoundGroupBehavior {
     pub fn from(value: ffi::FMOD_SOUNDGROUP_BEHAVIOR) -> Result<SoundGroupBehavior, Error> {
         match value {
@@ -1338,7 +1267,6 @@ impl SoundGroupBehavior {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ChannelControlCallbackType {
     End,
@@ -1347,7 +1275,6 @@ pub enum ChannelControlCallbackType {
     Occlusion,
     Max,
 }
-
 impl From<ChannelControlCallbackType> for ffi::FMOD_CHANNELCONTROL_CALLBACK_TYPE {
     fn from(value: ChannelControlCallbackType) -> ffi::FMOD_CHANNELCONTROL_CALLBACK_TYPE {
         match value {
@@ -1361,7 +1288,6 @@ impl From<ChannelControlCallbackType> for ffi::FMOD_CHANNELCONTROL_CALLBACK_TYPE
         }
     }
 }
-
 impl ChannelControlCallbackType {
     pub fn from(
         value: ffi::FMOD_CHANNELCONTROL_CALLBACK_TYPE,
@@ -1382,14 +1308,12 @@ impl ChannelControlCallbackType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ChannelControlDspIndex {
     Head,
     Fader,
     Tail,
 }
-
 impl From<ChannelControlDspIndex> for ffi::FMOD_CHANNELCONTROL_DSP_INDEX {
     fn from(value: ChannelControlDspIndex) -> ffi::FMOD_CHANNELCONTROL_DSP_INDEX {
         match value {
@@ -1399,7 +1323,6 @@ impl From<ChannelControlDspIndex> for ffi::FMOD_CHANNELCONTROL_DSP_INDEX {
         }
     }
 }
-
 impl ChannelControlDspIndex {
     pub fn from(
         value: ffi::FMOD_CHANNELCONTROL_DSP_INDEX,
@@ -1412,7 +1335,6 @@ impl ChannelControlDspIndex {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ErrorCallbackInstancetype {
     None,
@@ -1435,7 +1357,6 @@ pub enum ErrorCallbackInstancetype {
     Bank,
     CommandReplay,
 }
-
 impl From<ErrorCallbackInstancetype> for ffi::FMOD_ERRORCALLBACK_INSTANCETYPE {
     fn from(value: ErrorCallbackInstancetype) -> ffi::FMOD_ERRORCALLBACK_INSTANCETYPE {
         match value {
@@ -1477,7 +1398,6 @@ impl From<ErrorCallbackInstancetype> for ffi::FMOD_ERRORCALLBACK_INSTANCETYPE {
         }
     }
 }
-
 impl ErrorCallbackInstancetype {
     pub fn from(
         value: ffi::FMOD_ERRORCALLBACK_INSTANCETYPE,
@@ -1528,7 +1448,6 @@ impl ErrorCallbackInstancetype {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspResampler {
     Default,
@@ -1538,7 +1457,6 @@ pub enum DspResampler {
     Spline,
     Max,
 }
-
 impl From<DspResampler> for ffi::FMOD_DSP_RESAMPLER {
     fn from(value: DspResampler) -> ffi::FMOD_DSP_RESAMPLER {
         match value {
@@ -1551,7 +1469,6 @@ impl From<DspResampler> for ffi::FMOD_DSP_RESAMPLER {
         }
     }
 }
-
 impl DspResampler {
     pub fn from(value: ffi::FMOD_DSP_RESAMPLER) -> Result<DspResampler, Error> {
         match value {
@@ -1565,7 +1482,6 @@ impl DspResampler {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspConnectionType {
     Standard,
@@ -1574,7 +1490,6 @@ pub enum DspConnectionType {
     SendSidechain,
     Max,
 }
-
 impl From<DspConnectionType> for ffi::FMOD_DSPCONNECTION_TYPE {
     fn from(value: DspConnectionType) -> ffi::FMOD_DSPCONNECTION_TYPE {
         match value {
@@ -1586,7 +1501,6 @@ impl From<DspConnectionType> for ffi::FMOD_DSPCONNECTION_TYPE {
         }
     }
 }
-
 impl DspConnectionType {
     pub fn from(value: ffi::FMOD_DSPCONNECTION_TYPE) -> Result<DspConnectionType, Error> {
         match value {
@@ -1599,7 +1513,6 @@ impl DspConnectionType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TagType {
     Unknown,
@@ -1615,7 +1528,6 @@ pub enum TagType {
     User,
     Max,
 }
-
 impl From<TagType> for ffi::FMOD_TAGTYPE {
     fn from(value: TagType) -> ffi::FMOD_TAGTYPE {
         match value {
@@ -1634,7 +1546,6 @@ impl From<TagType> for ffi::FMOD_TAGTYPE {
         }
     }
 }
-
 impl TagType {
     pub fn from(value: ffi::FMOD_TAGTYPE) -> Result<TagType, Error> {
         match value {
@@ -1654,7 +1565,6 @@ impl TagType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum TagDataType {
     Binary,
@@ -1666,7 +1576,6 @@ pub enum TagDataType {
     StringUtf8,
     Max,
 }
-
 impl From<TagDataType> for ffi::FMOD_TAGDATATYPE {
     fn from(value: TagDataType) -> ffi::FMOD_TAGDATATYPE {
         match value {
@@ -1681,7 +1590,6 @@ impl From<TagDataType> for ffi::FMOD_TAGDATATYPE {
         }
     }
 }
-
 impl TagDataType {
     pub fn from(value: ffi::FMOD_TAGDATATYPE) -> Result<TagDataType, Error> {
         match value {
@@ -1697,7 +1605,6 @@ impl TagDataType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PortType {
     Music,
@@ -1709,7 +1616,6 @@ pub enum PortType {
     Aux,
     Max,
 }
-
 impl From<PortType> for ffi::FMOD_PORT_TYPE {
     fn from(value: PortType) -> ffi::FMOD_PORT_TYPE {
         match value {
@@ -1724,7 +1630,6 @@ impl From<PortType> for ffi::FMOD_PORT_TYPE {
         }
     }
 }
-
 impl PortType {
     pub fn from(value: ffi::FMOD_PORT_TYPE) -> Result<PortType, Error> {
         match value {
@@ -1740,13 +1645,11 @@ impl PortType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspProcessOperation {
     Perform,
     Query,
 }
-
 impl From<DspProcessOperation> for ffi::FMOD_DSP_PROCESS_OPERATION {
     fn from(value: DspProcessOperation) -> ffi::FMOD_DSP_PROCESS_OPERATION {
         match value {
@@ -1755,7 +1658,6 @@ impl From<DspProcessOperation> for ffi::FMOD_DSP_PROCESS_OPERATION {
         }
     }
 }
-
 impl DspProcessOperation {
     pub fn from(value: ffi::FMOD_DSP_PROCESS_OPERATION) -> Result<DspProcessOperation, Error> {
         match value {
@@ -1765,13 +1667,11 @@ impl DspProcessOperation {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspPanSurroundFlags {
     Default,
     RotationNotBiased,
 }
-
 impl From<DspPanSurroundFlags> for ffi::FMOD_DSP_PAN_SURROUND_FLAGS {
     fn from(value: DspPanSurroundFlags) -> ffi::FMOD_DSP_PAN_SURROUND_FLAGS {
         match value {
@@ -1782,7 +1682,6 @@ impl From<DspPanSurroundFlags> for ffi::FMOD_DSP_PAN_SURROUND_FLAGS {
         }
     }
 }
-
 impl DspPanSurroundFlags {
     pub fn from(value: ffi::FMOD_DSP_PAN_SURROUND_FLAGS) -> Result<DspPanSurroundFlags, Error> {
         match value {
@@ -1794,7 +1693,6 @@ impl DspPanSurroundFlags {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspParameterType {
     Float,
@@ -1803,7 +1701,6 @@ pub enum DspParameterType {
     Data,
     Max,
 }
-
 impl From<DspParameterType> for ffi::FMOD_DSP_PARAMETER_TYPE {
     fn from(value: DspParameterType) -> ffi::FMOD_DSP_PARAMETER_TYPE {
         match value {
@@ -1815,7 +1712,6 @@ impl From<DspParameterType> for ffi::FMOD_DSP_PARAMETER_TYPE {
         }
     }
 }
-
 impl DspParameterType {
     pub fn from(value: ffi::FMOD_DSP_PARAMETER_TYPE) -> Result<DspParameterType, Error> {
         match value {
@@ -1828,14 +1724,12 @@ impl DspParameterType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspParameterFloatMappingType {
     Linear,
     Auto,
     PiecewiseLinear,
 }
-
 impl From<DspParameterFloatMappingType> for ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE {
     fn from(value: DspParameterFloatMappingType) -> ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE {
         match value {
@@ -1849,7 +1743,6 @@ impl From<DspParameterFloatMappingType> for ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPIN
         }
     }
 }
-
 impl DspParameterFloatMappingType {
     pub fn from(
         value: ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_TYPE,
@@ -1868,7 +1761,6 @@ impl DspParameterFloatMappingType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspParameterDataType {
     User,
@@ -1879,7 +1771,6 @@ pub enum DspParameterDataType {
     AttributesMulti3D,
     AttenuationRange,
 }
-
 impl From<DspParameterDataType> for ffi::FMOD_DSP_PARAMETER_DATA_TYPE {
     fn from(value: DspParameterDataType) -> ffi::FMOD_DSP_PARAMETER_DATA_TYPE {
         match value {
@@ -1897,7 +1788,6 @@ impl From<DspParameterDataType> for ffi::FMOD_DSP_PARAMETER_DATA_TYPE {
         }
     }
 }
-
 impl DspParameterDataType {
     pub fn from(value: ffi::FMOD_DSP_PARAMETER_DATA_TYPE) -> Result<DspParameterDataType, Error> {
         match value {
@@ -1918,7 +1808,6 @@ impl DspParameterDataType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspType {
     Unknown,
@@ -1960,7 +1849,6 @@ pub enum DspType {
     MultibandEq,
     Max,
 }
-
 impl From<DspType> for ffi::FMOD_DSP_TYPE {
     fn from(value: DspType) -> ffi::FMOD_DSP_TYPE {
         match value {
@@ -2005,7 +1893,6 @@ impl From<DspType> for ffi::FMOD_DSP_TYPE {
         }
     }
 }
-
 impl DspType {
     pub fn from(value: ffi::FMOD_DSP_TYPE) -> Result<DspType, Error> {
         match value {
@@ -2051,13 +1938,11 @@ impl DspType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspOscillator {
     Type,
     Rate,
 }
-
 impl From<DspOscillator> for ffi::FMOD_DSP_OSCILLATOR {
     fn from(value: DspOscillator) -> ffi::FMOD_DSP_OSCILLATOR {
         match value {
@@ -2066,7 +1951,6 @@ impl From<DspOscillator> for ffi::FMOD_DSP_OSCILLATOR {
         }
     }
 }
-
 impl DspOscillator {
     pub fn from(value: ffi::FMOD_DSP_OSCILLATOR) -> Result<DspOscillator, Error> {
         match value {
@@ -2076,13 +1960,11 @@ impl DspOscillator {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspLowPass {
     Cutoff,
     Resonance,
 }
-
 impl From<DspLowPass> for ffi::FMOD_DSP_LOWPASS {
     fn from(value: DspLowPass) -> ffi::FMOD_DSP_LOWPASS {
         match value {
@@ -2091,7 +1973,6 @@ impl From<DspLowPass> for ffi::FMOD_DSP_LOWPASS {
         }
     }
 }
-
 impl DspLowPass {
     pub fn from(value: ffi::FMOD_DSP_LOWPASS) -> Result<DspLowPass, Error> {
         match value {
@@ -2101,13 +1982,11 @@ impl DspLowPass {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspItLowPass {
     Cutoff,
     Resonance,
 }
-
 impl From<DspItLowPass> for ffi::FMOD_DSP_ITLOWPASS {
     fn from(value: DspItLowPass) -> ffi::FMOD_DSP_ITLOWPASS {
         match value {
@@ -2116,7 +1995,6 @@ impl From<DspItLowPass> for ffi::FMOD_DSP_ITLOWPASS {
         }
     }
 }
-
 impl DspItLowPass {
     pub fn from(value: ffi::FMOD_DSP_ITLOWPASS) -> Result<DspItLowPass, Error> {
         match value {
@@ -2126,13 +2004,11 @@ impl DspItLowPass {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspHighPass {
     Cutoff,
     Resonance,
 }
-
 impl From<DspHighPass> for ffi::FMOD_DSP_HIGHPASS {
     fn from(value: DspHighPass) -> ffi::FMOD_DSP_HIGHPASS {
         match value {
@@ -2141,7 +2017,6 @@ impl From<DspHighPass> for ffi::FMOD_DSP_HIGHPASS {
         }
     }
 }
-
 impl DspHighPass {
     pub fn from(value: ffi::FMOD_DSP_HIGHPASS) -> Result<DspHighPass, Error> {
         match value {
@@ -2151,7 +2026,6 @@ impl DspHighPass {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspEcho {
     Delay,
@@ -2159,7 +2033,6 @@ pub enum DspEcho {
     DryLevel,
     WetLevel,
 }
-
 impl From<DspEcho> for ffi::FMOD_DSP_ECHO {
     fn from(value: DspEcho) -> ffi::FMOD_DSP_ECHO {
         match value {
@@ -2170,7 +2043,6 @@ impl From<DspEcho> for ffi::FMOD_DSP_ECHO {
         }
     }
 }
-
 impl DspEcho {
     pub fn from(value: ffi::FMOD_DSP_ECHO) -> Result<DspEcho, Error> {
         match value {
@@ -2182,13 +2054,11 @@ impl DspEcho {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspFader {
     Gain,
     OverallGain,
 }
-
 impl From<DspFader> for ffi::FMOD_DSP_FADER {
     fn from(value: DspFader) -> ffi::FMOD_DSP_FADER {
         match value {
@@ -2197,7 +2067,6 @@ impl From<DspFader> for ffi::FMOD_DSP_FADER {
         }
     }
 }
-
 impl DspFader {
     pub fn from(value: ffi::FMOD_DSP_FADER) -> Result<DspFader, Error> {
         match value {
@@ -2207,14 +2076,12 @@ impl DspFader {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspFlange {
     Mix,
     Depth,
     Rate,
 }
-
 impl From<DspFlange> for ffi::FMOD_DSP_FLANGE {
     fn from(value: DspFlange) -> ffi::FMOD_DSP_FLANGE {
         match value {
@@ -2224,7 +2091,6 @@ impl From<DspFlange> for ffi::FMOD_DSP_FLANGE {
         }
     }
 }
-
 impl DspFlange {
     pub fn from(value: ffi::FMOD_DSP_FLANGE) -> Result<DspFlange, Error> {
         match value {
@@ -2235,12 +2101,10 @@ impl DspFlange {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspDistortion {
     Level,
 }
-
 impl From<DspDistortion> for ffi::FMOD_DSP_DISTORTION {
     fn from(value: DspDistortion) -> ffi::FMOD_DSP_DISTORTION {
         match value {
@@ -2248,7 +2112,6 @@ impl From<DspDistortion> for ffi::FMOD_DSP_DISTORTION {
         }
     }
 }
-
 impl DspDistortion {
     pub fn from(value: ffi::FMOD_DSP_DISTORTION) -> Result<DspDistortion, Error> {
         match value {
@@ -2257,14 +2120,12 @@ impl DspDistortion {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspNormalize {
     FadeTime,
     Threshold,
     MaxAmp,
 }
-
 impl From<DspNormalize> for ffi::FMOD_DSP_NORMALIZE {
     fn from(value: DspNormalize) -> ffi::FMOD_DSP_NORMALIZE {
         match value {
@@ -2274,7 +2135,6 @@ impl From<DspNormalize> for ffi::FMOD_DSP_NORMALIZE {
         }
     }
 }
-
 impl DspNormalize {
     pub fn from(value: ffi::FMOD_DSP_NORMALIZE) -> Result<DspNormalize, Error> {
         match value {
@@ -2285,7 +2145,6 @@ impl DspNormalize {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspLimiter {
     ReleaseTime,
@@ -2293,7 +2152,6 @@ pub enum DspLimiter {
     MaximizerGain,
     Mode,
 }
-
 impl From<DspLimiter> for ffi::FMOD_DSP_LIMITER {
     fn from(value: DspLimiter) -> ffi::FMOD_DSP_LIMITER {
         match value {
@@ -2304,7 +2162,6 @@ impl From<DspLimiter> for ffi::FMOD_DSP_LIMITER {
         }
     }
 }
-
 impl DspLimiter {
     pub fn from(value: ffi::FMOD_DSP_LIMITER) -> Result<DspLimiter, Error> {
         match value {
@@ -2316,14 +2173,12 @@ impl DspLimiter {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspParameq {
     Center,
     Bandwidth,
     Gain,
 }
-
 impl From<DspParameq> for ffi::FMOD_DSP_PARAMEQ {
     fn from(value: DspParameq) -> ffi::FMOD_DSP_PARAMEQ {
         match value {
@@ -2333,7 +2188,6 @@ impl From<DspParameq> for ffi::FMOD_DSP_PARAMEQ {
         }
     }
 }
-
 impl DspParameq {
     pub fn from(value: ffi::FMOD_DSP_PARAMEQ) -> Result<DspParameq, Error> {
         match value {
@@ -2344,7 +2198,6 @@ impl DspParameq {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspMultibandEq {
     AFilter,
@@ -2368,7 +2221,6 @@ pub enum DspMultibandEq {
     EQ,
     EGain,
 }
-
 impl From<DspMultibandEq> for ffi::FMOD_DSP_MULTIBAND_EQ {
     fn from(value: DspMultibandEq) -> ffi::FMOD_DSP_MULTIBAND_EQ {
         match value {
@@ -2395,7 +2247,6 @@ impl From<DspMultibandEq> for ffi::FMOD_DSP_MULTIBAND_EQ {
         }
     }
 }
-
 impl DspMultibandEq {
     pub fn from(value: ffi::FMOD_DSP_MULTIBAND_EQ) -> Result<DspMultibandEq, Error> {
         match value {
@@ -2423,7 +2274,6 @@ impl DspMultibandEq {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspMultibandEqFilterType {
     Disabled,
@@ -2440,7 +2290,6 @@ pub enum DspMultibandEqFilterType {
     Notch,
     AllPass,
 }
-
 impl From<DspMultibandEqFilterType> for ffi::FMOD_DSP_MULTIBAND_EQ_FILTER_TYPE {
     fn from(value: DspMultibandEqFilterType) -> ffi::FMOD_DSP_MULTIBAND_EQ_FILTER_TYPE {
         match value {
@@ -2466,7 +2315,6 @@ impl From<DspMultibandEqFilterType> for ffi::FMOD_DSP_MULTIBAND_EQ_FILTER_TYPE {
         }
     }
 }
-
 impl DspMultibandEqFilterType {
     pub fn from(
         value: ffi::FMOD_DSP_MULTIBAND_EQ_FILTER_TYPE,
@@ -2501,7 +2349,6 @@ impl DspMultibandEqFilterType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspPitchShift {
     Pitch,
@@ -2509,7 +2356,6 @@ pub enum DspPitchShift {
     Overlap,
     MaxChannels,
 }
-
 impl From<DspPitchShift> for ffi::FMOD_DSP_PITCHSHIFT {
     fn from(value: DspPitchShift) -> ffi::FMOD_DSP_PITCHSHIFT {
         match value {
@@ -2520,7 +2366,6 @@ impl From<DspPitchShift> for ffi::FMOD_DSP_PITCHSHIFT {
         }
     }
 }
-
 impl DspPitchShift {
     pub fn from(value: ffi::FMOD_DSP_PITCHSHIFT) -> Result<DspPitchShift, Error> {
         match value {
@@ -2532,14 +2377,12 @@ impl DspPitchShift {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspChorus {
     Mix,
     Rate,
     Depth,
 }
-
 impl From<DspChorus> for ffi::FMOD_DSP_CHORUS {
     fn from(value: DspChorus) -> ffi::FMOD_DSP_CHORUS {
         match value {
@@ -2549,7 +2392,6 @@ impl From<DspChorus> for ffi::FMOD_DSP_CHORUS {
         }
     }
 }
-
 impl DspChorus {
     pub fn from(value: ffi::FMOD_DSP_CHORUS) -> Result<DspChorus, Error> {
         match value {
@@ -2560,7 +2402,6 @@ impl DspChorus {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspItEcho {
     WetDryMix,
@@ -2569,7 +2410,6 @@ pub enum DspItEcho {
     RightDelay,
     PanDelay,
 }
-
 impl From<DspItEcho> for ffi::FMOD_DSP_ITECHO {
     fn from(value: DspItEcho) -> ffi::FMOD_DSP_ITECHO {
         match value {
@@ -2581,7 +2421,6 @@ impl From<DspItEcho> for ffi::FMOD_DSP_ITECHO {
         }
     }
 }
-
 impl DspItEcho {
     pub fn from(value: ffi::FMOD_DSP_ITECHO) -> Result<DspItEcho, Error> {
         match value {
@@ -2594,7 +2433,6 @@ impl DspItEcho {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspCompressor {
     Threshold,
@@ -2605,7 +2443,6 @@ pub enum DspCompressor {
     UseSidechain,
     Linked,
 }
-
 impl From<DspCompressor> for ffi::FMOD_DSP_COMPRESSOR {
     fn from(value: DspCompressor) -> ffi::FMOD_DSP_COMPRESSOR {
         match value {
@@ -2619,7 +2456,6 @@ impl From<DspCompressor> for ffi::FMOD_DSP_COMPRESSOR {
         }
     }
 }
-
 impl DspCompressor {
     pub fn from(value: ffi::FMOD_DSP_COMPRESSOR) -> Result<DspCompressor, Error> {
         match value {
@@ -2634,7 +2470,6 @@ impl DspCompressor {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspSfxReverb {
     DecayTime,
@@ -2651,7 +2486,6 @@ pub enum DspSfxReverb {
     WetLevel,
     DryLevel,
 }
-
 impl From<DspSfxReverb> for ffi::FMOD_DSP_SFXREVERB {
     fn from(value: DspSfxReverb) -> ffi::FMOD_DSP_SFXREVERB {
         match value {
@@ -2671,7 +2505,6 @@ impl From<DspSfxReverb> for ffi::FMOD_DSP_SFXREVERB {
         }
     }
 }
-
 impl DspSfxReverb {
     pub fn from(value: ffi::FMOD_DSP_SFXREVERB) -> Result<DspSfxReverb, Error> {
         match value {
@@ -2692,12 +2525,10 @@ impl DspSfxReverb {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspLowPassSimple {
     Cutoff,
 }
-
 impl From<DspLowPassSimple> for ffi::FMOD_DSP_LOWPASS_SIMPLE {
     fn from(value: DspLowPassSimple) -> ffi::FMOD_DSP_LOWPASS_SIMPLE {
         match value {
@@ -2705,7 +2536,6 @@ impl From<DspLowPassSimple> for ffi::FMOD_DSP_LOWPASS_SIMPLE {
         }
     }
 }
-
 impl DspLowPassSimple {
     pub fn from(value: ffi::FMOD_DSP_LOWPASS_SIMPLE) -> Result<DspLowPassSimple, Error> {
         match value {
@@ -2714,7 +2544,6 @@ impl DspLowPassSimple {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspDelay {
     Ch0,
@@ -2735,7 +2564,6 @@ pub enum DspDelay {
     Ch15,
     MaxDelay,
 }
-
 impl From<DspDelay> for ffi::FMOD_DSP_DELAY {
     fn from(value: DspDelay) -> ffi::FMOD_DSP_DELAY {
         match value {
@@ -2759,7 +2587,6 @@ impl From<DspDelay> for ffi::FMOD_DSP_DELAY {
         }
     }
 }
-
 impl DspDelay {
     pub fn from(value: ffi::FMOD_DSP_DELAY) -> Result<DspDelay, Error> {
         match value {
@@ -2784,7 +2611,6 @@ impl DspDelay {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspTremolo {
     Frequency,
@@ -2796,7 +2622,6 @@ pub enum DspTremolo {
     Phase,
     Spread,
 }
-
 impl From<DspTremolo> for ffi::FMOD_DSP_TREMOLO {
     fn from(value: DspTremolo) -> ffi::FMOD_DSP_TREMOLO {
         match value {
@@ -2811,7 +2636,6 @@ impl From<DspTremolo> for ffi::FMOD_DSP_TREMOLO {
         }
     }
 }
-
 impl DspTremolo {
     pub fn from(value: ffi::FMOD_DSP_TREMOLO) -> Result<DspTremolo, Error> {
         match value {
@@ -2827,13 +2651,11 @@ impl DspTremolo {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspSend {
     ReturnId,
     Level,
 }
-
 impl From<DspSend> for ffi::FMOD_DSP_SEND {
     fn from(value: DspSend) -> ffi::FMOD_DSP_SEND {
         match value {
@@ -2842,7 +2664,6 @@ impl From<DspSend> for ffi::FMOD_DSP_SEND {
         }
     }
 }
-
 impl DspSend {
     pub fn from(value: ffi::FMOD_DSP_SEND) -> Result<DspSend, Error> {
         match value {
@@ -2852,13 +2673,11 @@ impl DspSend {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspReturn {
     Id,
     InputSpeakerMode,
 }
-
 impl From<DspReturn> for ffi::FMOD_DSP_RETURN {
     fn from(value: DspReturn) -> ffi::FMOD_DSP_RETURN {
         match value {
@@ -2867,7 +2686,6 @@ impl From<DspReturn> for ffi::FMOD_DSP_RETURN {
         }
     }
 }
-
 impl DspReturn {
     pub fn from(value: ffi::FMOD_DSP_RETURN) -> Result<DspReturn, Error> {
         match value {
@@ -2877,12 +2695,10 @@ impl DspReturn {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspHighpassSimple {
     Cutoff,
 }
-
 impl From<DspHighpassSimple> for ffi::FMOD_DSP_HIGHPASS_SIMPLE {
     fn from(value: DspHighpassSimple) -> ffi::FMOD_DSP_HIGHPASS_SIMPLE {
         match value {
@@ -2890,7 +2706,6 @@ impl From<DspHighpassSimple> for ffi::FMOD_DSP_HIGHPASS_SIMPLE {
         }
     }
 }
-
 impl DspHighpassSimple {
     pub fn from(value: ffi::FMOD_DSP_HIGHPASS_SIMPLE) -> Result<DspHighpassSimple, Error> {
         match value {
@@ -2899,13 +2714,11 @@ impl DspHighpassSimple {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspPan2DStereoModeType {
     Distributed,
     Discrete,
 }
-
 impl From<DspPan2DStereoModeType> for ffi::FMOD_DSP_PAN_2D_STEREO_MODE_TYPE {
     fn from(value: DspPan2DStereoModeType) -> ffi::FMOD_DSP_PAN_2D_STEREO_MODE_TYPE {
         match value {
@@ -2914,7 +2727,6 @@ impl From<DspPan2DStereoModeType> for ffi::FMOD_DSP_PAN_2D_STEREO_MODE_TYPE {
         }
     }
 }
-
 impl DspPan2DStereoModeType {
     pub fn from(
         value: ffi::FMOD_DSP_PAN_2D_STEREO_MODE_TYPE,
@@ -2926,14 +2738,12 @@ impl DspPan2DStereoModeType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspPanModeType {
     Mono,
     Stereo,
     Surround,
 }
-
 impl From<DspPanModeType> for ffi::FMOD_DSP_PAN_MODE_TYPE {
     fn from(value: DspPanModeType) -> ffi::FMOD_DSP_PAN_MODE_TYPE {
         match value {
@@ -2943,7 +2753,6 @@ impl From<DspPanModeType> for ffi::FMOD_DSP_PAN_MODE_TYPE {
         }
     }
 }
-
 impl DspPanModeType {
     pub fn from(value: ffi::FMOD_DSP_PAN_MODE_TYPE) -> Result<DspPanModeType, Error> {
         match value {
@@ -2954,7 +2763,6 @@ impl DspPanModeType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspPan3DRolloffType {
     LinearSquared,
@@ -2963,7 +2771,6 @@ pub enum DspPan3DRolloffType {
     InverseTapered,
     Custom,
 }
-
 impl From<DspPan3DRolloffType> for ffi::FMOD_DSP_PAN_3D_ROLLOFF_TYPE {
     fn from(value: DspPan3DRolloffType) -> ffi::FMOD_DSP_PAN_3D_ROLLOFF_TYPE {
         match value {
@@ -2975,7 +2782,6 @@ impl From<DspPan3DRolloffType> for ffi::FMOD_DSP_PAN_3D_ROLLOFF_TYPE {
         }
     }
 }
-
 impl DspPan3DRolloffType {
     pub fn from(value: ffi::FMOD_DSP_PAN_3D_ROLLOFF_TYPE) -> Result<DspPan3DRolloffType, Error> {
         match value {
@@ -2988,14 +2794,12 @@ impl DspPan3DRolloffType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspPan3DExtentModeType {
     Auto,
     User,
     Off,
 }
-
 impl From<DspPan3DExtentModeType> for ffi::FMOD_DSP_PAN_3D_EXTENT_MODE_TYPE {
     fn from(value: DspPan3DExtentModeType) -> ffi::FMOD_DSP_PAN_3D_EXTENT_MODE_TYPE {
         match value {
@@ -3005,7 +2809,6 @@ impl From<DspPan3DExtentModeType> for ffi::FMOD_DSP_PAN_3D_EXTENT_MODE_TYPE {
         }
     }
 }
-
 impl DspPan3DExtentModeType {
     pub fn from(
         value: ffi::FMOD_DSP_PAN_3D_EXTENT_MODE_TYPE,
@@ -3018,7 +2821,6 @@ impl DspPan3DExtentModeType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspPan {
     Mode,
@@ -3046,7 +2848,6 @@ pub enum DspPan {
     AttenuationRange,
     OverrideRange,
 }
-
 impl From<DspPan> for ffi::FMOD_DSP_PAN {
     fn from(value: DspPan) -> ffi::FMOD_DSP_PAN {
         match value {
@@ -3077,7 +2878,6 @@ impl From<DspPan> for ffi::FMOD_DSP_PAN {
         }
     }
 }
-
 impl DspPan {
     pub fn from(value: ffi::FMOD_DSP_PAN) -> Result<DspPan, Error> {
         match value {
@@ -3109,14 +2909,12 @@ impl DspPan {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspThreeEqCrossoverSlopeType {
     Slope12Db,
     Slope24Db,
     Slope48Db,
 }
-
 impl From<DspThreeEqCrossoverSlopeType> for ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_TYPE {
     fn from(value: DspThreeEqCrossoverSlopeType) -> ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_TYPE {
         match value {
@@ -3126,7 +2924,6 @@ impl From<DspThreeEqCrossoverSlopeType> for ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOP
         }
     }
 }
-
 impl DspThreeEqCrossoverSlopeType {
     pub fn from(
         value: ffi::FMOD_DSP_THREE_EQ_CROSSOVERSLOPE_TYPE,
@@ -3145,7 +2942,6 @@ impl DspThreeEqCrossoverSlopeType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspThreeEq {
     LowGain,
@@ -3155,7 +2951,6 @@ pub enum DspThreeEq {
     HightCorssover,
     CrossoverSlope,
 }
-
 impl From<DspThreeEq> for ffi::FMOD_DSP_THREE_EQ {
     fn from(value: DspThreeEq) -> ffi::FMOD_DSP_THREE_EQ {
         match value {
@@ -3168,7 +2963,6 @@ impl From<DspThreeEq> for ffi::FMOD_DSP_THREE_EQ {
         }
     }
 }
-
 impl DspThreeEq {
     pub fn from(value: ffi::FMOD_DSP_THREE_EQ) -> Result<DspThreeEq, Error> {
         match value {
@@ -3182,7 +2976,6 @@ impl DspThreeEq {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspFftWindow {
     Rect,
@@ -3192,7 +2985,6 @@ pub enum DspFftWindow {
     BlackMan,
     BlackManHarris,
 }
-
 impl From<DspFftWindow> for ffi::FMOD_DSP_FFT_WINDOW {
     fn from(value: DspFftWindow) -> ffi::FMOD_DSP_FFT_WINDOW {
         match value {
@@ -3205,7 +2997,6 @@ impl From<DspFftWindow> for ffi::FMOD_DSP_FFT_WINDOW {
         }
     }
 }
-
 impl DspFftWindow {
     pub fn from(value: ffi::FMOD_DSP_FFT_WINDOW) -> Result<DspFftWindow, Error> {
         match value {
@@ -3219,7 +3010,6 @@ impl DspFftWindow {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspFft {
     WindowSize,
@@ -3227,7 +3017,6 @@ pub enum DspFft {
     SpectrumData,
     DominantFreq,
 }
-
 impl From<DspFft> for ffi::FMOD_DSP_FFT {
     fn from(value: DspFft) -> ffi::FMOD_DSP_FFT {
         match value {
@@ -3238,7 +3027,6 @@ impl From<DspFft> for ffi::FMOD_DSP_FFT {
         }
     }
 }
-
 impl DspFft {
     pub fn from(value: ffi::FMOD_DSP_FFT) -> Result<DspFft, Error> {
         match value {
@@ -3250,14 +3038,12 @@ impl DspFft {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspLoudnessMeter {
     State,
     Weighting,
     Info,
 }
-
 impl From<DspLoudnessMeter> for ffi::FMOD_DSP_LOUDNESS_METER {
     fn from(value: DspLoudnessMeter) -> ffi::FMOD_DSP_LOUDNESS_METER {
         match value {
@@ -3267,7 +3053,6 @@ impl From<DspLoudnessMeter> for ffi::FMOD_DSP_LOUDNESS_METER {
         }
     }
 }
-
 impl DspLoudnessMeter {
     pub fn from(value: ffi::FMOD_DSP_LOUDNESS_METER) -> Result<DspLoudnessMeter, Error> {
         match value {
@@ -3278,7 +3063,6 @@ impl DspLoudnessMeter {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspLoudnessMeterStateType {
     ResetIntegrated,
@@ -3287,7 +3071,6 @@ pub enum DspLoudnessMeterStateType {
     Paused,
     Analyzing,
 }
-
 impl From<DspLoudnessMeterStateType> for ffi::FMOD_DSP_LOUDNESS_METER_STATE_TYPE {
     fn from(value: DspLoudnessMeterStateType) -> ffi::FMOD_DSP_LOUDNESS_METER_STATE_TYPE {
         match value {
@@ -3303,7 +3086,6 @@ impl From<DspLoudnessMeterStateType> for ffi::FMOD_DSP_LOUDNESS_METER_STATE_TYPE
         }
     }
 }
-
 impl DspLoudnessMeterStateType {
     pub fn from(
         value: ffi::FMOD_DSP_LOUDNESS_METER_STATE_TYPE,
@@ -3324,7 +3106,6 @@ impl DspLoudnessMeterStateType {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspEnvelopeFollower {
     Attack,
@@ -3332,7 +3113,6 @@ pub enum DspEnvelopeFollower {
     Envelope,
     UseSidechain,
 }
-
 impl From<DspEnvelopeFollower> for ffi::FMOD_DSP_ENVELOPEFOLLOWER {
     fn from(value: DspEnvelopeFollower) -> ffi::FMOD_DSP_ENVELOPEFOLLOWER {
         match value {
@@ -3343,7 +3123,6 @@ impl From<DspEnvelopeFollower> for ffi::FMOD_DSP_ENVELOPEFOLLOWER {
         }
     }
 }
-
 impl DspEnvelopeFollower {
     pub fn from(value: ffi::FMOD_DSP_ENVELOPEFOLLOWER) -> Result<DspEnvelopeFollower, Error> {
         match value {
@@ -3355,7 +3134,6 @@ impl DspEnvelopeFollower {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspConvolutionReverb {
     ParamIr,
@@ -3363,7 +3141,6 @@ pub enum DspConvolutionReverb {
     ParamDry,
     ParamLinked,
 }
-
 impl From<DspConvolutionReverb> for ffi::FMOD_DSP_CONVOLUTION_REVERB {
     fn from(value: DspConvolutionReverb) -> ffi::FMOD_DSP_CONVOLUTION_REVERB {
         match value {
@@ -3374,7 +3151,6 @@ impl From<DspConvolutionReverb> for ffi::FMOD_DSP_CONVOLUTION_REVERB {
         }
     }
 }
-
 impl DspConvolutionReverb {
     pub fn from(value: ffi::FMOD_DSP_CONVOLUTION_REVERB) -> Result<DspConvolutionReverb, Error> {
         match value {
@@ -3386,7 +3162,6 @@ impl DspConvolutionReverb {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspChannelMixOutput {
     Default,
@@ -3398,7 +3173,6 @@ pub enum DspChannelMixOutput {
     AllLfe,
     All7Point1Point4,
 }
-
 impl From<DspChannelMixOutput> for ffi::FMOD_DSP_CHANNELMIX_OUTPUT {
     fn from(value: DspChannelMixOutput) -> ffi::FMOD_DSP_CHANNELMIX_OUTPUT {
         match value {
@@ -3415,7 +3189,6 @@ impl From<DspChannelMixOutput> for ffi::FMOD_DSP_CHANNELMIX_OUTPUT {
         }
     }
 }
-
 impl DspChannelMixOutput {
     pub fn from(value: ffi::FMOD_DSP_CHANNELMIX_OUTPUT) -> Result<DspChannelMixOutput, Error> {
         match value {
@@ -3433,7 +3206,6 @@ impl DspChannelMixOutput {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspChannelMix {
     OutputGrouping,
@@ -3502,7 +3274,6 @@ pub enum DspChannelMix {
     OutputCh30,
     OutputCh31,
 }
-
 impl From<DspChannelMix> for ffi::FMOD_DSP_CHANNELMIX {
     fn from(value: DspChannelMix) -> ffi::FMOD_DSP_CHANNELMIX {
         match value {
@@ -3574,7 +3345,6 @@ impl From<DspChannelMix> for ffi::FMOD_DSP_CHANNELMIX {
         }
     }
 }
-
 impl DspChannelMix {
     pub fn from(value: ffi::FMOD_DSP_CHANNELMIX) -> Result<DspChannelMix, Error> {
         match value {
@@ -3647,7 +3417,6 @@ impl DspChannelMix {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspTransceiverSpeakerMode {
     Auto,
@@ -3655,7 +3424,6 @@ pub enum DspTransceiverSpeakerMode {
     Stereo,
     Surround,
 }
-
 impl From<DspTransceiverSpeakerMode> for ffi::FMOD_DSP_TRANSCEIVER_SPEAKERMODE {
     fn from(value: DspTransceiverSpeakerMode) -> ffi::FMOD_DSP_TRANSCEIVER_SPEAKERMODE {
         match value {
@@ -3666,7 +3434,6 @@ impl From<DspTransceiverSpeakerMode> for ffi::FMOD_DSP_TRANSCEIVER_SPEAKERMODE {
         }
     }
 }
-
 impl DspTransceiverSpeakerMode {
     pub fn from(
         value: ffi::FMOD_DSP_TRANSCEIVER_SPEAKERMODE,
@@ -3682,7 +3449,6 @@ impl DspTransceiverSpeakerMode {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspTransceiver {
     Transmit,
@@ -3690,7 +3456,6 @@ pub enum DspTransceiver {
     Channel,
     TransmitSpeakerMode,
 }
-
 impl From<DspTransceiver> for ffi::FMOD_DSP_TRANSCEIVER {
     fn from(value: DspTransceiver) -> ffi::FMOD_DSP_TRANSCEIVER {
         match value {
@@ -3701,7 +3466,6 @@ impl From<DspTransceiver> for ffi::FMOD_DSP_TRANSCEIVER {
         }
     }
 }
-
 impl DspTransceiver {
     pub fn from(value: ffi::FMOD_DSP_TRANSCEIVER) -> Result<DspTransceiver, Error> {
         match value {
@@ -3715,7 +3479,6 @@ impl DspTransceiver {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DspObjectPan {
     Position3D,
@@ -3730,7 +3493,6 @@ pub enum DspObjectPan {
     AttenuationRange,
     OverrideRange,
 }
-
 impl From<DspObjectPan> for ffi::FMOD_DSP_OBJECTPAN {
     fn from(value: DspObjectPan) -> ffi::FMOD_DSP_OBJECTPAN {
         match value {
@@ -3748,7 +3510,6 @@ impl From<DspObjectPan> for ffi::FMOD_DSP_OBJECTPAN {
         }
     }
 }
-
 impl DspObjectPan {
     pub fn from(value: ffi::FMOD_DSP_OBJECTPAN) -> Result<DspObjectPan, Error> {
         match value {
@@ -3767,7 +3528,6 @@ impl DspObjectPan {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct BankInfo {
     pub size: i32,
@@ -3778,7 +3538,6 @@ pub struct BankInfo {
     pub readcallback: ffi::FMOD_FILE_READ_CALLBACK,
     pub seekcallback: ffi::FMOD_FILE_SEEK_CALLBACK,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_BANK_INFO> for BankInfo {
     type Error = Error;
     fn try_from(value: ffi::FMOD_STUDIO_BANK_INFO) -> Result<Self, Self::Error> {
@@ -3795,7 +3554,6 @@ impl TryFrom<ffi::FMOD_STUDIO_BANK_INFO> for BankInfo {
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_BANK_INFO> for BankInfo {
     fn into(self) -> ffi::FMOD_STUDIO_BANK_INFO {
         ffi::FMOD_STUDIO_BANK_INFO {
@@ -3809,13 +3567,11 @@ impl Into<ffi::FMOD_STUDIO_BANK_INFO> for BankInfo {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct ParameterId {
     pub data_1: u32,
     pub data_2: u32,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_PARAMETER_ID> for ParameterId {
     type Error = Error;
     fn try_from(value: ffi::FMOD_STUDIO_PARAMETER_ID) -> Result<Self, Self::Error> {
@@ -3827,7 +3583,6 @@ impl TryFrom<ffi::FMOD_STUDIO_PARAMETER_ID> for ParameterId {
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_PARAMETER_ID> for ParameterId {
     fn into(self) -> ffi::FMOD_STUDIO_PARAMETER_ID {
         ffi::FMOD_STUDIO_PARAMETER_ID {
@@ -3836,7 +3591,6 @@ impl Into<ffi::FMOD_STUDIO_PARAMETER_ID> for ParameterId {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct ParameterDescription {
     pub name: String,
@@ -3848,7 +3602,6 @@ pub struct ParameterDescription {
     pub flags: ffi::FMOD_STUDIO_PARAMETER_FLAGS,
     pub guid: Guid,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION> for ParameterDescription {
     type Error = Error;
     fn try_from(value: ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION) -> Result<Self, Self::Error> {
@@ -3866,7 +3619,6 @@ impl TryFrom<ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION> for ParameterDescription {
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION> for ParameterDescription {
     fn into(self) -> ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION {
         ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION {
@@ -3881,14 +3633,12 @@ impl Into<ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION> for ParameterDescription {
         }
     }
 }
-
 #[derive(Clone)]
 pub struct UserProperty {
     pub name: String,
     pub type_: UserPropertyType,
     pub union: ffi::FMOD_STUDIO_USER_PROPERTY_UNION,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_USER_PROPERTY> for UserProperty {
     type Error = Error;
     fn try_from(value: ffi::FMOD_STUDIO_USER_PROPERTY) -> Result<Self, Self::Error> {
@@ -3901,7 +3651,6 @@ impl TryFrom<ffi::FMOD_STUDIO_USER_PROPERTY> for UserProperty {
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_USER_PROPERTY> for UserProperty {
     fn into(self) -> ffi::FMOD_STUDIO_USER_PROPERTY {
         ffi::FMOD_STUDIO_USER_PROPERTY {
@@ -3911,14 +3660,12 @@ impl Into<ffi::FMOD_STUDIO_USER_PROPERTY> for UserProperty {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct ProgrammerSoundProperties {
     pub name: String,
     pub sound: Sound,
     pub subsound_index: i32,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES> for ProgrammerSoundProperties {
     type Error = Error;
     fn try_from(value: ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES) -> Result<Self, Self::Error> {
@@ -3931,7 +3678,6 @@ impl TryFrom<ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES> for ProgrammerSoundPr
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES> for ProgrammerSoundProperties {
     fn into(self) -> ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES {
         ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES {
@@ -3941,13 +3687,11 @@ impl Into<ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES> for ProgrammerSoundPrope
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct PluginInstanceProperties {
     pub name: String,
     pub dsp: Dsp,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES> for PluginInstanceProperties {
     type Error = Error;
     fn try_from(value: ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES) -> Result<Self, Self::Error> {
@@ -3959,7 +3703,6 @@ impl TryFrom<ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES> for PluginInstanceProp
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES> for PluginInstanceProperties {
     fn into(self) -> ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES {
         ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES {
@@ -3968,13 +3711,11 @@ impl Into<ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES> for PluginInstancePropert
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct TimelineMarkerProperties {
     pub name: String,
     pub position: i32,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES> for TimelineMarkerProperties {
     type Error = Error;
     fn try_from(value: ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES) -> Result<Self, Self::Error> {
@@ -3986,7 +3727,6 @@ impl TryFrom<ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES> for TimelineMarkerProp
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES> for TimelineMarkerProperties {
     fn into(self) -> ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES {
         ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES {
@@ -3995,7 +3735,6 @@ impl Into<ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES> for TimelineMarkerPropert
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct TimelineBeatProperties {
     pub bar: i32,
@@ -4005,7 +3744,6 @@ pub struct TimelineBeatProperties {
     pub timesignatureupper: i32,
     pub timesignaturelower: i32,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES> for TimelineBeatProperties {
     type Error = Error;
     fn try_from(value: ffi::FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES) -> Result<Self, Self::Error> {
@@ -4021,7 +3759,6 @@ impl TryFrom<ffi::FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES> for TimelineBeatProperti
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES> for TimelineBeatProperties {
     fn into(self) -> ffi::FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES {
         ffi::FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES {
@@ -4034,13 +3771,11 @@ impl Into<ffi::FMOD_STUDIO_TIMELINE_BEAT_PROPERTIES> for TimelineBeatProperties 
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct TimelineNestedBeatProperties {
     pub eventid: Guid,
     pub properties: TimelineBeatProperties,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES> for TimelineNestedBeatProperties {
     type Error = Error;
     fn try_from(
@@ -4054,7 +3789,6 @@ impl TryFrom<ffi::FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES> for TimelineNeste
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES> for TimelineNestedBeatProperties {
     fn into(self) -> ffi::FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES {
         ffi::FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES {
@@ -4063,7 +3797,6 @@ impl Into<ffi::FMOD_STUDIO_TIMELINE_NESTED_BEAT_PROPERTIES> for TimelineNestedBe
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct StudioAdvancedSettings {
     pub commandqueuesize: u32,
@@ -4073,7 +3806,6 @@ pub struct StudioAdvancedSettings {
     pub streamingscheduledelay: u32,
     pub encryptionkey: String,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_ADVANCEDSETTINGS> for StudioAdvancedSettings {
     type Error = Error;
     fn try_from(value: ffi::FMOD_STUDIO_ADVANCEDSETTINGS) -> Result<Self, Self::Error> {
@@ -4089,7 +3821,6 @@ impl TryFrom<ffi::FMOD_STUDIO_ADVANCEDSETTINGS> for StudioAdvancedSettings {
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_ADVANCEDSETTINGS> for StudioAdvancedSettings {
     fn into(self) -> ffi::FMOD_STUDIO_ADVANCEDSETTINGS {
         ffi::FMOD_STUDIO_ADVANCEDSETTINGS {
@@ -4103,12 +3834,10 @@ impl Into<ffi::FMOD_STUDIO_ADVANCEDSETTINGS> for StudioAdvancedSettings {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct StudioCpuUsage {
     pub update: f32,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_CPU_USAGE> for StudioCpuUsage {
     type Error = Error;
     fn try_from(value: ffi::FMOD_STUDIO_CPU_USAGE) -> Result<Self, Self::Error> {
@@ -4119,7 +3848,6 @@ impl TryFrom<ffi::FMOD_STUDIO_CPU_USAGE> for StudioCpuUsage {
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_CPU_USAGE> for StudioCpuUsage {
     fn into(self) -> ffi::FMOD_STUDIO_CPU_USAGE {
         ffi::FMOD_STUDIO_CPU_USAGE {
@@ -4127,7 +3855,6 @@ impl Into<ffi::FMOD_STUDIO_CPU_USAGE> for StudioCpuUsage {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct BufferInfo {
     pub currentusage: i32,
@@ -4136,7 +3863,6 @@ pub struct BufferInfo {
     pub stallcount: i32,
     pub stalltime: f32,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_BUFFER_INFO> for BufferInfo {
     type Error = Error;
     fn try_from(value: ffi::FMOD_STUDIO_BUFFER_INFO) -> Result<Self, Self::Error> {
@@ -4151,7 +3877,6 @@ impl TryFrom<ffi::FMOD_STUDIO_BUFFER_INFO> for BufferInfo {
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_BUFFER_INFO> for BufferInfo {
     fn into(self) -> ffi::FMOD_STUDIO_BUFFER_INFO {
         ffi::FMOD_STUDIO_BUFFER_INFO {
@@ -4163,13 +3888,11 @@ impl Into<ffi::FMOD_STUDIO_BUFFER_INFO> for BufferInfo {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct BufferUsage {
     pub studiocommandqueue: BufferInfo,
     pub studiohandle: BufferInfo,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_BUFFER_USAGE> for BufferUsage {
     type Error = Error;
     fn try_from(value: ffi::FMOD_STUDIO_BUFFER_USAGE) -> Result<Self, Self::Error> {
@@ -4181,7 +3904,6 @@ impl TryFrom<ffi::FMOD_STUDIO_BUFFER_USAGE> for BufferUsage {
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_BUFFER_USAGE> for BufferUsage {
     fn into(self) -> ffi::FMOD_STUDIO_BUFFER_USAGE {
         ffi::FMOD_STUDIO_BUFFER_USAGE {
@@ -4190,7 +3912,6 @@ impl Into<ffi::FMOD_STUDIO_BUFFER_USAGE> for BufferUsage {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct SoundInfo {
     pub name_or_data: String,
@@ -4198,7 +3919,6 @@ pub struct SoundInfo {
     pub exinfo: CreateSoundexInfo,
     pub subsoundindex: i32,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_SOUND_INFO> for SoundInfo {
     type Error = Error;
     fn try_from(value: ffi::FMOD_STUDIO_SOUND_INFO) -> Result<Self, Self::Error> {
@@ -4212,7 +3932,6 @@ impl TryFrom<ffi::FMOD_STUDIO_SOUND_INFO> for SoundInfo {
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_SOUND_INFO> for SoundInfo {
     fn into(self) -> ffi::FMOD_STUDIO_SOUND_INFO {
         ffi::FMOD_STUDIO_SOUND_INFO {
@@ -4223,7 +3942,6 @@ impl Into<ffi::FMOD_STUDIO_SOUND_INFO> for SoundInfo {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct CommandInfo {
     pub commandname: String,
@@ -4235,7 +3953,6 @@ pub struct CommandInfo {
     pub instancehandle: u32,
     pub outputhandle: u32,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_COMMAND_INFO> for CommandInfo {
     type Error = Error;
     fn try_from(value: ffi::FMOD_STUDIO_COMMAND_INFO) -> Result<Self, Self::Error> {
@@ -4253,7 +3970,6 @@ impl TryFrom<ffi::FMOD_STUDIO_COMMAND_INFO> for CommandInfo {
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_COMMAND_INFO> for CommandInfo {
     fn into(self) -> ffi::FMOD_STUDIO_COMMAND_INFO {
         ffi::FMOD_STUDIO_COMMAND_INFO {
@@ -4268,14 +3984,12 @@ impl Into<ffi::FMOD_STUDIO_COMMAND_INFO> for CommandInfo {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct MemoryUsage {
     pub exclusive: i32,
     pub inclusive: i32,
     pub sampledata: i32,
 }
-
 impl TryFrom<ffi::FMOD_STUDIO_MEMORY_USAGE> for MemoryUsage {
     type Error = Error;
     fn try_from(value: ffi::FMOD_STUDIO_MEMORY_USAGE) -> Result<Self, Self::Error> {
@@ -4288,7 +4002,6 @@ impl TryFrom<ffi::FMOD_STUDIO_MEMORY_USAGE> for MemoryUsage {
         }
     }
 }
-
 impl Into<ffi::FMOD_STUDIO_MEMORY_USAGE> for MemoryUsage {
     fn into(self) -> ffi::FMOD_STUDIO_MEMORY_USAGE {
         ffi::FMOD_STUDIO_MEMORY_USAGE {
@@ -4298,7 +4011,6 @@ impl Into<ffi::FMOD_STUDIO_MEMORY_USAGE> for MemoryUsage {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct AsyncReadInfo {
     pub handle: *mut c_void,
@@ -4310,7 +4022,6 @@ pub struct AsyncReadInfo {
     pub bytesread: u32,
     pub done: ffi::FMOD_FILE_ASYNCDONE_FUNC,
 }
-
 impl TryFrom<ffi::FMOD_ASYNCREADINFO> for AsyncReadInfo {
     type Error = Error;
     fn try_from(value: ffi::FMOD_ASYNCREADINFO) -> Result<Self, Self::Error> {
@@ -4328,7 +4039,6 @@ impl TryFrom<ffi::FMOD_ASYNCREADINFO> for AsyncReadInfo {
         }
     }
 }
-
 impl Into<ffi::FMOD_ASYNCREADINFO> for AsyncReadInfo {
     fn into(self) -> ffi::FMOD_ASYNCREADINFO {
         ffi::FMOD_ASYNCREADINFO {
@@ -4343,14 +4053,12 @@ impl Into<ffi::FMOD_ASYNCREADINFO> for AsyncReadInfo {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vector {
     pub x: f32,
     pub y: f32,
     pub z: f32,
 }
-
 impl TryFrom<ffi::FMOD_VECTOR> for Vector {
     type Error = Error;
     fn try_from(value: ffi::FMOD_VECTOR) -> Result<Self, Self::Error> {
@@ -4363,13 +4071,11 @@ impl TryFrom<ffi::FMOD_VECTOR> for Vector {
         }
     }
 }
-
 impl Vector {
     pub const fn new(x: f32, y: f32, z: f32) -> Self {
         Vector { x, y, z }
     }
 }
-
 impl From<[f32; 3]> for Vector {
     fn from(value: [f32; 3]) -> Vector {
         Vector {
@@ -4379,13 +4085,11 @@ impl From<[f32; 3]> for Vector {
         }
     }
 }
-
 impl From<Vector> for [f32; 3] {
     fn from(value: Vector) -> [f32; 3] {
         [value.x, value.y, value.z]
     }
 }
-
 impl From<(f32, f32, f32)> for Vector {
     fn from(value: (f32, f32, f32)) -> Vector {
         Vector {
@@ -4395,13 +4099,11 @@ impl From<(f32, f32, f32)> for Vector {
         }
     }
 }
-
 impl From<Vector> for (f32, f32, f32) {
     fn from(value: Vector) -> (f32, f32, f32) {
         (value.x, value.y, value.z)
     }
 }
-
 impl Into<ffi::FMOD_VECTOR> for Vector {
     fn into(self) -> ffi::FMOD_VECTOR {
         ffi::FMOD_VECTOR {
@@ -4411,7 +4113,6 @@ impl Into<ffi::FMOD_VECTOR> for Vector {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct Attributes3d {
     pub position: Vector,
@@ -4419,7 +4120,6 @@ pub struct Attributes3d {
     pub forward: Vector,
     pub up: Vector,
 }
-
 impl TryFrom<ffi::FMOD_3D_ATTRIBUTES> for Attributes3d {
     type Error = Error;
     fn try_from(value: ffi::FMOD_3D_ATTRIBUTES) -> Result<Self, Self::Error> {
@@ -4433,7 +4133,6 @@ impl TryFrom<ffi::FMOD_3D_ATTRIBUTES> for Attributes3d {
         }
     }
 }
-
 impl Into<ffi::FMOD_3D_ATTRIBUTES> for Attributes3d {
     fn into(self) -> ffi::FMOD_3D_ATTRIBUTES {
         ffi::FMOD_3D_ATTRIBUTES {
@@ -4444,7 +4143,6 @@ impl Into<ffi::FMOD_3D_ATTRIBUTES> for Attributes3d {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct Guid {
     pub data_1: u32,
@@ -4452,7 +4150,6 @@ pub struct Guid {
     pub data_3: u16,
     pub data_4: [u8; 8 as usize],
 }
-
 impl TryFrom<ffi::FMOD_GUID> for Guid {
     type Error = Error;
     fn try_from(value: ffi::FMOD_GUID) -> Result<Self, Self::Error> {
@@ -4466,7 +4163,6 @@ impl TryFrom<ffi::FMOD_GUID> for Guid {
         }
     }
 }
-
 impl Guid {
     pub fn from_ptr(value: *mut ffi::FMOD_GUID) -> Self {
         let value = unsafe { *value };
@@ -4478,7 +4174,6 @@ impl Guid {
         }
     }
 }
-
 impl Into<ffi::FMOD_GUID> for Guid {
     fn into(self) -> ffi::FMOD_GUID {
         ffi::FMOD_GUID {
@@ -4489,13 +4184,11 @@ impl Into<ffi::FMOD_GUID> for Guid {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct PluginList {
     pub type_: PluginType,
     pub description: *mut c_void,
 }
-
 impl TryFrom<ffi::FMOD_PLUGINLIST> for PluginList {
     type Error = Error;
     fn try_from(value: ffi::FMOD_PLUGINLIST) -> Result<Self, Self::Error> {
@@ -4507,7 +4200,6 @@ impl TryFrom<ffi::FMOD_PLUGINLIST> for PluginList {
         }
     }
 }
-
 impl Into<ffi::FMOD_PLUGINLIST> for PluginList {
     fn into(self) -> ffi::FMOD_PLUGINLIST {
         ffi::FMOD_PLUGINLIST {
@@ -4516,7 +4208,6 @@ impl Into<ffi::FMOD_PLUGINLIST> for PluginList {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct AdvancedSettings {
     pub max_mpeg_codecs: i32,
@@ -4541,7 +4232,6 @@ pub struct AdvancedSettings {
     pub max_convolution_threads: i32,
     pub max_opus_codecs: i32,
 }
-
 impl TryFrom<ffi::FMOD_ADVANCEDSETTINGS> for AdvancedSettings {
     type Error = Error;
     fn try_from(value: ffi::FMOD_ADVANCEDSETTINGS) -> Result<Self, Self::Error> {
@@ -4580,7 +4270,6 @@ impl TryFrom<ffi::FMOD_ADVANCEDSETTINGS> for AdvancedSettings {
         }
     }
 }
-
 impl Into<ffi::FMOD_ADVANCEDSETTINGS> for AdvancedSettings {
     fn into(self) -> ffi::FMOD_ADVANCEDSETTINGS {
         ffi::FMOD_ADVANCEDSETTINGS {
@@ -4620,7 +4309,6 @@ impl Into<ffi::FMOD_ADVANCEDSETTINGS> for AdvancedSettings {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct Tag {
     pub type_: TagType,
@@ -4630,7 +4318,6 @@ pub struct Tag {
     pub datalen: u32,
     pub updated: ffi::FMOD_BOOL,
 }
-
 impl TryFrom<ffi::FMOD_TAG> for Tag {
     type Error = Error;
     fn try_from(value: ffi::FMOD_TAG) -> Result<Self, Self::Error> {
@@ -4646,7 +4333,6 @@ impl TryFrom<ffi::FMOD_TAG> for Tag {
         }
     }
 }
-
 impl Into<ffi::FMOD_TAG> for Tag {
     fn into(self) -> ffi::FMOD_TAG {
         ffi::FMOD_TAG {
@@ -4659,7 +4345,6 @@ impl Into<ffi::FMOD_TAG> for Tag {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct CreateSoundexInfo {
     pub length: u32,
@@ -4697,7 +4382,6 @@ pub struct CreateSoundexInfo {
     pub nonblockthreadid: i32,
     pub fsbguid: Option<Guid>,
 }
-
 impl TryFrom<ffi::FMOD_CREATESOUNDEXINFO> for CreateSoundexInfo {
     type Error = Error;
     fn try_from(value: ffi::FMOD_CREATESOUNDEXINFO) -> Result<Self, Self::Error> {
@@ -4747,13 +4431,11 @@ impl TryFrom<ffi::FMOD_CREATESOUNDEXINFO> for CreateSoundexInfo {
         }
     }
 }
-
 impl Default for CreateSoundexInfo {
     fn default() -> Self {
         Self::try_from(ffi::FMOD_CREATESOUNDEXINFO::default()).unwrap()
     }
 }
-
 impl Into<ffi::FMOD_CREATESOUNDEXINFO> for CreateSoundexInfo {
     fn into(self) -> ffi::FMOD_CREATESOUNDEXINFO {
         ffi::FMOD_CREATESOUNDEXINFO {
@@ -4799,7 +4481,6 @@ impl Into<ffi::FMOD_CREATESOUNDEXINFO> for CreateSoundexInfo {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct ReverbProperties {
     pub decay_time: f32,
@@ -4815,7 +4496,6 @@ pub struct ReverbProperties {
     pub early_late_mix: f32,
     pub wet_level: f32,
 }
-
 impl ReverbProperties {
     #[inline]
     pub fn off() -> Self {
@@ -4914,7 +4594,6 @@ impl ReverbProperties {
         Self::try_from(ffi::FMOD_PRESET_UNDERWATER).unwrap()
     }
 }
-
 impl TryFrom<ffi::FMOD_REVERB_PROPERTIES> for ReverbProperties {
     type Error = Error;
     fn try_from(value: ffi::FMOD_REVERB_PROPERTIES) -> Result<Self, Self::Error> {
@@ -4936,7 +4615,6 @@ impl TryFrom<ffi::FMOD_REVERB_PROPERTIES> for ReverbProperties {
         }
     }
 }
-
 impl Into<ffi::FMOD_REVERB_PROPERTIES> for ReverbProperties {
     fn into(self) -> ffi::FMOD_REVERB_PROPERTIES {
         ffi::FMOD_REVERB_PROPERTIES {
@@ -4955,7 +4633,6 @@ impl Into<ffi::FMOD_REVERB_PROPERTIES> for ReverbProperties {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct ErrorCallbackInfo {
     pub result: FmodResult,
@@ -4964,7 +4641,6 @@ pub struct ErrorCallbackInfo {
     pub functionname: String,
     pub functionparams: String,
 }
-
 impl TryFrom<ffi::FMOD_ERRORCALLBACK_INFO> for ErrorCallbackInfo {
     type Error = Error;
     fn try_from(value: ffi::FMOD_ERRORCALLBACK_INFO) -> Result<Self, Self::Error> {
@@ -4979,7 +4655,6 @@ impl TryFrom<ffi::FMOD_ERRORCALLBACK_INFO> for ErrorCallbackInfo {
         }
     }
 }
-
 impl Into<ffi::FMOD_ERRORCALLBACK_INFO> for ErrorCallbackInfo {
     fn into(self) -> ffi::FMOD_ERRORCALLBACK_INFO {
         ffi::FMOD_ERRORCALLBACK_INFO {
@@ -4991,7 +4666,6 @@ impl Into<ffi::FMOD_ERRORCALLBACK_INFO> for ErrorCallbackInfo {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct CpuUsage {
     pub dsp: f32,
@@ -5001,7 +4675,6 @@ pub struct CpuUsage {
     pub convolution_1: f32,
     pub convolution_2: f32,
 }
-
 impl TryFrom<ffi::FMOD_CPU_USAGE> for CpuUsage {
     type Error = Error;
     fn try_from(value: ffi::FMOD_CPU_USAGE) -> Result<Self, Self::Error> {
@@ -5017,7 +4690,6 @@ impl TryFrom<ffi::FMOD_CPU_USAGE> for CpuUsage {
         }
     }
 }
-
 impl Into<ffi::FMOD_CPU_USAGE> for CpuUsage {
     fn into(self) -> ffi::FMOD_CPU_USAGE {
         ffi::FMOD_CPU_USAGE {
@@ -5030,7 +4702,6 @@ impl Into<ffi::FMOD_CPU_USAGE> for CpuUsage {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct CodecDescription {
     pub apiversion: u32,
@@ -5047,7 +4718,6 @@ pub struct CodecDescription {
     pub soundcreate: ffi::FMOD_CODEC_SOUNDCREATE_CALLBACK,
     pub getwaveformat: ffi::FMOD_CODEC_GETWAVEFORMAT_CALLBACK,
 }
-
 impl TryFrom<ffi::FMOD_CODEC_DESCRIPTION> for CodecDescription {
     type Error = Error;
     fn try_from(value: ffi::FMOD_CODEC_DESCRIPTION) -> Result<Self, Self::Error> {
@@ -5070,7 +4740,6 @@ impl TryFrom<ffi::FMOD_CODEC_DESCRIPTION> for CodecDescription {
         }
     }
 }
-
 impl Into<ffi::FMOD_CODEC_DESCRIPTION> for CodecDescription {
     fn into(self) -> ffi::FMOD_CODEC_DESCRIPTION {
         ffi::FMOD_CODEC_DESCRIPTION {
@@ -5090,7 +4759,6 @@ impl Into<ffi::FMOD_CODEC_DESCRIPTION> for CodecDescription {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct CodecWaveformat {
     pub name: String,
@@ -5107,7 +4775,6 @@ pub struct CodecWaveformat {
     pub channelorder: ChannelOrder,
     pub peakvolume: f32,
 }
-
 impl TryFrom<ffi::FMOD_CODEC_WAVEFORMAT> for CodecWaveformat {
     type Error = Error;
     fn try_from(value: ffi::FMOD_CODEC_WAVEFORMAT) -> Result<Self, Self::Error> {
@@ -5130,7 +4797,6 @@ impl TryFrom<ffi::FMOD_CODEC_WAVEFORMAT> for CodecWaveformat {
         }
     }
 }
-
 impl Into<ffi::FMOD_CODEC_WAVEFORMAT> for CodecWaveformat {
     fn into(self) -> ffi::FMOD_CODEC_WAVEFORMAT {
         ffi::FMOD_CODEC_WAVEFORMAT {
@@ -5150,7 +4816,6 @@ impl Into<ffi::FMOD_CODEC_WAVEFORMAT> for CodecWaveformat {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct CodecStateFunctions {
     pub metadata: ffi::FMOD_CODEC_METADATA_FUNC,
@@ -5162,7 +4827,6 @@ pub struct CodecStateFunctions {
     pub tell: ffi::FMOD_CODEC_FILE_TELL_FUNC,
     pub size: ffi::FMOD_CODEC_FILE_SIZE_FUNC,
 }
-
 impl TryFrom<ffi::FMOD_CODEC_STATE_FUNCTIONS> for CodecStateFunctions {
     type Error = Error;
     fn try_from(value: ffi::FMOD_CODEC_STATE_FUNCTIONS) -> Result<Self, Self::Error> {
@@ -5180,7 +4844,6 @@ impl TryFrom<ffi::FMOD_CODEC_STATE_FUNCTIONS> for CodecStateFunctions {
         }
     }
 }
-
 impl Into<ffi::FMOD_CODEC_STATE_FUNCTIONS> for CodecStateFunctions {
     fn into(self) -> ffi::FMOD_CODEC_STATE_FUNCTIONS {
         ffi::FMOD_CODEC_STATE_FUNCTIONS {
@@ -5195,7 +4858,6 @@ impl Into<ffi::FMOD_CODEC_STATE_FUNCTIONS> for CodecStateFunctions {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct CodecState {
     pub plugindata: *mut c_void,
@@ -5203,7 +4865,6 @@ pub struct CodecState {
     pub functions: CodecStateFunctions,
     pub numsubsounds: i32,
 }
-
 impl TryFrom<ffi::FMOD_CODEC_STATE> for CodecState {
     type Error = Error;
     fn try_from(value: ffi::FMOD_CODEC_STATE) -> Result<Self, Self::Error> {
@@ -5217,7 +4878,6 @@ impl TryFrom<ffi::FMOD_CODEC_STATE> for CodecState {
         }
     }
 }
-
 impl Into<ffi::FMOD_CODEC_STATE> for CodecState {
     fn into(self) -> ffi::FMOD_CODEC_STATE {
         ffi::FMOD_CODEC_STATE {
@@ -5228,7 +4888,6 @@ impl Into<ffi::FMOD_CODEC_STATE> for CodecState {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct OutputDescription {
     pub apiversion: u32,
@@ -5252,7 +4911,6 @@ pub struct OutputDescription {
     pub closeport: ffi::FMOD_OUTPUT_CLOSEPORT_CALLBACK,
     pub devicelistchanged: ffi::FMOD_OUTPUT_DEVICELISTCHANGED_CALLBACK,
 }
-
 impl TryFrom<ffi::FMOD_OUTPUT_DESCRIPTION> for OutputDescription {
     type Error = Error;
     fn try_from(value: ffi::FMOD_OUTPUT_DESCRIPTION) -> Result<Self, Self::Error> {
@@ -5282,7 +4940,6 @@ impl TryFrom<ffi::FMOD_OUTPUT_DESCRIPTION> for OutputDescription {
         }
     }
 }
-
 impl Into<ffi::FMOD_OUTPUT_DESCRIPTION> for OutputDescription {
     fn into(self) -> ffi::FMOD_OUTPUT_DESCRIPTION {
         ffi::FMOD_OUTPUT_DESCRIPTION {
@@ -5309,7 +4966,6 @@ impl Into<ffi::FMOD_OUTPUT_DESCRIPTION> for OutputDescription {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct OutputState {
     pub plugindata: *mut c_void,
@@ -5320,7 +4976,6 @@ pub struct OutputState {
     pub copyport: ffi::FMOD_OUTPUT_COPYPORT_FUNC,
     pub requestreset: ffi::FMOD_OUTPUT_REQUESTRESET_FUNC,
 }
-
 impl TryFrom<ffi::FMOD_OUTPUT_STATE> for OutputState {
     type Error = Error;
     fn try_from(value: ffi::FMOD_OUTPUT_STATE) -> Result<Self, Self::Error> {
@@ -5337,7 +4992,6 @@ impl TryFrom<ffi::FMOD_OUTPUT_STATE> for OutputState {
         }
     }
 }
-
 impl Into<ffi::FMOD_OUTPUT_STATE> for OutputState {
     fn into(self) -> ffi::FMOD_OUTPUT_STATE {
         ffi::FMOD_OUTPUT_STATE {
@@ -5351,7 +5005,6 @@ impl Into<ffi::FMOD_OUTPUT_STATE> for OutputState {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct OutputObject3Dinfo {
     pub buffer: Vec<f32>,
@@ -5361,7 +5014,6 @@ pub struct OutputObject3Dinfo {
     pub spread: f32,
     pub priority: f32,
 }
-
 impl TryFrom<ffi::FMOD_OUTPUT_OBJECT3DINFO> for OutputObject3Dinfo {
     type Error = Error;
     fn try_from(value: ffi::FMOD_OUTPUT_OBJECT3DINFO) -> Result<Self, Self::Error> {
@@ -5377,7 +5029,6 @@ impl TryFrom<ffi::FMOD_OUTPUT_OBJECT3DINFO> for OutputObject3Dinfo {
         }
     }
 }
-
 impl Into<ffi::FMOD_OUTPUT_OBJECT3DINFO> for OutputObject3Dinfo {
     fn into(self) -> ffi::FMOD_OUTPUT_OBJECT3DINFO {
         ffi::FMOD_OUTPUT_OBJECT3DINFO {
@@ -5390,7 +5041,6 @@ impl Into<ffi::FMOD_OUTPUT_OBJECT3DINFO> for OutputObject3Dinfo {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspBufferArray {
     pub numbuffers: i32,
@@ -5399,7 +5049,6 @@ pub struct DspBufferArray {
     pub buffers: Vec<f32>,
     pub speakermode: SpeakerMode,
 }
-
 impl TryFrom<ffi::FMOD_DSP_BUFFER_ARRAY> for DspBufferArray {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_BUFFER_ARRAY) -> Result<Self, Self::Error> {
@@ -5414,7 +5063,6 @@ impl TryFrom<ffi::FMOD_DSP_BUFFER_ARRAY> for DspBufferArray {
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_BUFFER_ARRAY> for DspBufferArray {
     fn into(self) -> ffi::FMOD_DSP_BUFFER_ARRAY {
         ffi::FMOD_DSP_BUFFER_ARRAY {
@@ -5426,13 +5074,11 @@ impl Into<ffi::FMOD_DSP_BUFFER_ARRAY> for DspBufferArray {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct Complex {
     pub real: f32,
     pub imag: f32,
 }
-
 impl TryFrom<ffi::FMOD_COMPLEX> for Complex {
     type Error = Error;
     fn try_from(value: ffi::FMOD_COMPLEX) -> Result<Self, Self::Error> {
@@ -5444,7 +5090,6 @@ impl TryFrom<ffi::FMOD_COMPLEX> for Complex {
         }
     }
 }
-
 impl Into<ffi::FMOD_COMPLEX> for Complex {
     fn into(self) -> ffi::FMOD_COMPLEX {
         ffi::FMOD_COMPLEX {
@@ -5453,16 +5098,14 @@ impl Into<ffi::FMOD_COMPLEX> for Complex {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspParameterFloatMappingPiecewiseLinear {
     pub numpoints: i32,
     pub pointparamvalues: Vec<f32>,
     pub pointpositions: Vec<f32>,
 }
-
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR>
-for DspParameterFloatMappingPiecewiseLinear
+    for DspParameterFloatMappingPiecewiseLinear
 {
     type Error = Error;
     fn try_from(
@@ -5477,9 +5120,8 @@ for DspParameterFloatMappingPiecewiseLinear
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR>
-for DspParameterFloatMappingPiecewiseLinear
+    for DspParameterFloatMappingPiecewiseLinear
 {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
         ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING_PIECEWISE_LINEAR {
@@ -5489,13 +5131,11 @@ for DspParameterFloatMappingPiecewiseLinear
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspParameterFloatMapping {
     pub type_: DspParameterFloatMappingType,
     pub piecewiselinearmapping: DspParameterFloatMappingPiecewiseLinear,
 }
-
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING> for DspParameterFloatMapping {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING) -> Result<Self, Self::Error> {
@@ -5509,7 +5149,6 @@ impl TryFrom<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING> for DspParameterFloatMapping
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING> for DspParameterFloatMapping {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING {
         ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING {
@@ -5518,7 +5157,6 @@ impl Into<ffi::FMOD_DSP_PARAMETER_FLOAT_MAPPING> for DspParameterFloatMapping {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspParameterDescFloat {
     pub min: f32,
@@ -5526,7 +5164,6 @@ pub struct DspParameterDescFloat {
     pub defaultval: f32,
     pub mapping: DspParameterFloatMapping,
 }
-
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_DESC_FLOAT> for DspParameterDescFloat {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_PARAMETER_DESC_FLOAT) -> Result<Self, Self::Error> {
@@ -5540,7 +5177,6 @@ impl TryFrom<ffi::FMOD_DSP_PARAMETER_DESC_FLOAT> for DspParameterDescFloat {
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_PARAMETER_DESC_FLOAT> for DspParameterDescFloat {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_DESC_FLOAT {
         ffi::FMOD_DSP_PARAMETER_DESC_FLOAT {
@@ -5551,7 +5187,6 @@ impl Into<ffi::FMOD_DSP_PARAMETER_DESC_FLOAT> for DspParameterDescFloat {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspParameterDescInt {
     pub min: i32,
@@ -5560,7 +5195,6 @@ pub struct DspParameterDescInt {
     pub goestoinf: ffi::FMOD_BOOL,
     pub valuenames: Vec<String>,
 }
-
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_DESC_INT> for DspParameterDescInt {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_PARAMETER_DESC_INT) -> Result<Self, Self::Error> {
@@ -5575,7 +5209,6 @@ impl TryFrom<ffi::FMOD_DSP_PARAMETER_DESC_INT> for DspParameterDescInt {
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_PARAMETER_DESC_INT> for DspParameterDescInt {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_DESC_INT {
         ffi::FMOD_DSP_PARAMETER_DESC_INT {
@@ -5587,13 +5220,11 @@ impl Into<ffi::FMOD_DSP_PARAMETER_DESC_INT> for DspParameterDescInt {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspParameterDescBool {
     pub defaultval: ffi::FMOD_BOOL,
     pub valuenames: Vec<String>,
 }
-
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_DESC_BOOL> for DspParameterDescBool {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_PARAMETER_DESC_BOOL) -> Result<Self, Self::Error> {
@@ -5605,7 +5236,6 @@ impl TryFrom<ffi::FMOD_DSP_PARAMETER_DESC_BOOL> for DspParameterDescBool {
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_PARAMETER_DESC_BOOL> for DspParameterDescBool {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_DESC_BOOL {
         ffi::FMOD_DSP_PARAMETER_DESC_BOOL {
@@ -5614,12 +5244,10 @@ impl Into<ffi::FMOD_DSP_PARAMETER_DESC_BOOL> for DspParameterDescBool {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspParameterDescData {
     pub datatype: i32,
 }
-
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_DESC_DATA> for DspParameterDescData {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_PARAMETER_DESC_DATA) -> Result<Self, Self::Error> {
@@ -5630,7 +5258,6 @@ impl TryFrom<ffi::FMOD_DSP_PARAMETER_DESC_DATA> for DspParameterDescData {
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_PARAMETER_DESC_DATA> for DspParameterDescData {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_DESC_DATA {
         ffi::FMOD_DSP_PARAMETER_DESC_DATA {
@@ -5638,7 +5265,6 @@ impl Into<ffi::FMOD_DSP_PARAMETER_DESC_DATA> for DspParameterDescData {
         }
     }
 }
-
 #[derive(Clone)]
 pub struct DspParameterDesc {
     pub type_: DspParameterType,
@@ -5647,7 +5273,6 @@ pub struct DspParameterDesc {
     pub description: String,
     pub union: ffi::FMOD_DSP_PARAMETER_DESC_UNION,
 }
-
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_DESC> for DspParameterDesc {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_PARAMETER_DESC) -> Result<Self, Self::Error> {
@@ -5662,7 +5287,6 @@ impl TryFrom<ffi::FMOD_DSP_PARAMETER_DESC> for DspParameterDesc {
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_PARAMETER_DESC> for DspParameterDesc {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_DESC {
         ffi::FMOD_DSP_PARAMETER_DESC {
@@ -5674,13 +5298,11 @@ impl Into<ffi::FMOD_DSP_PARAMETER_DESC> for DspParameterDesc {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspParameterOverallgain {
     pub linear_gain: f32,
     pub linear_gain_additive: f32,
 }
-
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_OVERALLGAIN> for DspParameterOverallgain {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_PARAMETER_OVERALLGAIN) -> Result<Self, Self::Error> {
@@ -5692,7 +5314,6 @@ impl TryFrom<ffi::FMOD_DSP_PARAMETER_OVERALLGAIN> for DspParameterOverallgain {
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_PARAMETER_OVERALLGAIN> for DspParameterOverallgain {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_OVERALLGAIN {
         ffi::FMOD_DSP_PARAMETER_OVERALLGAIN {
@@ -5701,13 +5322,11 @@ impl Into<ffi::FMOD_DSP_PARAMETER_OVERALLGAIN> for DspParameterOverallgain {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspParameterAttributes3d {
     pub relative: Attributes3d,
     pub absolute: Attributes3d,
 }
-
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES> for DspParameterAttributes3d {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES) -> Result<Self, Self::Error> {
@@ -5719,7 +5338,6 @@ impl TryFrom<ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES> for DspParameterAttributes3d 
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES> for DspParameterAttributes3d {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES {
         ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES {
@@ -5728,7 +5346,6 @@ impl Into<ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES> for DspParameterAttributes3d {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspParameterAttributes3dMulti {
     pub numlisteners: i32,
@@ -5736,7 +5353,6 @@ pub struct DspParameterAttributes3dMulti {
     pub weight: [f32; ffi::FMOD_MAX_LISTENERS as usize],
     pub absolute: Attributes3d,
 }
-
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI> for DspParameterAttributes3dMulti {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI) -> Result<Self, Self::Error> {
@@ -5756,7 +5372,6 @@ impl TryFrom<ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI> for DspParameterAttribu
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI> for DspParameterAttributes3dMulti {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI {
         ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI {
@@ -5767,13 +5382,11 @@ impl Into<ffi::FMOD_DSP_PARAMETER_3DATTRIBUTES_MULTI> for DspParameterAttributes
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspParameterAttenuationRange {
     pub min: f32,
     pub max: f32,
 }
-
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_ATTENUATION_RANGE> for DspParameterAttenuationRange {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_PARAMETER_ATTENUATION_RANGE) -> Result<Self, Self::Error> {
@@ -5785,7 +5398,6 @@ impl TryFrom<ffi::FMOD_DSP_PARAMETER_ATTENUATION_RANGE> for DspParameterAttenuat
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_PARAMETER_ATTENUATION_RANGE> for DspParameterAttenuationRange {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_ATTENUATION_RANGE {
         ffi::FMOD_DSP_PARAMETER_ATTENUATION_RANGE {
@@ -5794,12 +5406,10 @@ impl Into<ffi::FMOD_DSP_PARAMETER_ATTENUATION_RANGE> for DspParameterAttenuation
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspParameterSidechain {
     pub sidechainenable: ffi::FMOD_BOOL,
 }
-
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_SIDECHAIN> for DspParameterSidechain {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_PARAMETER_SIDECHAIN) -> Result<Self, Self::Error> {
@@ -5810,7 +5420,6 @@ impl TryFrom<ffi::FMOD_DSP_PARAMETER_SIDECHAIN> for DspParameterSidechain {
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_PARAMETER_SIDECHAIN> for DspParameterSidechain {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_SIDECHAIN {
         ffi::FMOD_DSP_PARAMETER_SIDECHAIN {
@@ -5818,13 +5427,11 @@ impl Into<ffi::FMOD_DSP_PARAMETER_SIDECHAIN> for DspParameterSidechain {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspParameterFft {
     pub length: i32,
     pub spectrum: Vec<Vec<f32>>,
 }
-
 impl TryFrom<ffi::FMOD_DSP_PARAMETER_FFT> for DspParameterFft {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_PARAMETER_FFT) -> Result<Self, Self::Error> {
@@ -5838,7 +5445,6 @@ impl TryFrom<ffi::FMOD_DSP_PARAMETER_FFT> for DspParameterFft {
         }
     }
 }
-
 impl TryFrom<Dsp> for DspParameterFft {
     type Error = Error;
     fn try_from(dsp: Dsp) -> Result<Self, Self::Error> {
@@ -5852,7 +5458,6 @@ impl TryFrom<Dsp> for DspParameterFft {
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_PARAMETER_FFT> for DspParameterFft {
     fn into(self) -> ffi::FMOD_DSP_PARAMETER_FFT {
         ffi::FMOD_DSP_PARAMETER_FFT {
@@ -5862,7 +5467,6 @@ impl Into<ffi::FMOD_DSP_PARAMETER_FFT> for DspParameterFft {
         }
     }
 }
-
 #[derive(Clone)]
 pub struct DspDescription {
     pub pluginsdkversion: u32,
@@ -5891,7 +5495,6 @@ pub struct DspDescription {
     pub sys_deregister: ffi::FMOD_DSP_SYSTEM_DEREGISTER_CALLBACK,
     pub sys_mix: ffi::FMOD_DSP_SYSTEM_MIX_CALLBACK,
 }
-
 impl TryFrom<ffi::FMOD_DSP_DESCRIPTION> for DspDescription {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_DESCRIPTION) -> Result<Self, Self::Error> {
@@ -5930,7 +5533,6 @@ impl TryFrom<ffi::FMOD_DSP_DESCRIPTION> for DspDescription {
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_DESCRIPTION> for DspDescription {
     fn into(self) -> ffi::FMOD_DSP_DESCRIPTION {
         ffi::FMOD_DSP_DESCRIPTION {
@@ -5963,13 +5565,11 @@ impl Into<ffi::FMOD_DSP_DESCRIPTION> for DspDescription {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspStateDftFunctions {
     pub fftreal: ffi::FMOD_DSP_DFT_FFTREAL_FUNC,
     pub inversefftreal: ffi::FMOD_DSP_DFT_IFFTREAL_FUNC,
 }
-
 impl TryFrom<ffi::FMOD_DSP_STATE_DFT_FUNCTIONS> for DspStateDftFunctions {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_STATE_DFT_FUNCTIONS) -> Result<Self, Self::Error> {
@@ -5981,7 +5581,6 @@ impl TryFrom<ffi::FMOD_DSP_STATE_DFT_FUNCTIONS> for DspStateDftFunctions {
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_STATE_DFT_FUNCTIONS> for DspStateDftFunctions {
     fn into(self) -> ffi::FMOD_DSP_STATE_DFT_FUNCTIONS {
         ffi::FMOD_DSP_STATE_DFT_FUNCTIONS {
@@ -5990,7 +5589,6 @@ impl Into<ffi::FMOD_DSP_STATE_DFT_FUNCTIONS> for DspStateDftFunctions {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspStatePanFunctions {
     pub summonomatrix: ffi::FMOD_DSP_PAN_SUMMONOMATRIX_FUNC,
@@ -6000,7 +5598,6 @@ pub struct DspStatePanFunctions {
     pub sumstereotosurroundmatrix: ffi::FMOD_DSP_PAN_SUMSTEREOTOSURROUNDMATRIX_FUNC,
     pub getrolloffgain: ffi::FMOD_DSP_PAN_GETROLLOFFGAIN_FUNC,
 }
-
 impl TryFrom<ffi::FMOD_DSP_STATE_PAN_FUNCTIONS> for DspStatePanFunctions {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_STATE_PAN_FUNCTIONS) -> Result<Self, Self::Error> {
@@ -6016,7 +5613,6 @@ impl TryFrom<ffi::FMOD_DSP_STATE_PAN_FUNCTIONS> for DspStatePanFunctions {
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_STATE_PAN_FUNCTIONS> for DspStatePanFunctions {
     fn into(self) -> ffi::FMOD_DSP_STATE_PAN_FUNCTIONS {
         ffi::FMOD_DSP_STATE_PAN_FUNCTIONS {
@@ -6029,7 +5625,6 @@ impl Into<ffi::FMOD_DSP_STATE_PAN_FUNCTIONS> for DspStatePanFunctions {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspStateFunctions {
     pub alloc: ffi::FMOD_DSP_ALLOC_FUNC,
@@ -6045,7 +5640,6 @@ pub struct DspStateFunctions {
     pub log: ffi::FMOD_DSP_LOG_FUNC,
     pub getuserdata: ffi::FMOD_DSP_GETUSERDATA_FUNC,
 }
-
 impl TryFrom<ffi::FMOD_DSP_STATE_FUNCTIONS> for DspStateFunctions {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_STATE_FUNCTIONS) -> Result<Self, Self::Error> {
@@ -6067,7 +5661,6 @@ impl TryFrom<ffi::FMOD_DSP_STATE_FUNCTIONS> for DspStateFunctions {
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_STATE_FUNCTIONS> for DspStateFunctions {
     fn into(self) -> ffi::FMOD_DSP_STATE_FUNCTIONS {
         ffi::FMOD_DSP_STATE_FUNCTIONS {
@@ -6086,7 +5679,6 @@ impl Into<ffi::FMOD_DSP_STATE_FUNCTIONS> for DspStateFunctions {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspState {
     pub instance: *mut c_void,
@@ -6098,7 +5690,6 @@ pub struct DspState {
     pub functions: DspStateFunctions,
     pub systemobject: i32,
 }
-
 impl TryFrom<ffi::FMOD_DSP_STATE> for DspState {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_STATE) -> Result<Self, Self::Error> {
@@ -6116,7 +5707,6 @@ impl TryFrom<ffi::FMOD_DSP_STATE> for DspState {
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_STATE> for DspState {
     fn into(self) -> ffi::FMOD_DSP_STATE {
         ffi::FMOD_DSP_STATE {
@@ -6131,7 +5721,6 @@ impl Into<ffi::FMOD_DSP_STATE> for DspState {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspMeteringInfo {
     pub numsamples: i32,
@@ -6139,7 +5728,6 @@ pub struct DspMeteringInfo {
     pub rmslevel: [f32; 32 as usize],
     pub numchannels: i16,
 }
-
 impl TryFrom<ffi::FMOD_DSP_METERING_INFO> for DspMeteringInfo {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_METERING_INFO) -> Result<Self, Self::Error> {
@@ -6153,7 +5741,6 @@ impl TryFrom<ffi::FMOD_DSP_METERING_INFO> for DspMeteringInfo {
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_METERING_INFO> for DspMeteringInfo {
     fn into(self) -> ffi::FMOD_DSP_METERING_INFO {
         ffi::FMOD_DSP_METERING_INFO {
@@ -6164,7 +5751,6 @@ impl Into<ffi::FMOD_DSP_METERING_INFO> for DspMeteringInfo {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspLoudnessMeterInfoType {
     pub momentaryloudness: f32,
@@ -6176,7 +5762,6 @@ pub struct DspLoudnessMeterInfoType {
     pub maxtruepeak: f32,
     pub maxmomentaryloudness: f32,
 }
-
 impl TryFrom<ffi::FMOD_DSP_LOUDNESS_METER_INFO_TYPE> for DspLoudnessMeterInfoType {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_LOUDNESS_METER_INFO_TYPE) -> Result<Self, Self::Error> {
@@ -6194,7 +5779,6 @@ impl TryFrom<ffi::FMOD_DSP_LOUDNESS_METER_INFO_TYPE> for DspLoudnessMeterInfoTyp
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_LOUDNESS_METER_INFO_TYPE> for DspLoudnessMeterInfoType {
     fn into(self) -> ffi::FMOD_DSP_LOUDNESS_METER_INFO_TYPE {
         ffi::FMOD_DSP_LOUDNESS_METER_INFO_TYPE {
@@ -6209,12 +5793,10 @@ impl Into<ffi::FMOD_DSP_LOUDNESS_METER_INFO_TYPE> for DspLoudnessMeterInfoType {
         }
     }
 }
-
 #[derive(Debug, Clone)]
 pub struct DspLoudnessMeterWeightingType {
     pub channelweight: [f32; 32 as usize],
 }
-
 impl TryFrom<ffi::FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE> for DspLoudnessMeterWeightingType {
     type Error = Error;
     fn try_from(value: ffi::FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE) -> Result<Self, Self::Error> {
@@ -6225,7 +5807,6 @@ impl TryFrom<ffi::FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE> for DspLoudnessMeterWe
         }
     }
 }
-
 impl Into<ffi::FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE> for DspLoudnessMeterWeightingType {
     fn into(self) -> ffi::FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE {
         ffi::FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE {
@@ -6233,16 +5814,12 @@ impl Into<ffi::FMOD_DSP_LOUDNESS_METER_WEIGHTING_TYPE> for DspLoudnessMeterWeigh
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct Channel {
     pointer: *mut ffi::FMOD_CHANNEL,
 }
-
 unsafe impl Send for Channel {}
-
 unsafe impl Sync for Channel {}
-
 impl Channel {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_CHANNEL) -> Self {
@@ -7056,16 +6633,12 @@ impl Channel {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct ChannelControl {
     pointer: *mut ffi::FMOD_CHANNELCONTROL,
 }
-
 unsafe impl Send for ChannelControl {}
-
 unsafe impl Sync for ChannelControl {}
-
 impl ChannelControl {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_CHANNELCONTROL) -> Self {
@@ -7076,16 +6649,12 @@ impl ChannelControl {
         self.pointer
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct ChannelGroup {
     pointer: *mut ffi::FMOD_CHANNELGROUP,
 }
-
 unsafe impl Send for ChannelGroup {}
-
 unsafe impl Sync for ChannelGroup {}
-
 impl ChannelGroup {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_CHANNELGROUP) -> Self {
@@ -7840,16 +7409,12 @@ impl ChannelGroup {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct Dsp {
     pointer: *mut ffi::FMOD_DSP,
 }
-
 unsafe impl Send for Dsp {}
-
 unsafe impl Sync for Dsp {}
-
 impl Dsp {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_DSP) -> Self {
@@ -8366,16 +7931,12 @@ impl Dsp {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct DspConnection {
     pointer: *mut ffi::FMOD_DSPCONNECTION,
 }
-
 unsafe impl Send for DspConnection {}
-
 unsafe impl Sync for DspConnection {}
-
 impl DspConnection {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_DSPCONNECTION) -> Self {
@@ -8484,16 +8045,12 @@ impl DspConnection {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct Geometry {
     pointer: *mut ffi::FMOD_GEOMETRY,
 }
-
 unsafe impl Send for Geometry {}
-
 unsafe impl Sync for Geometry {}
-
 impl Geometry {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_GEOMETRY) -> Self {
@@ -8740,16 +8297,12 @@ impl Geometry {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct Polygon {
     pointer: *mut ffi::FMOD_POLYGON,
 }
-
 unsafe impl Send for Polygon {}
-
 unsafe impl Sync for Polygon {}
-
 impl Polygon {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_POLYGON) -> Self {
@@ -8760,16 +8313,12 @@ impl Polygon {
         self.pointer
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct Reverb3d {
     pointer: *mut ffi::FMOD_REVERB3D,
 }
-
 unsafe impl Send for Reverb3d {}
-
 unsafe impl Sync for Reverb3d {}
-
 impl Reverb3d {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_REVERB3D) -> Self {
@@ -8877,16 +8426,12 @@ impl Reverb3d {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct Sound {
     pointer: *mut ffi::FMOD_SOUND,
 }
-
 unsafe impl Send for Sound {}
-
 unsafe impl Sync for Sound {}
-
 impl Sound {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_SOUND) -> Self {
@@ -9404,16 +8949,12 @@ impl Sound {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct SoundGroup {
     pointer: *mut ffi::FMOD_SOUNDGROUP,
 }
-
 unsafe impl Send for SoundGroup {}
-
 unsafe impl Sync for SoundGroup {}
-
 impl SoundGroup {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_SOUNDGROUP) -> Self {
@@ -9572,16 +9113,12 @@ impl SoundGroup {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct Bank {
     pointer: *mut ffi::FMOD_STUDIO_BANK,
 }
-
 unsafe impl Send for Bank {}
-
 unsafe impl Sync for Bank {}
-
 impl Bank {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_STUDIO_BANK) -> Self {
@@ -9802,16 +9339,12 @@ impl Bank {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct Bus {
     pointer: *mut ffi::FMOD_STUDIO_BUS,
 }
-
 unsafe impl Send for Bus {}
-
 unsafe impl Sync for Bus {}
-
 impl Bus {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_STUDIO_BUS) -> Self {
@@ -9977,16 +9510,12 @@ impl Bus {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct CommandReplay {
     pointer: *mut ffi::FMOD_STUDIO_COMMANDREPLAY,
 }
-
 unsafe impl Send for CommandReplay {}
-
 unsafe impl Sync for CommandReplay {}
-
 impl CommandReplay {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_STUDIO_COMMANDREPLAY) -> Self {
@@ -10234,16 +9763,12 @@ impl CommandReplay {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct EventDescription {
     pointer: *mut ffi::FMOD_STUDIO_EVENTDESCRIPTION,
 }
-
 unsafe impl Send for EventDescription {}
-
 unsafe impl Sync for EventDescription {}
-
 impl EventDescription {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_STUDIO_EVENTDESCRIPTION) -> Self {
@@ -10725,16 +10250,12 @@ impl EventDescription {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct EventInstance {
     pointer: *mut ffi::FMOD_STUDIO_EVENTINSTANCE,
 }
-
 unsafe impl Send for EventInstance {}
-
 unsafe impl Sync for EventInstance {}
-
 impl EventInstance {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_STUDIO_EVENTINSTANCE) -> Self {
@@ -11200,16 +10721,12 @@ impl EventInstance {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct Studio {
     pointer: *mut ffi::FMOD_STUDIO_SYSTEM,
 }
-
 unsafe impl Send for Studio {}
-
 unsafe impl Sync for Studio {}
-
 impl Studio {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_STUDIO_SYSTEM) -> Self {
@@ -12010,16 +11527,12 @@ impl Studio {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct Vca {
     pointer: *mut ffi::FMOD_STUDIO_VCA,
 }
-
 unsafe impl Send for Vca {}
-
 unsafe impl Sync for Vca {}
-
 impl Vca {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_STUDIO_VCA) -> Self {
@@ -12082,16 +11595,12 @@ impl Vca {
         }
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct SyncPoint {
     pointer: *mut ffi::FMOD_SYNCPOINT,
 }
-
 unsafe impl Send for SyncPoint {}
-
 unsafe impl Sync for SyncPoint {}
-
 impl SyncPoint {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_SYNCPOINT) -> Self {
@@ -12102,16 +11611,12 @@ impl SyncPoint {
         self.pointer
     }
 }
-
 #[derive(Debug, Clone, Copy)]
 pub struct System {
     pointer: *mut ffi::FMOD_SYSTEM,
 }
-
 unsafe impl Send for System {}
-
 unsafe impl Sync for System {}
-
 impl System {
     #[inline]
     pub fn from(pointer: *mut ffi::FMOD_SYSTEM) -> Self {

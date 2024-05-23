@@ -989,6 +989,7 @@ pub fn generate_lib_code(api: &Api) -> Result<TokenStream, Error> {
         use std::mem::size_of;
         use std::ptr::{null, null_mut};
         use std::slice;
+        pub mod errors;
         pub mod ffi;
         #[cfg(feature = "flags")]
         mod flags;
@@ -1050,7 +1051,7 @@ pub fn generate_lib_code(api: &Api) -> Result<TokenStream, Error> {
                 Error::Fmod {
                     function: $function.to_string(),
                     code: $code,
-                    message: ffi::map_fmod_error($code).to_string(),
+                    message: errors::map_fmod_error($code).to_string(),
                 }
             };
         }
@@ -1145,6 +1146,5 @@ pub fn generate_lib_code(api: &Api) -> Result<TokenStream, Error> {
 }
 
 pub fn generate(api: &Api) -> Result<String, Error> {
-    let code = generate_lib_code(api)?;
-    rustfmt_wrapper::rustfmt(code).map_err(Error::from)
+    generate_lib_code(api).map(|code| code.to_string())
 }
