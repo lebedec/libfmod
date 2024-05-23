@@ -182,7 +182,7 @@ fn generate_lib_fmod(source: &str, destination: &str) -> Result<(), Error> {
     Ok(())
 }
 
-const FMOD_SDK_PATH: &str = "C:\\Program Files (x86)\\FMOD SoundSystem\\FMOD Studio API Windows";
+const FMOD_SDK_PATH: &str = "./fmod/20206";
 const OUTPUT_DIR: &str = "../libfmod";
 
 fn main() {
