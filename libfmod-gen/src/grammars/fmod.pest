@@ -1,0 +1,49 @@
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT = _{
+    ("/*" ~ (!"*/" ~ ANY)* ~ "*/")
+    | ("//" ~ (!"\n" ~ ANY)*)
+}
+
+name = @{ ("_" | ASCII_ALPHANUMERIC)+ }
+string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+
+define = _{ "#define" ~ "_FMOD_H" }
+ifndef = _{ "#ifndef" ~ "_FMOD_H" }
+endif = _{ "#endif" }
+include = _{ "#include" ~ "\"fmod_common.h\"" }
+Directive = { define | ifndef | endif | include }
+
+extern_linkage_begin = _{"#ifdef __cplusplus" ~ "extern" ~ "\"C\"" ~ "{" ~ "#endif" }
+extern_linkage_end = _{"#ifdef __cplusplus" ~ "}" ~ "#endif"}
+ExternLinkage = { extern_linkage_begin | extern_linkage_end}
+
+FundamentalType = {
+    "char" |
+    "unsigned char" |
+    "signed char" |
+    "int" |
+    "unsigned int" |
+    "short" |
+    "unsigned short" |
+    "long long" |
+    "long" |
+    "unsigned long long" |
+    "unsigned long" |
+    "void" |
+    "float"
+}
+UserType = @{name}
+
+as_const = { "const" }
+NormalPointer = {"*"}
+DoublePointer = {"**"}
+pointer = { DoublePointer | NormalPointer }
+argument_type = {FundamentalType | UserType }
+Argument = {as_const? ~ argument_type ~ pointer? ~ name}
+arguments = {"(" ~ (","? ~ Argument)* ~ ")"}
+return_type = { FundamentalType | UserType}
+Function = {return_type ~ "F_API" ~ name ~ arguments ~ ";"}
+
+declaration = _{Function | Directive | ExternLinkage}
+
+api = { SOI ~ declaration* ~ EOI  }

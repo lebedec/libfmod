@@ -1,0 +1,59 @@
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT = _{
+    ("/*" ~ (!"*/" ~ ANY)* ~ "*/")
+    | ("//" ~ (!"\n" ~ ANY)*)
+}
+
+name = @{ ("_" | ASCII_ALPHANUMERIC)+ }
+string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+
+define = _{ "#define" ~ "_FMOD_DSP_EFFECTS_H" }
+ifndef = _{ "#ifndef" ~ "_FMOD_DSP_EFFECTS_H" }
+endif = _{ "#endif" }
+Directive = { define | ifndef | endif }
+
+FundamentalType = {
+    "char" |
+    "unsigned char" |
+    "signed char" |
+    "int" |
+    "unsigned int" |
+    "short" |
+    "unsigned short" |
+    "long long" |
+    "long" |
+    "unsigned long long" |
+    "unsigned long" |
+    "void" |
+    "float"
+}
+UserType = @{name}
+
+Calculation = { "(" ~ (!")" ~ ANY)* ~ ")" }
+Literal = { ("-" | "_" | ASCII_ALPHANUMERIC)+ }
+value = @{Calculation | Literal }
+Constant = { "#define" ~ name ~ value }
+
+Enumerator = { ","? ~ name ~ ("=" ~ value)? }
+enumerators = { Enumerator* }
+Enumeration = { "typedef" ~ "enum" ~ name? ~ "{" ~ enumerators ~ ","? ~ "}" ~  name ~ ";" }
+
+as_const = { "const" }
+as_array = { "[" ~ ("_" | ASCII_ALPHANUMERIC)+ ~ "]" }
+NormalPointer = { "*" }
+DoublePointer = { "**" }
+pointer = { DoublePointer | NormalPointer }
+field_type = { FundamentalType | UserType }
+Field = { as_const? ~ field_type ~ pointer? ~ name ~ as_array? ~ ";" }
+fields = { Field* }
+union = { "union" ~ "{" ~ fields ~ "}" ~ ";" }
+Structure = { "typedef"? ~ "struct" ~ name ~ "{" ~ fields ~ union? ~ "}" ~ name? ~ ";" }
+
+declaration = _{
+    Directive |
+    Constant |
+    Enumeration |
+    Structure
+}
+
+api = { SOI ~ declaration* ~ EOI  }
