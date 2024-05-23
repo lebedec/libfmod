@@ -1,0 +1,35 @@
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT = _{
+    ("/*" ~ (!"*/" ~ ANY)* ~ "*/")
+    | ("//" ~ (!"\n" ~ ANY)*)
+}
+
+name = @{ ("_" | ASCII_ALPHANUMERIC)+ }
+string = { (!"\"" ~ ANY)* }
+literal = _{ "\"" ~ string ~ "\"" }
+
+define = _{ "#define" ~ "_FMOD_ERRORS_H" }
+ifndef = _{ "#ifndef" ~ "_FMOD_ERRORS_H" }
+endif = _{ "#endif" }
+include = _{ "#include \"fmod.h\"" }
+gnuc = _ { "#ifdef __GNUC__" ~ (!"#endif" ~ ANY)* ~ "#endif" }
+Directive = { define | ifndef | endif | include | gnuc }
+
+ErrorString = { "case" ~ name ~ ":" ~ "return" ~ literal ~ ";" }
+errors = {ErrorString*}
+ErrorStringMapping = {
+    "static const char *FMOD_ErrorString(FMOD_RESULT errcode)" ~
+    "{" ~
+        "switch (errcode)" ~
+        "{" ~
+            errors ~
+            "default" ~ ":" ~ "return" ~ "\"Unknown error.\";" ~
+        "};" ~
+    "}"
+}
+
+declaration = _{
+    Directive | ErrorStringMapping
+}
+
+api = { SOI ~ declaration* ~ EOI  }

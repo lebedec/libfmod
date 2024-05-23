@@ -1,0 +1,94 @@
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT = _{
+    ("/*" ~ (!"*/" ~ ANY)* ~ "*/")
+    | ("//" ~ (!"\n" ~ ANY)*)
+}
+
+name = @{ ("_" | ASCII_ALPHANUMERIC)+ }
+string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+
+define = _{ "#define" ~ "_FMOD_COMMON_H" }
+ifndef = _{ "#ifndef" ~ "_FMOD_COMMON_H" }
+endif = _{ "#endif" }
+include = _{ (
+	"#include \"fmod_codec.h\"" |
+	"#include \"fmod_dsp.h\"" |
+	"#include \"fmod_output.h\""
+) }
+Directive = { define | ifndef | endif | include }
+
+ImportHelper = {"#define F_CALLBACK F_CALL" | ("#if" ~ (!"#endif" ~ ANY)* ~ "#endif")}
+
+FundamentalType = {
+    "char" |
+    "unsigned char" |
+    "signed char" |
+    "int" |
+    "unsigned int" |
+    "short" |
+    "unsigned short" |
+    "long long" |
+    "long" |
+    "unsigned long long" |
+    "unsigned long" |
+    "void" |
+    "float"
+}
+UserType = @{name}
+
+base_type = { FundamentalType | UserType }
+TypeAlias = { "typedef" ~ base_type ~ name ~ ";" }
+
+OpaqueType = { "typedef" ~ "struct" ~ name ~ name ~ ";"}
+
+Calculation = { "(" ~ (!")" ~ ANY)* ~ ")" }
+Literal = { ("-" | "_" | ASCII_ALPHANUMERIC)+ }
+value = @{Calculation | Literal }
+Constant = { "#define" ~ name ~ value }
+
+ensure_flag = _{ !"FMOD_VERSION" }
+Flag = { "#define" ~ ensure_flag ~ name ~ value }
+flags = { Flag+ }
+flags_type = { FundamentalType }
+Flags = { "typedef" ~ flags_type ~ name ~ ";" ~ flags  }
+
+Enumerator = { ","? ~ name ~ ("=" ~ value)? }
+enumerators = { Enumerator* }
+Enumeration = { "typedef" ~ "enum" ~ name ~ "{" ~ enumerators ~ "}" ~  name ~ ";" }
+
+as_const = { "const" }
+as_array = { "[" ~ ("_" | ASCII_ALPHANUMERIC)+ ~ "]" }
+NormalPointer = { "*" }
+DoublePointer = { "**" }
+pointer = { DoublePointer | NormalPointer }
+field_type = { FundamentalType | UserType }
+Field = { as_const? ~ field_type ~ pointer? ~ name ~ as_array? ~ ";" }
+fields = { Field* }
+union = { "union" ~ "{" ~ fields ~ "}" ~ ";" }
+Structure = { "typedef"? ~ "struct" ~ name ~ "{" ~ fields ~ union? ~ "}" ~ name? ~ ";" }
+
+argument_type = { FundamentalType | UserType }
+Argument = { as_const? ~ argument_type ~ pointer? ~ name}
+arguments = { (","? ~ Argument)* }
+return_type = { FundamentalType | UserType}
+varargs = { "," ~ "..." }
+Callback = { "typedef" ~ return_type ~ pointer? ~ ("(F_CALLBACK *" | "(F_CALL *") ~ name ~ ")" ~ "(" ~ arguments ~ varargs?  ~ ")" ~  ";" }
+
+literal = @{ ("." | "-" | ASCII_ALPHANUMERIC)+ }
+values = { (","? ~ literal)* }
+Preset = { "#define" ~ name ~ "{" ~ values ~ "}" }
+
+declaration = _{
+	ImportHelper |
+    OpaqueType |
+    Directive |
+    Flags |
+    TypeAlias |
+    Preset |
+    Constant |
+    Enumeration |
+    Structure |
+    Callback
+}
+
+api = { SOI ~ declaration* ~ EOI  }
