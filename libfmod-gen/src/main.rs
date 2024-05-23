@@ -9,7 +9,7 @@ extern crate proc_macro;
 #[macro_use]
 extern crate pest_derive;
 
-use crate::generators::{ffi, flags, lib};
+use crate::generators::{errors, ffi, flags, lib};
 use crate::models::{Api, Error};
 use crate::parsers::{
     fmod, fmod_codec, fmod_common, fmod_docs, fmod_dsp, fmod_dsp_effects, fmod_errors, fmod_output,
@@ -17,6 +17,7 @@ use crate::parsers::{
 };
 use std::path::Path;
 use std::{env, fs};
+use std::process::Command;
 
 mod generators;
 mod models;
@@ -178,6 +179,14 @@ fn generate_lib_fmod(source: &str, destination: &str) -> Result<(), Error> {
     fs::write(destination.join("src/lib.rs"), code)?;
     let code = flags::generate_to_file(&api)?;
     fs::write(destination.join("src/flags.rs"), code)?;
+    let code = errors::generate_to_file(&api)?;
+    fs::write(destination.join("src/errors.rs"), code)?;
+
+    Command::new("cargo")
+        .args(["fmt"])
+        .current_dir(destination)
+        .output()
+        .map_err(Error::Fmt)?;
 
     Ok(())
 }

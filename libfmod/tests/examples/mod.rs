@@ -1,2 +1,2 @@
-pub mod studio;
 pub mod core;
+pub mod studio;

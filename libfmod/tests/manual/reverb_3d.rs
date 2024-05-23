@@ -1,5 +1,5 @@
-use libfmod::{Error, ReverbProperties, System, Vector};
 use libfmod::ffi::FMOD_INIT_NORMAL;
+use libfmod::{Error, ReverbProperties, System, Vector};
 
 #[test]
 fn test_3d_reverb() -> Result<(), Error> {
