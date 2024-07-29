@@ -32,7 +32,7 @@ fn test_dsp_custom() -> Result<(), Error> {
             floatdesc: FMOD_DSP_PARAMETER_DESC_FLOAT {
                 min: 0.0,
                 max: 1.0,
-                defaultval: 1.0,
+                defaultval: 0.42,
                 mapping: Default::default(),
             },
         },
@@ -112,15 +112,17 @@ fn test_dsp_custom() -> Result<(), Error> {
             3 => {
                 mydsp.set_parameter_float(0, 0.25)?;
             }
-            4 => {
-                let (value, _) = mydsp.get_parameter_float(0, 0)?;
-                println!("volume: {}", value);
-            }
             _ => {}
         }
     }
     let info = mydsp.get_parameter_info(0)?;
-    println!("default: {}", unsafe { info.union.floatdesc.defaultval });
+
+    let default_value = unsafe { info.union.floatdesc.defaultval };
+    let (current_value, _) = mydsp.get_parameter_float(0, 0)?;
+
+    assert_eq!(default_value, 0.42, "default value");
+    assert_eq!(current_value, 0.25, "current value");
+    assert_eq!(info.description, "linear volume in percent", "description");
 
     system.release()
 }

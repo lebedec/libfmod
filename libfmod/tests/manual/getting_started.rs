@@ -67,9 +67,19 @@ fn test_studio_system_advanced_settings() -> Result<(), Error> {
         streamingscheduledelay: 10,
         encryptionkey: "secret".to_string(),
     };
-    studio.set_advanced_settings(settings)?;
-    let settings = studio.get_advanced_settings()?;
-    println!("Settings: {:?}", settings);
+    studio.set_advanced_settings(settings.clone())?;
+    let actual = studio.get_advanced_settings()?;
+    assert_eq!(actual.commandqueuesize, settings.commandqueuesize);
+    assert_eq!(actual.handleinitialsize, settings.handleinitialsize);
+    assert_eq!(actual.studioupdateperiod, settings.studioupdateperiod);
+    assert_eq!(
+        actual.idlesampledatapoolsize,
+        settings.idlesampledatapoolsize
+    );
+    assert_eq!(
+        actual.streamingscheduledelay,
+        settings.streamingscheduledelay
+    );
     studio.release()
 }
 
