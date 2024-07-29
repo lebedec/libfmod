@@ -5,7 +5,7 @@ publish = true
 edition = "2021"
 license = "MIT"
 description = "A library wrapper for integrating FMOD Engine in Rust applications."
-readme = "README.md"
+readme = "../README.md"
 homepage = "https://github.com/lebedec/libfmod"
 repository = "https://github.com/lebedec/libfmod"
 
