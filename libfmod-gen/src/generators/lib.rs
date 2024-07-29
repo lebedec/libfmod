@@ -288,8 +288,8 @@ pub fn generate_into_field(structure: &str, field: &Field, api: &Api) -> TokenSt
         Some(expression) => expression,
         _ => match &field.field_type {
             FundamentalType(name) => match (ptr, &name[..]) {
-                ("*const", "char") => quote! { self.#self_name.as_ptr().cast() },
-                ("*mut", "char") => quote! { self.#self_name.as_ptr() as *mut _ },
+                ("*const", "char") => quote! { move_string_to_c!(self.#self_name) },
+                ("*mut", "char") => quote! { move_string_to_c!(self.#self_name) as *mut _ },
                 _ => quote! { self.#self_name },
             },
             UserType(name) => match (ptr, api.describe_user_type(name)) {
@@ -1054,6 +1054,12 @@ pub fn generate_lib_code(api: &Api) -> Result<TokenStream, Error> {
                     message: errors::map_fmod_error($code).to_string(),
                 }
             };
+        }
+
+        macro_rules! move_string_to_c {
+            ($ value : expr) => {
+                CString::new($value).unwrap_or(CString::from(c"err!")).into_raw()
+            }
         }
 
         macro_rules! err_enum {
