@@ -86,9 +86,11 @@ because you still have to install the FMOD libraries as described above.
 
 ### Features
 
-You can enable or disable wrapper features depending on your needs:
+You can enable or disable crate features depending on your needs:
 
-- `flags` provides C-style flags with ergonomic Rust API based on [bitflags](https://crates.io/crates/bitflags) crate
+- `flags`*(default)* provides C-style flags with ergonomic Rust API based
+  on [bitflags](https://crates.io/crates/bitflags) crate
+- `debug` links logging version of FMOD libraries (fmodL.dll, fmodstudioL.dll, etc)
 
 ### Getting Started
 
