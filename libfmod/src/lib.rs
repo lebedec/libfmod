@@ -73,6 +73,13 @@ macro_rules! err_fmod {
         }
     };
 }
+macro_rules! move_string_to_c {
+    ($ value : expr) => {
+        CString::new($value)
+            .unwrap_or(CString::from(c"err!"))
+            .into_raw()
+    };
+}
 macro_rules! err_enum {
     ($ enumeration : expr , $ value : expr) => {
         Error::EnumBindgen {
@@ -3622,7 +3629,7 @@ impl TryFrom<ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION> for ParameterDescription {
 impl Into<ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION> for ParameterDescription {
     fn into(self) -> ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION {
         ffi::FMOD_STUDIO_PARAMETER_DESCRIPTION {
-            name: self.name.as_ptr().cast(),
+            name: move_string_to_c!(self.name),
             id: self.id.into(),
             minimum: self.minimum,
             maximum: self.maximum,
@@ -3654,7 +3661,7 @@ impl TryFrom<ffi::FMOD_STUDIO_USER_PROPERTY> for UserProperty {
 impl Into<ffi::FMOD_STUDIO_USER_PROPERTY> for UserProperty {
     fn into(self) -> ffi::FMOD_STUDIO_USER_PROPERTY {
         ffi::FMOD_STUDIO_USER_PROPERTY {
-            name: self.name.as_ptr().cast(),
+            name: move_string_to_c!(self.name),
             type_: self.type_.into(),
             union: self.union,
         }
@@ -3681,7 +3688,7 @@ impl TryFrom<ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES> for ProgrammerSoundPr
 impl Into<ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES> for ProgrammerSoundProperties {
     fn into(self) -> ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES {
         ffi::FMOD_STUDIO_PROGRAMMER_SOUND_PROPERTIES {
-            name: self.name.as_ptr().cast(),
+            name: move_string_to_c!(self.name),
             sound: self.sound.as_mut_ptr(),
             subsoundIndex: self.subsound_index,
         }
@@ -3706,7 +3713,7 @@ impl TryFrom<ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES> for PluginInstanceProp
 impl Into<ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES> for PluginInstanceProperties {
     fn into(self) -> ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES {
         ffi::FMOD_STUDIO_PLUGIN_INSTANCE_PROPERTIES {
-            name: self.name.as_ptr().cast(),
+            name: move_string_to_c!(self.name),
             dsp: self.dsp.as_mut_ptr(),
         }
     }
@@ -3730,7 +3737,7 @@ impl TryFrom<ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES> for TimelineMarkerProp
 impl Into<ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES> for TimelineMarkerProperties {
     fn into(self) -> ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES {
         ffi::FMOD_STUDIO_TIMELINE_MARKER_PROPERTIES {
-            name: self.name.as_ptr().cast(),
+            name: move_string_to_c!(self.name),
             position: self.position,
         }
     }
@@ -3830,7 +3837,7 @@ impl Into<ffi::FMOD_STUDIO_ADVANCEDSETTINGS> for StudioAdvancedSettings {
             studioupdateperiod: self.studioupdateperiod,
             idlesampledatapoolsize: self.idlesampledatapoolsize,
             streamingscheduledelay: self.streamingscheduledelay,
-            encryptionkey: self.encryptionkey.as_ptr().cast(),
+            encryptionkey: move_string_to_c!(self.encryptionkey),
         }
     }
 }
@@ -3935,7 +3942,7 @@ impl TryFrom<ffi::FMOD_STUDIO_SOUND_INFO> for SoundInfo {
 impl Into<ffi::FMOD_STUDIO_SOUND_INFO> for SoundInfo {
     fn into(self) -> ffi::FMOD_STUDIO_SOUND_INFO {
         ffi::FMOD_STUDIO_SOUND_INFO {
-            name_or_data: self.name_or_data.as_ptr().cast(),
+            name_or_data: move_string_to_c!(self.name_or_data),
             mode: self.mode,
             exinfo: self.exinfo.into(),
             subsoundindex: self.subsoundindex,
@@ -3973,7 +3980,7 @@ impl TryFrom<ffi::FMOD_STUDIO_COMMAND_INFO> for CommandInfo {
 impl Into<ffi::FMOD_STUDIO_COMMAND_INFO> for CommandInfo {
     fn into(self) -> ffi::FMOD_STUDIO_COMMAND_INFO {
         ffi::FMOD_STUDIO_COMMAND_INFO {
-            commandname: self.commandname.as_ptr().cast(),
+            commandname: move_string_to_c!(self.commandname),
             parentcommandindex: self.parentcommandindex,
             framenumber: self.framenumber,
             frametime: self.frametime,
@@ -4338,7 +4345,7 @@ impl Into<ffi::FMOD_TAG> for Tag {
         ffi::FMOD_TAG {
             type_: self.type_.into(),
             datatype: self.datatype.into(),
-            name: self.name.as_ptr() as *mut _,
+            name: move_string_to_c!(self.name) as *mut _,
             data: self.data,
             datalen: self.datalen,
             updated: self.updated,
@@ -4661,8 +4668,8 @@ impl Into<ffi::FMOD_ERRORCALLBACK_INFO> for ErrorCallbackInfo {
             result: self.result.into(),
             instancetype: self.instancetype.into(),
             instance: self.instance,
-            functionname: self.functionname.as_ptr().cast(),
-            functionparams: self.functionparams.as_ptr().cast(),
+            functionname: move_string_to_c!(self.functionname),
+            functionparams: move_string_to_c!(self.functionparams),
         }
     }
 }
@@ -4744,7 +4751,7 @@ impl Into<ffi::FMOD_CODEC_DESCRIPTION> for CodecDescription {
     fn into(self) -> ffi::FMOD_CODEC_DESCRIPTION {
         ffi::FMOD_CODEC_DESCRIPTION {
             apiversion: self.apiversion,
-            name: self.name.as_ptr().cast(),
+            name: move_string_to_c!(self.name),
             version: self.version,
             defaultasstream: self.defaultasstream,
             timeunits: self.timeunits,
@@ -4800,7 +4807,7 @@ impl TryFrom<ffi::FMOD_CODEC_WAVEFORMAT> for CodecWaveformat {
 impl Into<ffi::FMOD_CODEC_WAVEFORMAT> for CodecWaveformat {
     fn into(self) -> ffi::FMOD_CODEC_WAVEFORMAT {
         ffi::FMOD_CODEC_WAVEFORMAT {
-            name: self.name.as_ptr().cast(),
+            name: move_string_to_c!(self.name),
             format: self.format.into(),
             channels: self.channels,
             frequency: self.frequency,
@@ -4944,7 +4951,7 @@ impl Into<ffi::FMOD_OUTPUT_DESCRIPTION> for OutputDescription {
     fn into(self) -> ffi::FMOD_OUTPUT_DESCRIPTION {
         ffi::FMOD_OUTPUT_DESCRIPTION {
             apiversion: self.apiversion,
-            name: self.name.as_ptr().cast(),
+            name: move_string_to_c!(self.name),
             version: self.version,
             method: self.method,
             getnumdrivers: self.getnumdrivers,
@@ -5293,7 +5300,7 @@ impl Into<ffi::FMOD_DSP_PARAMETER_DESC> for DspParameterDesc {
             type_: self.type_.into(),
             name: self.name,
             label: self.label,
-            description: self.description.as_ptr().cast(),
+            description: move_string_to_c!(self.description),
             union: self.union,
         }
     }
