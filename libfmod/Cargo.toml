@@ -16,7 +16,7 @@ exclude = [
 [features]
 default = ["flags"]
 flags = ["bitflags"]
-debug = []
+logging = []
 
 [dependencies]
 bitflags = { version = "1", optional = true }

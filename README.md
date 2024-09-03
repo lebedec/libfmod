@@ -2,7 +2,7 @@
 
 [![Crates.io Version](https://img.shields.io/crates/v/libfmod.svg)](https://crates.io/crates/libfmod)
 [![LICENSE](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![MSRV](https://img.shields.io/badge/rustc-1.69.0+-ab6000.svg)](https://blog.rust-lang.org/2023/04/20/Rust-1.69.0.html)
+[![MSRV](https://img.shields.io/badge/rustc-1.77.0+-ab6000.svg)](https://blog.rust-lang.org/2024/03/21/Rust-1.77.0.html)
 
 A Rust bindings for [FMOD Engine](https://fmod.com/).
 FFI wrapped in Rust code to make them safe, more idiomatic
@@ -10,17 +10,21 @@ and abstract away uncomfortable manual C interface using.
 
 ### Installation
 
-Choose one of FMOD supported versions:
-
-| libfmod | FMOD    |
-|---------|---------|
-| 2.222   | 2.02.22 |
-| 2.206   | 2.02.06 |
-
 ```toml
 [dependencies]
-libfmod = "~2.206"
+libfmod = "~2.222"
 ```
+
+Choose one of FMOD supported versions:
+
+| libfmod | FMOD    | Status | End of life |
+|---------|---------|--------|-------------|
+| 2.222   | 2.02.22 | active |             | 
+| 2.206   | 2.02.06 | frozen | 2024-09-03  |
+
+Active: new features, bugfixes, and security fixes are accepted, new crates are still released.
+
+Frozen: no further changes can be pushed to it.
 
 #### FMOD Development Libraries
 
@@ -90,7 +94,7 @@ You can enable or disable crate features depending on your needs:
 
 - `flags`*(default)* provides C-style flags with ergonomic Rust API based
   on [bitflags](https://crates.io/crates/bitflags) crate
-- `debug` links logging version of FMOD libraries (fmodL.dll, fmodstudioL.dll, etc)
+- `logging` links logging version of FMOD libraries (fmodL.dll, fmodstudioL.dll, etc)
 
 ### Getting Started
 
