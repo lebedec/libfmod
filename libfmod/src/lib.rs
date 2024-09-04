@@ -159,9 +159,7 @@ where
     F: FnMut(T) -> O,
 {
     let mut values = values.into_iter().map(map).collect::<Vec<O>>();
-    let pointer = values.as_mut_ptr();
-    std::mem::forget(values);
-    pointer
+    Box::into_raw(values.into_boxed_slice()) as *mut _
 }
 const fn from_ref<T: ?Sized>(value: &T) -> *const T {
     value
@@ -5615,7 +5613,9 @@ impl Into<ffi::FMOD_DSP_DESCRIPTION> for DspDescription {
             process: self.process,
             setposition: self.setposition,
             numparameters: self.paramdesc.len() as i32,
-            paramdesc: &mut vec_as_mut_ptr(self.paramdesc, |param| param.into()),
+            paramdesc: vec_as_mut_ptr(self.paramdesc, |param| {
+                Box::into_raw(Box::new(param.into()))
+            }),
             setparameterfloat: self.setparameterfloat,
             setparameterint: self.setparameterint,
             setparameterbool: self.setparameterbool,
