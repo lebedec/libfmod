@@ -144,8 +144,8 @@ fn test_channel_custom_rolloff() -> Result<(), Error> {
             z: 0.0,
         },
     ];
-    channel.set_3d_custom_rolloff(curve)?;
+    channel.set_3d_custom_rolloff(curve.clone())?;
     let rolloff = channel.get_3d_custom_rolloff()?;
-    println!("rolloff: {:?}", rolloff);
+    assert_eq!(curve, rolloff, "rolloff");
     system.release()
 }

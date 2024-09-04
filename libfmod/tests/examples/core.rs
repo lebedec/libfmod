@@ -1,11 +1,12 @@
-use std::os::raw::{c_char, c_float, c_int};
-use std::ptr::null_mut;
-
 use libfmod::ffi::{
     FMOD_DSP_PARAMETER_DESC_FLOAT, FMOD_DSP_PARAMETER_DESC_UNION, FMOD_DSP_STATE, FMOD_INIT_NORMAL,
     FMOD_LOOP_NORMAL, FMOD_OK, FMOD_RESULT,
 };
 use libfmod::{DspDescription, DspParameterDesc, DspParameterType, Error, System};
+use std::os::raw::{c_char, c_float, c_int};
+use std::ptr::null_mut;
+use std::thread;
+use std::time::Duration;
 
 #[test]
 fn test_system_advanced_settings_before_init() -> Result<(), Error> {
@@ -38,34 +39,62 @@ fn test_dsp_custom() -> Result<(), Error> {
         },
     };
 
+    let other_desc = DspParameterDesc {
+        type_: DspParameterType::Float,
+        name: name16("other"),
+        label: name16("%"),
+        description: "linear value in percent".to_string(),
+        union: FMOD_DSP_PARAMETER_DESC_UNION {
+            floatdesc: FMOD_DSP_PARAMETER_DESC_FLOAT {
+                min: 0.0,
+                max: 1.0,
+                defaultval: 0.42,
+                mapping: Default::default(),
+            },
+        },
+    };
+
     struct MyDspData {
         volume: f32,
+        other: f32,
     }
 
     unsafe extern "C" fn create_callback(dsp_state: *mut FMOD_DSP_STATE) -> FMOD_RESULT {
-        let data = Box::new(MyDspData { volume: 1.0 });
-        (*dsp_state).plugindata = Box::into_raw(data) as *mut MyDspData as *mut _;
+        let data = Box::new(MyDspData {
+            volume: 1.0,
+            other: 0.0,
+        });
+        (*dsp_state).plugindata = Box::into_raw(data) as *mut _;
         FMOD_OK
     }
 
     unsafe extern "C" fn set_parameter_float_callback(
         dsp_state: *mut FMOD_DSP_STATE,
-        _index: c_int,
+        index: c_int,
         value: c_float,
     ) -> FMOD_RESULT {
-        let data = (*dsp_state).plugindata as *mut MyDspData;
-        (*data).volume = value;
+        let data = &mut *((*dsp_state).plugindata as *mut MyDspData);
+        match index {
+            0 => data.volume = value,
+            1 => data.other = value,
+            _ => unreachable!(),
+        }
         FMOD_OK
     }
 
     unsafe extern "C" fn get_parameter_float_callback(
         dsp_state: *mut FMOD_DSP_STATE,
-        _index: c_int,
+        index: c_int,
         value: *mut c_float,
         _valuestr: *mut c_char,
     ) -> FMOD_RESULT {
         let data = (*dsp_state).plugindata as *mut MyDspData;
-        value.write((*data).volume);
+        let data = match index {
+            0 => (*data).volume,
+            1 => (*data).other,
+            _ => unreachable!(),
+        };
+        value.write(data);
         FMOD_OK
     }
 
@@ -81,7 +110,7 @@ fn test_dsp_custom() -> Result<(), Error> {
         read: None,
         process: None,
         setposition: None,
-        paramdesc: vec![volume_desc],
+        paramdesc: vec![volume_desc, other_desc],
         setparameterfloat: Some(set_parameter_float_callback),
         setparameterint: None,
         setparameterbool: None,
@@ -112,17 +141,25 @@ fn test_dsp_custom() -> Result<(), Error> {
             3 => {
                 mydsp.set_parameter_float(0, 0.25)?;
             }
+            4 => {
+                mydsp.set_parameter_float(1, 0.75)?;
+            }
             _ => {}
         }
+        thread::sleep(Duration::from_millis(100))
     }
+
     let info = mydsp.get_parameter_info(0)?;
-
-    let default_value = unsafe { info.union.floatdesc.defaultval };
-    let (current_value, _) = mydsp.get_parameter_float(0, 0)?;
-
-    assert_eq!(default_value, 0.42, "default value");
-    assert_eq!(current_value, 0.25, "current value");
+    let volume_value_default = unsafe { info.union.floatdesc.defaultval };
+    let (volume_value, _) = mydsp.get_parameter_float(0, 0)?;
+    assert_eq!(volume_value_default, 0.42, "volume default value");
+    assert_eq!(volume_value, 0.25, "volume value");
     assert_eq!(info.description, "linear volume in percent", "description");
+
+    let info = mydsp.get_parameter_info(1)?;
+    let (other_value, _) = mydsp.get_parameter_float(1, 0)?;
+    assert_eq!(other_value, 0.75, "other value");
+    assert_eq!(info.description, "linear value in percent", "description");
 
     system.release()
 }

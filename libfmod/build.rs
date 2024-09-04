@@ -7,7 +7,7 @@ fn main() {
         (false, "windows") => ["fmod_vc", "fmodstudio_vc"],
         (true, "windows") => ["fmodL_vc", "fmodstudioL_vc"],
         (true, _) => ["fmodL", "fmodstudioL"],
-        _ => ["fmod", "fmodstudio"]
+        _ => ["fmod", "fmodstudio"],
     };
     println!("cargo:rustc-flags=-l {core}");
     println!("cargo:rustc-flags=-l {studio}");
