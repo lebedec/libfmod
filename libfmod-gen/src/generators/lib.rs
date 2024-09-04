@@ -1130,15 +1130,11 @@ pub fn generate_lib_code(api: &Api) -> Result<TokenStream, Error> {
         }
 
         pub fn vec_as_mut_ptr<T, O, F>(values: Vec<T>, map: F) -> *mut O
-            where F: FnMut(T) -> O
+        where
+            F: FnMut(T) -> O,
         {
-            let mut values = values
-                .into_iter()
-                .map(map)
-                .collect::<Vec<O>>();
-            let pointer = values.as_mut_ptr();
-            std::mem::forget(values);
-            pointer
+            let mut values = values.into_iter().map(map).collect::<Vec<O>>();
+            Box::into_raw(values.into_boxed_slice()) as *mut _
         }
 
         const fn from_ref<T: ?Sized>(value: &T) -> *const T {

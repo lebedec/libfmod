@@ -182,7 +182,7 @@ impl Api {
                 quote! { self.valuenames.as_ptr() as *mut _ }
             }
             ("FMOD_DSP_DESCRIPTION", "paramdesc") => {
-                quote! { &mut vec_as_mut_ptr(self.paramdesc, |param| param.into()) }
+                quote! { vec_as_mut_ptr(self.paramdesc, |param| Box::into_raw(Box::new(param.into()))) }
             }
             ("FMOD_DSP_STATE", "sidechaindata") => {
                 quote! { self.sidechaindata.as_ptr() as *mut _ }
