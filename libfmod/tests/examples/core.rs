@@ -161,6 +161,31 @@ fn test_dsp_custom() -> Result<(), Error> {
     assert_eq!(other_value, 0.75, "other value");
     assert_eq!(info.description, "linear value in percent", "description");
 
+    let (name, version, _, _, _) = mydsp.get_info()?;
+    assert_eq!(name, "My first DSP unit", "dsp info name");
+    assert_eq!(version, 0x00010000, "dsp info version");
+
+    system.release()
+}
+
+#[test]
+pub fn test_channel_group_get_name() -> Result<(), Error> {
+    let system = System::create()?;
+    system.init(32, FMOD_INIT_NORMAL, None)?;
+    let group = system.get_master_channel_group()?;
+    let name_5 = group.get_name(5)?;
+    let name_100 = group.get_name(100)?;
+    assert_eq!(name_5, "FMOD", "name 5");
+    assert_eq!(name_100, "FMOD master", "name 100");
+    system.release()
+}
+
+#[test]
+pub fn test_get_driver_info() -> Result<(), Error> {
+    let system = System::create()?;
+    system.init(32, FMOD_INIT_NORMAL, None)?;
+    let info = system.get_driver_info(0, 100)?;
+    println!("info: {:?}", info);
     system.release()
 }
 

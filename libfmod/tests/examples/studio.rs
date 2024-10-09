@@ -105,6 +105,26 @@ fn test_get_bank_path() -> Result<(), Error> {
 }
 
 #[test]
+fn test_get_parameter_label_by_name() -> Result<(), Error> {
+    let studio = Studio::create()?;
+    let system = studio.get_core_system()?;
+    system.set_software_format(None, Some(SpeakerMode::Quad), None)?;
+    studio.initialize(1024, StudioInit::NORMAL, Init::NORMAL, None)?;
+    let banks = [
+        "./tests/data/Build/Desktop/Master.strings.bank",
+        "./tests/data/Build/Desktop/SFX.bank",
+    ];
+    for bank in banks {
+        studio.load_bank_file(bank, LoadBank::NORMAL)?;
+    }
+    let event = studio.get_event("event:/events/1")?;
+    let (label, len) = event.get_parameter_label_by_name("UserParameter", 0, 10)?;
+    assert_eq!(label, "Value A", "label");
+    assert_eq!(len, 8, "C string length");
+    studio.release()
+}
+
+#[test]
 fn test_get_event_path() -> Result<(), Error> {
     let studio = Studio::create()?;
     let system = studio.get_core_system()?;
@@ -155,10 +175,10 @@ fn test_get_bus_path() -> Result<(), Error> {
         "./tests/data/Build/Desktop/Master.strings.bank",
         LoadBank::NORMAL,
     )?;
-    let bus = studio.get_bus("bus:/MyGroup/Bus")?;
+    let bus = studio.get_bus("bus:/MyGroup/New Return")?;
 
     let path = bus.get_path()?;
-    assert_eq!(path, "bus:/MyGroup/Bus");
+    assert_eq!(path, "bus:/MyGroup/New Return");
 
     studio.release()
 }

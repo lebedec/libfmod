@@ -20,6 +20,70 @@ impl Signature {
             return true;
         }
 
+        let out_string_arguments = [
+            ("FMOD_ChannelGroup_GetName", "name", "namelen"),
+            ("FMOD_DSP_GetParameterFloat", "valuestr", "valuestrlen"),
+            ("FMOD_DSP_GetParameterInt", "valuestr", "valuestrlen"),
+            ("FMOD_DSP_GetParameterBool", "valuestr", "valuestrlen"),
+            ("FMOD_DSP_GetParameterData", "valuestr", "valuestrlen"),
+            // ("FMOD_DSP_GetInfo", "name", "32"),
+            ("FMOD_Sound_GetName", "name", "namelen"),
+            ("FMOD_Sound_GetSyncPointInfo", "name", "namelen"),
+            ("FMOD_SoundGroup_GetName", "name", "namelen"),
+            ("FMOD_Studio_Bank_GetStringInfo", "path", "size"),
+            (
+                "FMOD_Studio_CommandReplay_GetCommandString",
+                "buffer",
+                "length",
+            ),
+            (
+                "FMOD_Studio_EventDescription_GetParameterLabelByIndex",
+                "label",
+                "size",
+            ),
+            (
+                "FMOD_Studio_EventDescription_GetParameterLabelByName",
+                "label",
+                "size",
+            ),
+            (
+                "FMOD_Studio_EventDescription_GetParameterLabelByID",
+                "label",
+                "size",
+            ),
+            (
+                "FMOD_Studio_System_GetParameterLabelByName",
+                "label",
+                "size",
+            ),
+            ("FMOD_Studio_System_GetParameterLabelByID", "label", "size"),
+            ("FMOD_System_GetDriverInfo", "name", "namelen"),
+            ("FMOD_System_GetPluginInfo", "name", "namelen"),
+            ("FMOD_System_GetRecordDriverInfo", "name", "namelen"),
+            ("FMOD_System_GetNetworkProxy", "proxy", "proxylen"),
+        ];
+
+        for (func, name, len) in out_string_arguments {
+            if function.name == func && argument.name == name {
+                let name = format_ident!("{}", name);
+                let len = format_ident!("{}", len);
+                self.targets
+                    .push(quote! { let #name = string_buffer!(#len); });
+                self.inputs.push(quote! { #name });
+                self.outputs.push(quote! { to_string!(#name)? });
+                self.return_types.push(quote! { String });
+                return true;
+            }
+        }
+
+        if function.name == "FMOD_DSP_GetInfo" && argument.name == "name" {
+            self.targets.push(quote! { let name = string_buffer!(32); });
+            self.inputs.push(quote! { name });
+            self.outputs.push(quote! { to_string!(name)? });
+            self.return_types.push(quote! { String });
+            return true;
+        }
+
         if function.name == "FMOD_Studio_System_Create" && argument.name == "headerversion" {
             self.inputs.push(quote! { ffi::FMOD_VERSION });
             return true;

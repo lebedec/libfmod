@@ -609,18 +609,12 @@ fn map_input(argument: &Argument, api: &Api) -> InArgument {
     }
 }
 
-fn map_output(argument: &Argument, _function: &Function, api: &Api) -> OutArgument {
+fn map_output(argument: &Argument, function: &Function, api: &Api) -> OutArgument {
     let pointer = ffi::describe_pointer(&argument.as_const, &argument.pointer);
     let arg = format_argument_ident(&argument.name);
 
     match &argument.argument_type {
         FundamentalType(type_name) => match &format!("{}:{}", pointer, type_name)[..] {
-            "*mut:char" => OutArgument {
-                target: quote! { let #arg = CString::from_vec_unchecked(b"".to_vec()).into_raw(); },
-                source: quote! { #arg },
-                output: quote! { CString::from_raw(#arg).into_string().map_err(Error::String)? },
-                retype: quote! { String },
-            },
             "*mut:float" => OutArgument {
                 target: quote! { let mut #arg = f32::default(); },
                 source: quote! { &mut #arg },
@@ -1081,6 +1075,16 @@ pub fn generate_lib_code(api: &Api) -> Result<TokenStream, Error> {
                         .map_err(Error::String)
                 }
             };
+        }
+
+        macro_rules! string_buffer {
+            ($ len : expr) => {
+                if $len == 0 {
+                    std::ptr::null_mut()
+                } else {
+                    vec![0; $len as usize].into_boxed_slice().as_mut_ptr()
+                }
+            }
         }
 
         macro_rules! ptr_opt {

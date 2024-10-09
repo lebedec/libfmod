@@ -99,6 +99,15 @@ macro_rules! to_string {
         }
     };
 }
+macro_rules! string_buffer {
+    ($ len : expr) => {
+        if $len == 0 {
+            std::ptr::null_mut()
+        } else {
+            vec![0; $len as usize].into_boxed_slice().as_mut_ptr()
+        }
+    };
+}
 macro_rules! ptr_opt {
     ($ ptr : expr , $ value : expr) => {
         if $ptr.is_null() {
@@ -7448,11 +7457,9 @@ impl ChannelGroup {
     }
     pub fn get_name(&self, namelen: i32) -> Result<String, Error> {
         unsafe {
-            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let name = string_buffer!(namelen);
             match ffi::FMOD_ChannelGroup_GetName(self.pointer, name, namelen) {
-                ffi::FMOD_OK => Ok(CString::from_raw(name)
-                    .into_string()
-                    .map_err(Error::String)?),
+                ffi::FMOD_OK => Ok(to_string!(name)?),
                 error => Err(err_fmod!("FMOD_ChannelGroup_GetName", error)),
             }
         }
@@ -7762,7 +7769,7 @@ impl Dsp {
     ) -> Result<(f32, String), Error> {
         unsafe {
             let mut value = f32::default();
-            let valuestr = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let valuestr = string_buffer!(valuestrlen);
             match ffi::FMOD_DSP_GetParameterFloat(
                 self.pointer,
                 index,
@@ -7770,12 +7777,7 @@ impl Dsp {
                 valuestr,
                 valuestrlen,
             ) {
-                ffi::FMOD_OK => Ok((
-                    value,
-                    CString::from_raw(valuestr)
-                        .into_string()
-                        .map_err(Error::String)?,
-                )),
+                ffi::FMOD_OK => Ok((value, to_string!(valuestr)?)),
                 error => Err(err_fmod!("FMOD_DSP_GetParameterFloat", error)),
             }
         }
@@ -7783,7 +7785,7 @@ impl Dsp {
     pub fn get_parameter_int(&self, index: i32, valuestrlen: i32) -> Result<(i32, String), Error> {
         unsafe {
             let mut value = i32::default();
-            let valuestr = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let valuestr = string_buffer!(valuestrlen);
             match ffi::FMOD_DSP_GetParameterInt(
                 self.pointer,
                 index,
@@ -7791,12 +7793,7 @@ impl Dsp {
                 valuestr,
                 valuestrlen,
             ) {
-                ffi::FMOD_OK => Ok((
-                    value,
-                    CString::from_raw(valuestr)
-                        .into_string()
-                        .map_err(Error::String)?,
-                )),
+                ffi::FMOD_OK => Ok((value, to_string!(valuestr)?)),
                 error => Err(err_fmod!("FMOD_DSP_GetParameterInt", error)),
             }
         }
@@ -7808,7 +7805,7 @@ impl Dsp {
     ) -> Result<(bool, String), Error> {
         unsafe {
             let mut value = ffi::FMOD_BOOL::default();
-            let valuestr = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let valuestr = string_buffer!(valuestrlen);
             match ffi::FMOD_DSP_GetParameterBool(
                 self.pointer,
                 index,
@@ -7816,12 +7813,7 @@ impl Dsp {
                 valuestr,
                 valuestrlen,
             ) {
-                ffi::FMOD_OK => Ok((
-                    to_bool!(value),
-                    CString::from_raw(valuestr)
-                        .into_string()
-                        .map_err(Error::String)?,
-                )),
+                ffi::FMOD_OK => Ok((to_bool!(value), to_string!(valuestr)?)),
                 error => Err(err_fmod!("FMOD_DSP_GetParameterBool", error)),
             }
         }
@@ -7834,7 +7826,7 @@ impl Dsp {
         unsafe {
             let mut data = null_mut();
             let mut length = u32::default();
-            let valuestr = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let valuestr = string_buffer!(valuestrlen);
             match ffi::FMOD_DSP_GetParameterData(
                 self.pointer,
                 index,
@@ -7843,13 +7835,7 @@ impl Dsp {
                 valuestr,
                 valuestrlen,
             ) {
-                ffi::FMOD_OK => Ok((
-                    data,
-                    length,
-                    CString::from_raw(valuestr)
-                        .into_string()
-                        .map_err(Error::String)?,
-                )),
+                ffi::FMOD_OK => Ok((data, length, to_string!(valuestr)?)),
                 error => Err(err_fmod!("FMOD_DSP_GetParameterData", error)),
             }
         }
@@ -7891,7 +7877,7 @@ impl Dsp {
     }
     pub fn get_info(&self) -> Result<(String, u32, i32, i32, i32), Error> {
         unsafe {
-            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let name = string_buffer!(32);
             let mut version = u32::default();
             let mut channels = i32::default();
             let mut configwidth = i32::default();
@@ -7905,9 +7891,7 @@ impl Dsp {
                 &mut configheight,
             ) {
                 ffi::FMOD_OK => Ok((
-                    CString::from_raw(name)
-                        .into_string()
-                        .map_err(Error::String)?,
+                    to_string!(name)?,
                     version,
                     channels,
                     configwidth,
@@ -8684,11 +8668,9 @@ impl Sound {
     }
     pub fn get_name(&self, namelen: i32) -> Result<String, Error> {
         unsafe {
-            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let name = string_buffer!(namelen);
             match ffi::FMOD_Sound_GetName(self.pointer, name, namelen) {
-                ffi::FMOD_OK => Ok(CString::from_raw(name)
-                    .into_string()
-                    .map_err(Error::String)?),
+                ffi::FMOD_OK => Ok(to_string!(name)?),
                 error => Err(err_fmod!("FMOD_Sound_GetName", error)),
             }
         }
@@ -8840,7 +8822,7 @@ impl Sound {
         offsettype: impl Into<ffi::FMOD_TIMEUNIT>,
     ) -> Result<(String, u32), Error> {
         unsafe {
-            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let name = string_buffer!(namelen);
             let mut offset = u32::default();
             match ffi::FMOD_Sound_GetSyncPointInfo(
                 self.pointer,
@@ -8850,12 +8832,7 @@ impl Sound {
                 &mut offset,
                 offsettype.into(),
             ) {
-                ffi::FMOD_OK => Ok((
-                    CString::from_raw(name)
-                        .into_string()
-                        .map_err(Error::String)?,
-                    offset,
-                )),
+                ffi::FMOD_OK => Ok((to_string!(name)?, offset)),
                 error => Err(err_fmod!("FMOD_Sound_GetSyncPointInfo", error)),
             }
         }
@@ -9134,11 +9111,9 @@ impl SoundGroup {
     }
     pub fn get_name(&self, namelen: i32) -> Result<String, Error> {
         unsafe {
-            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let name = string_buffer!(namelen);
             match ffi::FMOD_SoundGroup_GetName(self.pointer, name, namelen) {
-                ffi::FMOD_OK => Ok(CString::from_raw(name)
-                    .into_string()
-                    .map_err(Error::String)?),
+                ffi::FMOD_OK => Ok(to_string!(name)?),
                 error => Err(err_fmod!("FMOD_SoundGroup_GetName", error)),
             }
         }
@@ -9291,7 +9266,7 @@ impl Bank {
     pub fn get_string_info(&self, index: i32, size: i32) -> Result<(Guid, String, i32), Error> {
         unsafe {
             let mut id = ffi::FMOD_GUID::default();
-            let path = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let path = string_buffer!(size);
             let mut retrieved = i32::default();
             match ffi::FMOD_Studio_Bank_GetStringInfo(
                 self.pointer,
@@ -9301,13 +9276,7 @@ impl Bank {
                 size,
                 &mut retrieved,
             ) {
-                ffi::FMOD_OK => Ok((
-                    Guid::try_from(id)?,
-                    CString::from_raw(path)
-                        .into_string()
-                        .map_err(Error::String)?,
-                    retrieved,
-                )),
+                ffi::FMOD_OK => Ok((Guid::try_from(id)?, to_string!(path)?, retrieved)),
                 error => Err(err_fmod!("FMOD_Studio_Bank_GetStringInfo", error)),
             }
         }
@@ -9648,16 +9617,14 @@ impl CommandReplay {
     }
     pub fn get_command_string(&self, commandindex: i32, length: i32) -> Result<String, Error> {
         unsafe {
-            let buffer = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let buffer = string_buffer!(length);
             match ffi::FMOD_Studio_CommandReplay_GetCommandString(
                 self.pointer,
                 commandindex,
                 buffer,
                 length,
             ) {
-                ffi::FMOD_OK => Ok(CString::from_raw(buffer)
-                    .into_string()
-                    .map_err(Error::String)?),
+                ffi::FMOD_OK => Ok(to_string!(buffer)?),
                 error => Err(err_fmod!(
                     "FMOD_Studio_CommandReplay_GetCommandString",
                     error
@@ -9971,7 +9938,7 @@ impl EventDescription {
         size: i32,
     ) -> Result<(String, i32), Error> {
         unsafe {
-            let label = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let label = string_buffer!(size);
             let mut retrieved = i32::default();
             match ffi::FMOD_Studio_EventDescription_GetParameterLabelByIndex(
                 self.pointer,
@@ -9981,12 +9948,7 @@ impl EventDescription {
                 size,
                 &mut retrieved,
             ) {
-                ffi::FMOD_OK => Ok((
-                    CString::from_raw(label)
-                        .into_string()
-                        .map_err(Error::String)?,
-                    retrieved,
-                )),
+                ffi::FMOD_OK => Ok((to_string!(label)?, retrieved)),
                 error => Err(err_fmod!(
                     "FMOD_Studio_EventDescription_GetParameterLabelByIndex",
                     error
@@ -10001,7 +9963,7 @@ impl EventDescription {
         size: i32,
     ) -> Result<(String, i32), Error> {
         unsafe {
-            let label = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let label = string_buffer!(size);
             let mut retrieved = i32::default();
             match ffi::FMOD_Studio_EventDescription_GetParameterLabelByName(
                 self.pointer,
@@ -10011,12 +9973,7 @@ impl EventDescription {
                 size,
                 &mut retrieved,
             ) {
-                ffi::FMOD_OK => Ok((
-                    CString::from_raw(label)
-                        .into_string()
-                        .map_err(Error::String)?,
-                    retrieved,
-                )),
+                ffi::FMOD_OK => Ok((to_string!(label)?, retrieved)),
                 error => Err(err_fmod!(
                     "FMOD_Studio_EventDescription_GetParameterLabelByName",
                     error
@@ -10031,7 +9988,7 @@ impl EventDescription {
         size: i32,
     ) -> Result<(String, i32), Error> {
         unsafe {
-            let label = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let label = string_buffer!(size);
             let mut retrieved = i32::default();
             match ffi::FMOD_Studio_EventDescription_GetParameterLabelByID(
                 self.pointer,
@@ -10041,12 +9998,7 @@ impl EventDescription {
                 size,
                 &mut retrieved,
             ) {
-                ffi::FMOD_OK => Ok((
-                    CString::from_raw(label)
-                        .into_string()
-                        .map_err(Error::String)?,
-                    retrieved,
-                )),
+                ffi::FMOD_OK => Ok((to_string!(label)?, retrieved)),
                 error => Err(err_fmod!(
                     "FMOD_Studio_EventDescription_GetParameterLabelByID",
                     error
@@ -11031,7 +10983,7 @@ impl Studio {
         size: i32,
     ) -> Result<(String, i32), Error> {
         unsafe {
-            let label = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let label = string_buffer!(size);
             let mut retrieved = i32::default();
             match ffi::FMOD_Studio_System_GetParameterLabelByName(
                 self.pointer,
@@ -11041,12 +10993,7 @@ impl Studio {
                 size,
                 &mut retrieved,
             ) {
-                ffi::FMOD_OK => Ok((
-                    CString::from_raw(label)
-                        .into_string()
-                        .map_err(Error::String)?,
-                    retrieved,
-                )),
+                ffi::FMOD_OK => Ok((to_string!(label)?, retrieved)),
                 error => Err(err_fmod!(
                     "FMOD_Studio_System_GetParameterLabelByName",
                     error
@@ -11061,7 +11008,7 @@ impl Studio {
         size: i32,
     ) -> Result<(String, i32), Error> {
         unsafe {
-            let label = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let label = string_buffer!(size);
             let mut retrieved = i32::default();
             match ffi::FMOD_Studio_System_GetParameterLabelByID(
                 self.pointer,
@@ -11071,12 +11018,7 @@ impl Studio {
                 size,
                 &mut retrieved,
             ) {
-                ffi::FMOD_OK => Ok((
-                    CString::from_raw(label)
-                        .into_string()
-                        .map_err(Error::String)?,
-                    retrieved,
-                )),
+                ffi::FMOD_OK => Ok((to_string!(label)?, retrieved)),
                 error => Err(err_fmod!("FMOD_Studio_System_GetParameterLabelByID", error)),
             }
         }
@@ -11750,7 +11692,7 @@ impl System {
         namelen: i32,
     ) -> Result<(String, Guid, i32, SpeakerMode, i32), Error> {
         unsafe {
-            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let name = string_buffer!(namelen);
             let mut guid = ffi::FMOD_GUID::default();
             let mut systemrate = i32::default();
             let mut speakermode = ffi::FMOD_SPEAKERMODE::default();
@@ -11766,9 +11708,7 @@ impl System {
                 &mut speakermodechannels,
             ) {
                 ffi::FMOD_OK => Ok((
-                    CString::from_raw(name)
-                        .into_string()
-                        .map_err(Error::String)?,
+                    to_string!(name)?,
                     Guid::try_from(guid)?,
                     systemrate,
                     SpeakerMode::from(speakermode)?,
@@ -12021,7 +11961,7 @@ impl System {
     ) -> Result<(PluginType, String, u32), Error> {
         unsafe {
             let mut plugintype = ffi::FMOD_PLUGINTYPE::default();
-            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let name = string_buffer!(namelen);
             let mut version = u32::default();
             match ffi::FMOD_System_GetPluginInfo(
                 self.pointer,
@@ -12031,13 +11971,7 @@ impl System {
                 namelen,
                 &mut version,
             ) {
-                ffi::FMOD_OK => Ok((
-                    PluginType::from(plugintype)?,
-                    CString::from_raw(name)
-                        .into_string()
-                        .map_err(Error::String)?,
-                    version,
-                )),
+                ffi::FMOD_OK => Ok((PluginType::from(plugintype)?, to_string!(name)?, version)),
                 error => Err(err_fmod!("FMOD_System_GetPluginInfo", error)),
             }
         }
@@ -12747,7 +12681,7 @@ impl System {
         namelen: i32,
     ) -> Result<(String, Guid, i32, SpeakerMode, i32, ffi::FMOD_DRIVER_STATE), Error> {
         unsafe {
-            let name = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let name = string_buffer!(namelen);
             let mut guid = ffi::FMOD_GUID::default();
             let mut systemrate = i32::default();
             let mut speakermode = ffi::FMOD_SPEAKERMODE::default();
@@ -12765,9 +12699,7 @@ impl System {
                 &mut state,
             ) {
                 ffi::FMOD_OK => Ok((
-                    CString::from_raw(name)
-                        .into_string()
-                        .map_err(Error::String)?,
+                    to_string!(name)?,
                     Guid::try_from(guid)?,
                     systemrate,
                     SpeakerMode::from(speakermode)?,
@@ -12887,11 +12819,9 @@ impl System {
     }
     pub fn get_network_proxy(&self, proxylen: i32) -> Result<String, Error> {
         unsafe {
-            let proxy = CString::from_vec_unchecked(b"".to_vec()).into_raw();
+            let proxy = string_buffer!(proxylen);
             match ffi::FMOD_System_GetNetworkProxy(self.pointer, proxy, proxylen) {
-                ffi::FMOD_OK => Ok(CString::from_raw(proxy)
-                    .into_string()
-                    .map_err(Error::String)?),
+                ffi::FMOD_OK => Ok(to_string!(proxy)?),
                 error => Err(err_fmod!("FMOD_System_GetNetworkProxy", error)),
             }
         }

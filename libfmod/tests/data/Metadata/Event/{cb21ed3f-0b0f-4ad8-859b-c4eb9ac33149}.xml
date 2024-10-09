@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.01.00">
+<objects serializationModel="Studio.02.02.00">
 	<object class="Event" id="{cb21ed3f-0b0f-4ad8-859b-c4eb9ac33149}">
 		<property name="name">
 			<value>1</value>
@@ -30,6 +30,9 @@
 		</relationship>
 		<relationship name="timeline">
 			<destination>{eb90e6cd-122c-43b6-9735-0f4967c5c015}</destination>
+		</relationship>
+		<relationship name="parameters">
+			<destination>{bfd8b2b8-5f99-414f-891a-8140e3fdf6b6}</destination>
 		</relationship>
 		<relationship name="banks">
 			<destination>{fa4db5ee-aa2c-48dc-a4d1-77bac4164250}</destination>
@@ -69,6 +72,11 @@
 	<object class="Timeline" id="{eb90e6cd-122c-43b6-9735-0f4967c5c015}">
 		<relationship name="modules">
 			<destination>{51b06429-13e4-44d4-aef7-1efcff7396ba}</destination>
+		</relationship>
+	</object>
+	<object class="ParameterProxy" id="{bfd8b2b8-5f99-414f-891a-8140e3fdf6b6}">
+		<relationship name="preset">
+			<destination>{2014a7d5-326a-42ba-99ee-491a5d0df19a}</destination>
 		</relationship>
 	</object>
 	<object class="EventMixerMaster" id="{8047c09f-2971-493c-b26e-f2cff962980b}">
