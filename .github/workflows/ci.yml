@@ -20,11 +20,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ls -al
-      - run: cd libfmod
+        working-directory: ./libfmod
       - run: apt update && apt install p7zip-full -y
       - run: curl https://raw.githubusercontent.com/lebedec/data/main/libfmod-2.02.22-linux-x86_64.7z --output ./libfmod-2.02.22-linux-x86_64.7z
       - run: 7z e ./libfmod-2.02.22-linux-x86_64.7z -p$BUILD_DEPS_PASSWORD -o/usr/lib
       - run: cargo test -- --test-threads=1
+        working-directory: ./libfmod
   publish:
     name: Publish
     needs: test
@@ -36,6 +37,5 @@ jobs:
         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
-      - run: ls -al
-      - run: cd libfmod
       - run: cargo publish --dry-run
+        working-directory: ./libfmod
