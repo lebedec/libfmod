@@ -17,10 +17,9 @@ jobs:
       image: rust:1.77
       env:
         BUILD_DEPS_PASSWORD: ${{ secrets.BUILD_DEPS_PASSWORD }}
-      volumes:
-        - /libfmod:/opt/libfmod
     steps:
-      - run: cd /opt/libfmod
+      - run: ls -al
+      - run: cd libfmod
       - run: apt update && apt install p7zip-full -y
       - run: curl https://raw.githubusercontent.com/lebedec/data/main/libfmod-2.02.22-linux-x86_64.7z --output ./libfmod-2.02.22-linux-x86_64.7z
       - run: 7z e ./libfmod-2.02.22-linux-x86_64.7z -p$BUILD_DEPS_PASSWORD -o/usr/lib
@@ -34,8 +33,7 @@ jobs:
       image: rust:1.77
       env:
         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      volumes:
-        - /libfmod:/opt/libfmod
     steps:
-      - run: cd /opt/libfmod
+      - run: ls -al
+      - run: cd libfmod
       - run: cargo publish --dry-run
