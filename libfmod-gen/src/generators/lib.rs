@@ -1082,7 +1082,7 @@ pub fn generate_lib_code(api: &Api) -> Result<TokenStream, Error> {
                 if $len == 0 {
                     std::ptr::null_mut()
                 } else {
-                    vec![0; $len as usize].into_boxed_slice().as_mut_ptr()
+                    Box::into_raw(vec![0; $len as usize].into_boxed_slice()) as *mut _
                 }
             }
         }

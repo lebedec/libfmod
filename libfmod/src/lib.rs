@@ -104,7 +104,7 @@ macro_rules! string_buffer {
         if $len == 0 {
             std::ptr::null_mut()
         } else {
-            vec![0; $len as usize].into_boxed_slice().as_mut_ptr()
+            Box::into_raw(vec![0; $len as usize].into_boxed_slice()) as *mut _
         }
     };
 }
