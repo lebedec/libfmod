@@ -1,6 +1,6 @@
 [package]
 name = "libfmod"
-version = "2.222.5"
+version = "2.222.6"
 publish = true
 edition = "2021"
 license = "MIT"
